@@ -70,82 +70,22 @@ function getReadableZone(p) {
 
 
 
-let sitePassword = "";
-let isAuthenticated = false;
 
 
 
-function loadJsonp(url) {
-  return new Promise((resolve, reject) => {
-    const callbackName = `ogCallback_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
-    const script = document.createElement("script");
 
-    window[callbackName] = data => {
-      resolve(data);
-      script.remove();
-      delete window[callbackName];
-    };
 
-    script.onerror = () => {
-      script.remove();
-      delete window[callbackName];
-      reject(new Error("Apps Script kon niet worden geladen"));
-    };
 
-    const separator = url.includes("?") ? "&" : "?";
-    script.src = `${url}${separator}callback=${callbackName}&t=${Date.now()}`;
-    document.body.appendChild(script);
-  });
-}
 
-async function fetchSitePassword() {
-  try {
-    const payload = await loadJsonp(APPS_SCRIPT_URL);
-    sitePassword = String(payload.sitePassword || "").trim();
-    return sitePassword;
-  } catch (error) {
-    console.error("Kon site wachtwoord niet ophalen", error);
-    return "";
-  }
-}
+async 
 
-async function verifySitePassword() {
-  const input = document.getElementById("sitePasswordInput");
-  const error = document.getElementById("loginError");
-  const entered = String(input?.value || "").trim();
 
-  const correctPassword = await fetchSitePassword();
+async 
 
-  if (entered && correctPassword && entered === correctPassword) {
-    isAuthenticated = true;
-    if (error) error.classList.add("hidden");
-    showHome();
-      return;
-  }
 
-  if (error) {
-    error.textContent = "Ongeldig wachtwoord of wachtwoord kon niet worden geladen";
-    error.classList.remove("hidden");
-  }
-}
 
-function showHome() {
-  if (!isAuthenticated) {
-    showLoginScreen();
-    return;
-  }
 
-  setActiveScreen("homeScreen");
-}
 
-function goHomeIfAuthenticated() {
-  if (!isAuthenticated) {
-    showLoginScreen();
-    return;
-  }
-
-  showHome();
-}
 
 async 
 
@@ -157,6 +97,102 @@ async
 // OG Pitching Tracker
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_SD7MDqIzOD8FIrpjh-XwaqMlz5epHVMt88upepu1x96ss8B0LXWSYbzZ-F8yrH6W/exec";
+
+
+let sitePassword = "";
+let isAuthenticated = false;
+
+function loadJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "ogJsonp_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+    const script = document.createElement("script");
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timeout bij laden van Apps Script"));
+    }, 12000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      if (script.parentNode) script.parentNode.removeChild(script);
+      try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+    }
+
+    window[callbackName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = function() {
+      cleanup();
+      reject(new Error("Apps Script script-tag kon niet laden"));
+    };
+
+    const separator = url.indexOf("?") === -1 ? "?" : "&";
+    script.src = url + separator + "callback=" + encodeURIComponent(callbackName) + "&t=" + Date.now();
+    document.body.appendChild(script);
+  });
+}
+
+async function fetchSitePassword() {
+  const payload = await loadJsonp(APPS_SCRIPT_URL);
+  sitePassword = String((payload && payload.sitePassword) || "").trim();
+  return sitePassword;
+}
+
+async function verifySitePassword() {
+  const input = document.getElementById("sitePasswordInput");
+  const error = document.getElementById("loginError");
+  const entered = String((input && input.value) || "").trim();
+
+  try {
+    const correctPassword = await fetchSitePassword();
+
+    if (!correctPassword) {
+      if (error) {
+        error.textContent = "Geen wachtwoord gevonden in tabblad Wachtwoord cel A1.";
+        error.classList.remove("hidden");
+      }
+      return;
+    }
+
+    if (entered === correctPassword) {
+      isAuthenticated = true;
+      if (error) error.classList.add("hidden");
+      setActiveScreen("homeScreen");
+          return;
+    }
+
+    if (error) {
+      error.textContent = "Ongeldig wachtwoord";
+      error.classList.remove("hidden");
+    }
+  } catch (err) {
+    console.error("Wachtwoord laden fout:", err);
+    if (error) {
+      error.textContent = "Wachtwoord kon niet worden geladen. Check Apps Script deployment.";
+      error.classList.remove("hidden");
+    }
+  }
+}
+
+function showLoginScreen() {
+  document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+  const login = document.getElementById("loginScreen");
+  if (login) login.classList.add("active");
+}
+
+function showHome() {
+  if (!isAuthenticated) {
+    showLoginScreen();
+    return;
+  }
+  setActiveScreen("homeScreen");
+}
+
+function goHomeIfAuthenticated() {
+  showHome();
+}
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
@@ -1658,16 +1694,10 @@ function loadLocalGame() {
 window.addEventListener("DOMContentLoaded", init);
 
 
-function showLoginScreen() {
-  document.querySelectorAll(".screen").forEach(screen => {
-    screen.classList.remove("active");
-  });
 
-  const login = document.getElementById("loginScreen");
-  if (login) login.classList.add("active");
+
+
+
+function handlePasswordEnter(event) {
+  if (event.key === "Enter") verifySitePassword();
 }
-
-window.addEventListener("load", async () => {
-  await fetchSitePassword();
-  showLoginScreen();
-});
