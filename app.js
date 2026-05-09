@@ -96,8 +96,7 @@ async
 
 // OG Pitching Tracker
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_SD7MDqIzOD8FIrpjh-XwaqMlz5epHVMt88upepu1x96ss8B0LXWSYbzZ-F8yrH6W/exec";
-
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqKuIfSHLqByP-pGXgANZKaAWHnh1WrUrUx_XxoSAaD51EBk0p_C07F-Q/exec";
 
 let sitePassword = "";
 let isAuthenticated = false;
