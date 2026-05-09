@@ -1069,10 +1069,10 @@ button.danger {
 
 .search-batter-figure {
   position: absolute !important;
-  left: 18px !important;
-  bottom: 8px !important;
-  width: 190px !important;
-  height: 285px !important;
+  left: 10px !important;
+  bottom: 4px !important;
+  width: 175px !important;
+  height: 275px !important;
   display: flex !important;
   align-items: flex-end !important;
   justify-content: center !important;
@@ -1091,10 +1091,10 @@ button.danger {
 
 .search-heatmap-field .heatmap-zone {
   position: absolute !important;
-  right: 34px !important;
-  top: 36px !important;
-  width: 132px !important;
-  height: 180px !important;
+  right: 42px !important;
+  top: 42px !important;
+  width: 128px !important;
+  height: 176px !important;
   z-index: 3 !important;
 }
 
