@@ -10,6 +10,7 @@ let sheetSyncLoaded = false;
 let game = {
   opponent: "",
   pitcherName: "",
+  pitcherSessions: [],
   date: "",
   startTime: "",
   lineup: [],
@@ -87,7 +88,26 @@ function showPitcherStats() {
 }
 
 function getPitcherGames(pitcherName) {
-  return getStoredGames().filter(g => g.pitcherName === pitcherName);
+  return getStoredGames()
+    .map(g => {
+      const pitcherPitches = (g.pitches || []).filter(p => p.pitcherName === pitcherName);
+      if (!pitcherPitches.length) return null;
+
+      return {
+        ...g,
+        pitcherName,
+        pitches: pitcherPitches,
+        totalOuts: countPitcherOutsFromPitches(pitcherPitches),
+        totalBalls: pitcherPitches.filter(p => p.result === "Ball").length,
+        totalStrikes: pitcherPitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length,
+        firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length
+      };
+    })
+    .filter(Boolean);
+}
+
+function countPitcherOutsFromPitches(pitches) {
+  return pitches.filter(p => p.result === "Out" || (p.result !== "Out" && false)).length;
 }
 
 function calculateGameStats(g) {
@@ -99,7 +119,7 @@ function calculateGameStats(g) {
   ).length;
 
   const balls = pitches.filter(p => p.result === "Ball").length;
-  const outs = Number(g.totalOuts || 0);
+  const outs = Number(g.totalOuts || Math.max(0, ...pitches.map(p => Number(p.totalOuts || 0))));
 
   const fps = pitches.filter(p =>
     p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)
@@ -383,6 +403,10 @@ function upsertStoredGame(gameToStore) {
 }
 
 function showUnfinishedGames() {
+  syncFromGoogleSheet().then(() => renderUnfinishedGames());
+}
+
+function renderUnfinishedGames() {
   const list = document.getElementById("unfinishedGamesList");
   const games = getStoredGames().filter(g => !g.closed);
 
@@ -466,6 +490,7 @@ function selectChoice(key, value) {
 
 function startGame() {
   game.pitcherName = document.getElementById("pitcherName").value;
+  game.pitcherSessions = [];
   if (!game.pitcherName) {
     alert("Kies eerst een pitcher.");
     return;
@@ -503,6 +528,7 @@ function startGame() {
   game.outs = 0;
   game.totalOuts = 0;
   game.pitches = [];
+  startPitcherSession(game.pitcherName);
 
   saveLocalGame();
   setSyncStatus("Google Sheets nog niet getest.");
@@ -645,6 +671,78 @@ function undoPitch() {
 }
 
 
+
+function startPitcherSession(pitcherName) {
+  game.pitcherSessions = game.pitcherSessions || [];
+  game.pitcherSessions.push({
+    pitcherName,
+    startedAt: new Date().toISOString(),
+    endedAt: "",
+    startPitchCount: game.pitches?.length || 0,
+    endPitchCount: null
+  });
+}
+
+function closeCurrentPitcherSession() {
+  game.pitcherSessions = game.pitcherSessions || [];
+  const current = [...game.pitcherSessions].reverse().find(session => !session.endedAt);
+  if (current) {
+    current.endedAt = new Date().toISOString();
+    current.endPitchCount = game.pitches?.length || 0;
+  }
+}
+
+function openPitcherModal() {
+  const select = document.getElementById("newPitcherSelect");
+  if (select) {
+    select.value = "";
+    [...select.options].forEach(option => {
+      option.disabled = option.value === game.pitcherName && option.value !== "";
+    });
+  }
+  document.getElementById("pitcherModal").classList.remove("hidden");
+}
+
+function closePitcherModal() {
+  document.getElementById("pitcherModal").classList.add("hidden");
+}
+
+function confirmPitcherChange() {
+  const select = document.getElementById("newPitcherSelect");
+  const newPitcher = select.value;
+
+  if (!newPitcher) {
+    alert("Kies eerst een nieuwe pitcher.");
+    return;
+  }
+
+  if (newPitcher === game.pitcherName) {
+    alert("Deze pitcher is al actief.");
+    return;
+  }
+
+  closeCurrentPitcherSession();
+
+  game.pitcherName = newPitcher;
+
+  // Nieuwe pitcher begint met eigen pitching count/statline.
+  game.balls = 0;
+  game.strikes = 0;
+  game.totalBalls = 0;
+  game.totalStrikes = 0;
+  game.firstPitchStrikes = 0;
+  game.outs = 0;
+  game.totalOuts = 0;
+
+  startPitcherSession(newPitcher);
+  saveLocalGame();
+  closePitcherModal();
+  updateUI();
+
+  setSyncStatus(`Nieuwe pitcher actief: ${newPitcher}`, "ok");
+}
+
+
 function openSubModal() {
   const activeSelect = document.getElementById("activeSubSelect");
   const benchSelect = document.getElementById("benchSubSelect");
@@ -722,11 +820,13 @@ function backToMenu() {
 }
 
 function resetGame() {
-  if (!confirm("Wil je deze game afsluiten? Daarna staat hij niet meer bij 'Niet afgesloten games'.")) return;
+  if (!confirm("Wil je deze game afsluiten? Daarna staat hij bij 'Vorige games'.")) return;
 
   game.closed = true;
   game.closedAt = new Date().toISOString();
+
   saveLocalGame();
+  sendGameStatusToGoogleSheet();
 
   localStorage.removeItem("ogActiveGameId");
   localStorage.removeItem("ogSoftbalGame");
@@ -749,6 +849,8 @@ function updateUI() {
   document.getElementById("totalPitches").textContent = game.pitches.length;
   document.getElementById("fpsCount").textContent = game.firstPitchStrikes;
   document.getElementById("inningsPitched").textContent = formatInningsPitched(game.totalOuts);
+  const activePitcherLabel = document.getElementById("activePitcherLabel");
+  if (activePitcherLabel) activePitcherLabel.textContent = game.pitcherName || "-";
   document.getElementById("currentBalls").textContent = game.balls;
   document.getElementById("currentStrikes").textContent = game.strikes;
 
@@ -828,6 +930,42 @@ function getPitchZone(x, y) {
   return { horizontal, vertical, label: `${horizontal} ${vertical}` };
 }
 
+async function sendGameStatusToGoogleSheet() {
+  if (!game.appsScriptUrl) {
+    setSyncStatus("Google Sheets niet gekoppeld.", "error");
+    return;
+  }
+
+  try {
+    await fetch(game.appsScriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        type: "game_status",
+        gameId: game.gameId,
+        date: game.date,
+        startTime: game.startTime,
+        opponent: game.opponent,
+        pitcherName: game.pitcherName,
+        closed: true,
+        closedAt: game.closedAt || new Date().toISOString(),
+        totalBalls: game.totalBalls,
+        totalStrikes: game.totalStrikes,
+        totalOuts: game.totalOuts,
+        inningsPitched: formatInningsPitched(game.totalOuts),
+        totalPitches: game.pitches?.length || 0,
+        firstPitchStrikes: game.firstPitchStrikes || 0
+      })
+    });
+
+    setSyncStatus("Game afgesloten en verzonden naar Google Sheets.", "ok");
+  } catch (error) {
+    console.error("Game status sync error", error);
+    setSyncStatus("Kon game status niet verzenden naar Google Sheets.", "error");
+  }
+}
+
 async function sendPitchToGoogleSheet(pitch) {
   if (!game.appsScriptUrl) {
     setSyncStatus("Google Sheets niet gekoppeld.", "error");
@@ -841,7 +979,7 @@ async function sendPitchToGoogleSheet(pitch) {
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         type: "pitch",
-        gameId: `${game.date}-${game.startTime}-${game.opponent}-${game.pitcherName}`,
+        gameId: game.gameId || `${game.date}-${game.startTime}-${game.opponent}-${game.pitcherName}`,
         ...pitch,
         totalBalls: game.totalBalls,
         totalStrikes: game.totalStrikes,
@@ -970,13 +1108,50 @@ function convertSheetRowsToGames(payload) {
   const games = new Map();
 
   records.forEach(record => {
-    const gameId = String(get(record, ["Game ID", "gameId"], 1) || "").trim();
+    const rowType = String(get(record, ["Row Type", "type"], 0) || "").trim();
+    const gameId = String(get(record, ["Game ID", "gameId"], rowType ? 2 : 1) || "").trim();
     if (!gameId) return;
 
-    const date = get(record, ["Datum", "date"], 2);
-    const startTime = get(record, ["Starttijd", "startTime"], 3);
-    const opponent = get(record, ["Tegenstander", "opponent"], 4);
-    const pitcherName = get(record, ["Pitcher", "pitcherName"], 5);
+    const date = get(record, ["Datum", "date"], rowType ? 3 : 2);
+    const startTime = get(record, ["Starttijd", "startTime"], rowType ? 4 : 3);
+    const opponent = get(record, ["Tegenstander", "opponent"], rowType ? 5 : 4);
+    const pitcherName = get(record, ["Pitcher", "pitcherName"], rowType ? 6 : 5);
+
+    if (rowType === "game_status") {
+      if (!games.has(gameId)) {
+        games.set(gameId, {
+          gameId,
+          date,
+          startTime,
+          opponent,
+          pitcherName,
+          lineup: [],
+          activeLineupSize: 9,
+          substitutionHistory: [],
+          pitcherSessions: [],
+          batterIndex: 0,
+          balls: 0,
+          strikes: 0,
+          totalBalls: 0,
+          totalStrikes: 0,
+          firstPitchStrikes: 0,
+          outs: 0,
+          totalOuts: 0,
+          pitches: [],
+          closed: true,
+          closedAt: get(record, ["Closed At", "closedAt"], 29),
+          appsScriptUrl: APPS_SCRIPT_URL
+        });
+      }
+
+      const g = games.get(gameId);
+      g.closed = parseBool(get(record, ["Closed", "closed"], 28)) || true;
+      g.closedAt = get(record, ["Closed At", "closedAt"], 29) || g.closedAt;
+      g.totalBalls = Number(get(record, ["Total Balls", "totalBalls"], 25) || g.totalBalls || 0);
+      g.totalStrikes = Number(get(record, ["Total Strikes", "totalStrikes"], 26) || g.totalStrikes || 0);
+      g.totalOuts = Number(get(record, ["Total Outs", "totalOuts"], 27) || g.totalOuts || 0);
+      return;
+    }
 
     const pitch = {
       timestamp: get(record, ["Timestamp", "timestamp"], 0),
@@ -1026,7 +1201,7 @@ function convertSheetRowsToGames(payload) {
         outs: 0,
         totalOuts: 0,
         pitches: [],
-        closed: true,
+        closed: parseBool(get(record, ["Closed", "closed"], 28)),
         appsScriptUrl: APPS_SCRIPT_URL
       });
     }
@@ -1096,6 +1271,7 @@ function loadLocalGame() {
         pitches: loaded.pitches || [],
         activeLineupSize: Number(loaded.activeLineupSize || 9),
         substitutionHistory: loaded.substitutionHistory || [],
+        pitcherSessions: loaded.pitcherSessions || [],
         appsScriptUrl: APPS_SCRIPT_URL
       };
       saveLocalGame();

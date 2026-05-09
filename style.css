@@ -869,3 +869,52 @@ button.good { background: var(--good); color: #072214; }
 button.danger {
   background: linear-gradient(135deg, #ff5f5f, #d11f1f);
 }
+
+
+/* Definitieve regels voor wissel-popup en wedstrijdbediening */
+#subModal.hidden {
+  display: none !important;
+}
+
+#subModal.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0,0,0,.62);
+  backdrop-filter: blur(6px);
+}
+
+#subModal.modal:not(.hidden) {
+  display: grid !important;
+}
+
+.game-controls-card .actions {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 420px) {
+  .game-controls-card .actions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+#pitcherModal.hidden {
+  display: none !important;
+}
+
+#pitcherModal.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0,0,0,.62);
+  backdrop-filter: blur(6px);
+}
+
+#pitcherModal.modal:not(.hidden) {
+  display: grid !important;
+}

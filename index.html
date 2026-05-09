@@ -20,9 +20,6 @@
         <img class="home-logo" src="logo.png" alt="Onze Gezellen logo" />
         <h2 class="home-title">Onze Gezellen U21</h2>
         <p class="home-subtitle">Pitching Tracker</p>
-        <div class="actions">
-          <button class="secondary" onclick="syncFromGoogleSheet()">Sync Google Sheets</button>
-        </div>
         <div class="home-menu">
           <button onclick="showSetup()">Nieuwe game <span>→</span></button>
           <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
@@ -233,6 +230,7 @@
         <div class="stat"><small>FPS</small><strong id="fpsCount">0</strong></div>
         <div class="stat"><small>IP</small><strong id="inningsPitched">0.000</strong></div>
       </div>
+      <div class="sync-status ok">Actieve pitcher: <strong id="activePitcherLabel">-</strong></div>
 
       <div class="card batter-heatmap-card">
         <div class="batter-info-panel">
@@ -303,23 +301,24 @@
         </div>
       </div>
 
-      <div class="card">
-        <label>Slagbeurt / teller</label>
+      
+      <section class="game-controls-card">
+        <h3>Wedstrijd bediening</h3>
         <div class="actions">
-          <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
-          <button class="secondary" onclick="resetCount()">Reset count</button>
+          <button class="danger" onclick="resetGame()">Einde wedstrijd</button>
           <button class="secondary" onclick="openSubModal()">Wissel speelster</button>
-          <button class="secondary" onclick="addOut()">+ Out</button>
-          <button class="danger" onclick="resetGame()">Stop/reset</button>
-          <button class="secondary" onclick="backToMenu()">Terug naar hoofdmenu</button>
+          <button class="secondary" onclick="openPitcherModal()">Wijzig pitcher</button>
+          <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
         </div>
-      </div>
+      </section>
+
 
       <div class="card">
         <label>Laatste pitches</label>
         <div id="history" class="history"></div>
       </div>
     </section>
+
   
     <div id="subModal" class="modal hidden">
       <div class="modal-card">
@@ -335,6 +334,31 @@
         <div class="actions">
           <button class="secondary" onclick="closeSubModal()">Annuleren</button>
           <button onclick="confirmSubstitution()">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
+  
+    <div id="pitcherModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Wijzig pitcher</h2>
+        <p class="small-note">De huidige pitcher-statistieken worden afgerond. Nieuwe pitches worden vanaf nu bij de gekozen pitcher opgeslagen.</p>
+
+        <label for="newPitcherSelect">Nieuwe pitcher</label>
+        <select id="newPitcherSelect">
+          <option value="" disabled selected>Kies pitcher</option>
+          <option>Amy Blom</option>
+          <option>Lottie Twisk</option>
+          <option>Elin Baas</option>
+          <option>Tessa Schenk</option>
+          <option>Annick Jansen</option>
+          <option>Nina van der Putten</option>
+          <option>Overig</option>
+        </select>
+
+        <div class="actions">
+          <button class="secondary" onclick="closePitcherModal()">Annuleren</button>
+          <button onclick="confirmPitcherChange()">Bevestigen</button>
         </div>
       </div>
     </div>
