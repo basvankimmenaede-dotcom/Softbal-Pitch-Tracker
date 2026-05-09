@@ -270,22 +270,21 @@ async function loadTeamsFromSheet() {
 
 async function postTeamMutationToSheet(action, teamName, player = {}, index = null) {
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        type: "tegenstander",
-        action,
-        team: teamName,
-        name: player.name || "",
-        number: player.number || "",
-        index
-      })
+    const params = new URLSearchParams({
+      type: "tegenstander",
+      action,
+      team: teamName || "",
+      name: player.name || "",
+      number: player.number || ""
     });
 
-    // no-cors geeft geen leesbare response terug; daarom daarna opnieuw laden.
-    await new Promise(resolve => setTimeout(resolve, 500));
+    if (index !== null && index !== undefined) {
+      params.set("index", String(index));
+    }
+
+    await loadJsonp(`${APPS_SCRIPT_URL}?${params.toString()}`);
+
+    // Daarna opnieuw laden zodat de app exact toont wat in de database staat.
     await loadTeamsFromSheet();
 
     setTeamsSyncStatus("Tegenstanders opgeslagen.", "ok");
