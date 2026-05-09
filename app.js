@@ -67,22 +67,40 @@ function getReadableZone(p) {
 
 
 
-function goHomeIfAuthenticated() {
-  if (!isAuthenticated) {
-    showLoginScreen();
-    return;
-  }
 
-  showHome();
-}
 
 
 let sitePassword = "";
 let isAuthenticated = false;
 
+
+
+function loadJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `ogCallback_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const script = document.createElement("script");
+
+    window[callbackName] = data => {
+      resolve(data);
+      script.remove();
+      delete window[callbackName];
+    };
+
+    script.onerror = () => {
+      script.remove();
+      delete window[callbackName];
+      reject(new Error("Apps Script kon niet worden geladen"));
+    };
+
+    const separator = url.includes("?") ? "&" : "?";
+    script.src = `${url}${separator}callback=${callbackName}&t=${Date.now()}`;
+    document.body.appendChild(script);
+  });
+}
+
 async function fetchSitePassword() {
   try {
-    const payload = await loadSheetDataJsonp();
+    const payload = await loadJsonp(APPS_SCRIPT_URL);
     sitePassword = String(payload.sitePassword || "").trim();
     return sitePassword;
   } catch (error) {
@@ -94,36 +112,46 @@ async function fetchSitePassword() {
 async function verifySitePassword() {
   const input = document.getElementById("sitePasswordInput");
   const error = document.getElementById("loginError");
+  const entered = String(input?.value || "").trim();
 
-  try {
-    const response = await fetch(APPS_SCRIPT_URL);
-    const payload = await response.json();
+  const correctPassword = await fetchSitePassword();
 
-    const correctPassword = String(payload.sitePassword || "").trim();
-    const enteredPassword = String(input?.value || "").trim();
-
-    if (enteredPassword === correctPassword && correctPassword) {
-      isAuthenticated = true;
-      if (error) error.classList.add("hidden");
-      showHome();
-      syncFromGoogleSheet();
+  if (entered && correctPassword && entered === correctPassword) {
+    isAuthenticated = true;
+    if (error) error.classList.add("hidden");
+    showHome();
       return;
-    }
+  }
 
-    if (error) {
-      error.textContent = "Ongeldig wachtwoord";
-      error.classList.remove("hidden");
-    }
-
-  } catch(err) {
-    console.error(err);
-
-    if (error) {
-      error.textContent = "Wachtwoord kon niet worden geladen";
-      error.classList.remove("hidden");
-    }
+  if (error) {
+    error.textContent = "Ongeldig wachtwoord of wachtwoord kon niet worden geladen";
+    error.classList.remove("hidden");
   }
 }
+
+function showHome() {
+  if (!isAuthenticated) {
+    showLoginScreen();
+    return;
+  }
+
+  setActiveScreen("homeScreen");
+}
+
+function goHomeIfAuthenticated() {
+  if (!isAuthenticated) {
+    showLoginScreen();
+    return;
+  }
+
+  showHome();
+}
+
+async 
+
+
+async 
+
 
 
 // OG Pitching Tracker
@@ -181,14 +209,7 @@ function setActiveScreen(screenId) {
   if (target) target.classList.add("active");
 }
 
-function showHome() {
-  if (!isAuthenticated) {
-    showLoginScreen();
-    return;
-  }
 
-  setActiveScreen("homeScreen");
-}
 
 function showSetup() {
   prepareNewGameForm();
@@ -1462,25 +1483,7 @@ function syncFromGoogleSheet() {
 }
 
 function loadSheetDataJsonp() {
-  return new Promise((resolve, reject) => {
-    const callbackName = `ogSheetCallback_${Date.now()}`;
-    const script = document.createElement("script");
-
-    window[callbackName] = data => {
-      resolve(data);
-      script.remove();
-      delete window[callbackName];
-    };
-
-    script.onerror = () => {
-      script.remove();
-      delete window[callbackName];
-      reject(new Error("JSONP laden mislukt"));
-    };
-
-    script.src = `${APPS_SCRIPT_URL}?callback=${callbackName}&t=${Date.now()}`;
-    document.body.appendChild(script);
-  });
+  return loadJsonp(APPS_SCRIPT_URL);
 }
 
 function mergeGames(localGames, sheetGamesFromServer) {
