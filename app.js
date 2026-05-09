@@ -2,41 +2,38 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqK
 let sitePassword = "";
 let isAuthenticated = false;
 
-async function verifySitePassword() {
-  const input = document.getElementById("sitePasswordInput");
-  const error = document.getElementById("loginError");
 
-  try {
-    const response = await loadJsonp(APPS_SCRIPT_URL);
-    const correctPassword = String(response.sitePassword || "").trim();
-    const enteredPassword = String(input?.value || "").trim();
+function loadJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "ogJsonp_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+    const script = document.createElement("script");
 
-    if (enteredPassword === correctPassword) {
-      isAuthenticated = true;
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timeout bij laden van Apps Script"));
+    }, 12000);
 
-      if (error) {
-        error.classList.add("hidden");
-      }
-
-      setActiveScreen("homeScreen");
-      return;
+    function cleanup() {
+      clearTimeout(timeout);
+      if (script.parentNode) script.parentNode.removeChild(script);
+      try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
     }
 
-    if (error) {
-      error.textContent = "Ongeldig wachtwoord";
-      error.classList.remove("hidden");
-    }
+    window[callbackName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
 
-  } catch (err) {
-    console.error(err);
+    script.onerror = function() {
+      cleanup();
+      reject(new Error("Apps Script kon niet laden"));
+    };
 
-    if (error) {
-      error.textContent = "Wachtwoord kon niet worden geladen";
-      error.classList.remove("hidden");
-    }
-  }
+    const separator = url.includes("?") ? "&" : "?";
+    script.src = url + separator + "callback=" + encodeURIComponent(callbackName) + "&t=" + Date.now();
+    document.body.appendChild(script);
+  });
 }
-
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
@@ -97,3 +94,60 @@ function init() {
 }
 
 window.onload = init;
+
+
+window.verifySitePassword = async function verifySitePassword() {
+  const input = document.getElementById("sitePasswordInput");
+  const error = document.getElementById("loginError");
+  const enteredPassword = String(input?.value || "").trim();
+
+  try {
+    const payload = await loadJsonp(APPS_SCRIPT_URL);
+    const correctPassword = String(payload?.sitePassword || "").trim();
+
+    if (!correctPassword) {
+      if (error) {
+        error.textContent = "Geen wachtwoord gevonden in tabblad Wachtwoord cel A1.";
+        error.classList.remove("hidden");
+      }
+      return;
+    }
+
+    if (enteredPassword === correctPassword) {
+      isAuthenticated = true;
+      if (error) error.classList.add("hidden");
+
+      if (typeof setActiveScreen === "function") {
+        setActiveScreen("homeScreen");
+      } else {
+        document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+        document.getElementById("homeScreen")?.classList.add("active");
+      }
+
+      if (typeof syncFromGoogleSheet === "function") {
+        syncFromGoogleSheet().catch(() => {});
+      }
+      return;
+    }
+
+    if (error) {
+      error.textContent = "Ongeldig wachtwoord";
+      error.classList.remove("hidden");
+    }
+  } catch (err) {
+    console.error("Wachtwoord laden fout:", err);
+    if (error) {
+      error.textContent = "Wachtwoord kon niet worden geladen";
+      error.classList.remove("hidden");
+    }
+  }
+};
+
+function verifySitePassword() {
+  return window.verifySitePassword();
+}
+
+window.handlePasswordEnter = function handlePasswordEnter(event) {
+  if (event.key === "Enter") window.verifySitePassword();
+};
+
