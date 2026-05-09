@@ -1122,3 +1122,17 @@ button.danger {
 #pitcherModal.modal:not(.hidden) {
   display: grid !important;
 }
+
+
+.hero-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.hero-logo {
+  width: 140px;
+  height: auto;
+  display: block;
+}
