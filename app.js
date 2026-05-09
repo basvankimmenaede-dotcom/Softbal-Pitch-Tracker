@@ -259,11 +259,19 @@ function convertTegenstandersRowsToTeams(payload) {
 async function loadTeamsFromSheet() {
   try {
     const payload = await loadJsonp(APPS_SCRIPT_URL);
+    const rows = Array.isArray(payload?.tegenstandersRows) ? payload.tegenstandersRows : [];
+
     savedTeams = convertTegenstandersRowsToTeams(payload);
+
+    const teamCount = Object.keys(savedTeams || {}).length;
+    if (document.getElementById("teamsScreen")?.classList.contains("active")) {
+      setTeamsSyncStatus(`Tegenstanders geladen: ${teamCount} teams, ${rows.length} speelsters.`, "ok");
+    }
+
     return savedTeams;
   } catch (error) {
     console.error("Kon teams niet laden", error);
-    setTeamsSyncStatus("Kon teams niet laden uit Tegenstanders.", "error");
+    setTeamsSyncStatus("Kon teams niet laden uit Tegenstanders. Controleer deployment en rechten.", "error");
     return {};
   }
 }
@@ -283,15 +291,13 @@ async function postTeamMutationToSheet(action, teamName, player = {}, index = nu
     }
 
     await loadJsonp(`${APPS_SCRIPT_URL}?${params.toString()}`);
-
-    // Daarna opnieuw laden zodat de app exact toont wat in de database staat.
     await loadTeamsFromSheet();
 
     setTeamsSyncStatus("Tegenstanders opgeslagen.", "ok");
     return true;
   } catch (error) {
     console.error("Kon tegenstander niet opslaan", error);
-    setTeamsSyncStatus("Kon Tegenstanders niet opslaan.", "error");
+    setTeamsSyncStatus("Kon Tegenstanders niet opslaan. Controleer Apps Script deployment.", "error");
     return false;
   }
 }
@@ -331,7 +337,6 @@ async function showTeams() {
   setActiveScreen("teamsScreen");
   setTeamsSyncStatus("Tegenstanders worden geladen...", "loading");
   await loadTeamsFromSheet();
-  setTeamsSyncStatus("Tegenstanders geladen.", "ok");
   populateTeamSelect(game.opponent || "");
   renderTeamPlayers();
 }
@@ -412,6 +417,8 @@ async function addTeamPlayer() {
       name: name || "Onbekende slagvrouw",
       number: number || "?"
     });
+  } else {
+    setTeamsSyncStatus("Deze speelster bestaat al bij dit team.", "ok");
   }
 
   populateTeamSelect(teamName);
@@ -426,11 +433,7 @@ async function removeTeamPlayer(index) {
   const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
   if (!teamName || !savedTeams[teamName]) return;
 
-  savedTeams[teamName].splice(index, 1);
-  await saveTeamPlayerToSheet(teamName, {
-    name: name || "Onbekende slagvrouw",
-    number: number || "?"
-  });
+  await removeTeamPlayerFromSheet(teamName, index);
 
   populateTeamSelect(teamName);
   renderTeamPlayers();
