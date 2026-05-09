@@ -363,6 +363,7 @@ function calculateGameStats(g) {
     fps,
     totalBatters,
     walks,
+    strikeouts: countStrikeoutsFromPitches(pitches),
     sbRatio
   };
 }
@@ -422,7 +423,7 @@ function renderPitcherStats() {
     document.getElementById("statsFPSBatters").textContent = "0%";
     setStatHighlight("statsFPSBatters", false);
     setStatHighlight("statsSBRatio", false);
-    body.innerHTML = `<tr><td colspan="11">Kies een pitcher.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
     return;
   }
 
@@ -440,7 +441,7 @@ function renderPitcherStats() {
     document.getElementById("statsFPSBatters").textContent = "0%";
     setStatHighlight("statsFPSBatters", false);
     setStatHighlight("statsSBRatio", false);
-    body.innerHTML = `<tr><td colspan="11">Geen games gevonden voor ${pitcherName}.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
 
@@ -483,6 +484,7 @@ function renderPitcherStats() {
         <td>${s.fps}</td>
         <td class="${getGoodStatClass(Number(s.sbRatio) > 1)}">${s.sbRatio}</td>
         <td>${s.walks}</td>
+        <td>${s.strikeouts || 0}</td>
         <td class="${getGoodStatClass(getFpsPercentValue(s.fps, s.totalBatters) > 50)}">${getFpsPercentValue(s.fps, s.totalBatters)}%</td>
       </tr>
     `;

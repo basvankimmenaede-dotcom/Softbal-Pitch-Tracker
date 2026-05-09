@@ -1260,3 +1260,10 @@ button.danger {
 .overview-row.good-stat span {
   color: #15803d !important;
 }
+
+
+.stats-table td.good-stat {
+  background: rgba(34,197,94,.14) !important;
+  color: #15803d !important;
+  font-weight: 950;
+}
