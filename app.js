@@ -72,6 +72,7 @@ function goHomeIfAuthenticated() {
     showLoginScreen();
     return;
   }
+
   showHome();
 }
 
@@ -94,29 +95,33 @@ async function verifySitePassword() {
   const input = document.getElementById("sitePasswordInput");
   const error = document.getElementById("loginError");
 
-  const entered = String(input?.value || "").trim();
+  try {
+    const response = await fetch(APPS_SCRIPT_URL);
+    const payload = await response.json();
 
-  if (!sitePassword) {
-    await fetchSitePassword();
-  }
+    const correctPassword = String(payload.sitePassword || "").trim();
+    const enteredPassword = String(input?.value || "").trim();
 
-  if (!sitePassword) {
+    if (enteredPassword === correctPassword && correctPassword) {
+      isAuthenticated = true;
+      if (error) error.classList.add("hidden");
+      showHome();
+      syncFromGoogleSheet();
+      return;
+    }
+
+    if (error) {
+      error.textContent = "Ongeldig wachtwoord";
+      error.classList.remove("hidden");
+    }
+
+  } catch(err) {
+    console.error(err);
+
     if (error) {
       error.textContent = "Wachtwoord kon niet worden geladen";
       error.classList.remove("hidden");
     }
-    return;
-  }
-
-  if (entered === String(sitePassword).trim()) {
-    if (error) error.classList.add("hidden");
-    showHome();
-      return;
-  }
-
-  if (error) {
-    error.textContent = "Ongeldig wachtwoord";
-    error.classList.remove("hidden");
   }
 }
 
@@ -181,6 +186,7 @@ function showHome() {
     showLoginScreen();
     return;
   }
+
   setActiveScreen("homeScreen");
 }
 
