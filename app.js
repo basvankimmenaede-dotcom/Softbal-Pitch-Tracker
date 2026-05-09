@@ -1,3 +1,48 @@
+
+let sitePassword = "";
+
+async function fetchSitePassword() {
+  try {
+    const payload = await loadSheetDataJsonp();
+    sitePassword = String(payload.sitePassword || "").trim();
+    return sitePassword;
+  } catch (error) {
+    console.error("Kon site wachtwoord niet ophalen", error);
+    return "";
+  }
+}
+
+async function verifySitePassword() {
+  const input = document.getElementById("sitePasswordInput");
+  const error = document.getElementById("loginError");
+
+  const entered = String(input?.value || "").trim();
+
+  if (!sitePassword) {
+    await fetchSitePassword();
+  }
+
+  if (!sitePassword) {
+    if (error) {
+      error.textContent = "Wachtwoord kon niet worden geladen";
+      error.classList.remove("hidden");
+    }
+    return;
+  }
+
+  if (entered === String(sitePassword).trim()) {
+    if (error) error.classList.add("hidden");
+    showHome();
+      return;
+  }
+
+  if (error) {
+    error.textContent = "Ongeldig wachtwoord";
+    error.classList.remove("hidden");
+  }
+}
+
+
 // OG Pitching Tracker
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_SD7MDqIzOD8FIrpjh-XwaqMlz5epHVMt88upepu1x96ss8B0LXWSYbzZ-F8yrH6W/exec";
@@ -45,12 +90,12 @@ function init() {
   renderLineupRows();
   renderChoices("pitchTypes", pitchTypeOptions, "pitchType");
   renderChoices("results", resultOptions, "result");
-  syncFromGoogleSheet();
 }
 
 function setActiveScreen(screenId) {
   document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
-  document.getElementById(screenId).classList.add("active");
+  const target = document.getElementById(screenId);
+  if (target) target.classList.add("active");
 }
 
 function showHome() {
@@ -107,21 +152,19 @@ function getPitcherGames(pitcherName) {
     .filter(Boolean);
 }
 
-function countPitcherOutsFromPitches(pitches) {
-  return pitches.filter(p => p.result === "Out" || (p.result !== "Out" && false)).length;
-}
 
 
 function getPitcherOutsFromPitches(pitches) {
-  if (!pitches || !pitches.length) return 0;
+  if (!Array.isArray(pitches) || !pitches.length) return 0;
 
   const totals = pitches
     .map(p => Number(p.totalOuts || 0))
-    .filter(n => !Number.isNaN(n));
+    .filter(n => Number.isFinite(n));
 
-  if (totals.length) return Math.max(...totals);
+  if (totals.length && Math.max(...totals) > 0) {
+    return Math.max(...totals);
+  }
 
-  // Fallback voor oudere data zonder totalOuts.
   return pitches.filter(p => p.result === "Out").length;
 }
 
@@ -134,7 +177,7 @@ function calculateGameStats(g) {
   ).length;
 
   const balls = pitches.filter(p => p.result === "Ball").length;
-  const outs = Number(g.totalOuts || getPitcherOutsFromPitches(pitches));
+  const outs = getPitcherOutsFromPitches(pitches);
 
   const fps = pitches.filter(p =>
     p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)
@@ -340,7 +383,7 @@ function populateBatterOpponentFilter() {
   const opponents = [...new Set(getStoredGames().map(g => g.opponent).filter(Boolean))].sort();
   const current = select.value;
 
-  select.innerHTML = `<option value="">Alle tegenstanders</option>` + opponents.map(o =>
+  select.innerHTML = `<option value="">Kies tegenstander</option>` + opponents.map(o =>
     `<option value="${o}">${o}</option>`
   ).join("");
 
@@ -548,6 +591,28 @@ function requireEditPassword(message = "Voer wachtwoord in om deze game te opene
   return password === "Edit";
 }
 
+
+
+
+
+
+
+// Oude naam blijft bestaan, maar gaat nu verplicht via wachtwoord.
+
+
+
+
+
+
+
+
+
+
+function requireEditPassword(message = "Voer wachtwoord in om deze game te openen/wijzigen:") {
+  const password = prompt(message);
+  return password === "Edit";
+}
+
 function showUnfinishedGames() {
   setActiveScreen("unfinishedGamesScreen");
   const list = document.getElementById("unfinishedGamesList");
@@ -600,7 +665,6 @@ function loadUnfinishedGame(gameId) {
   showGame();
 }
 
-// Oude naam blijft bestaan, maar gaat nu verplicht via wachtwoord.
 function loadGameById(gameId) {
   loadUnfinishedGame(gameId);
 }
@@ -621,7 +685,6 @@ function renderPreviousGames() {
   if (!list) return;
 
   const query = (input?.value || "").trim().toLowerCase();
-
   let rows = [];
 
   getStoredGames()
@@ -714,6 +777,7 @@ function continuePreviousGame() {
   showUnfinishedGames();
 }
 
+
 function startGame() {
   game.pitcherName = document.getElementById("pitcherName").value;
   game.pitcherSessions = [];
@@ -754,8 +818,8 @@ function startGame() {
   game.outs = 0;
   game.totalOuts = 0;
   game.pitches = [];
+  game.pitcherSessions = [];
   startPitcherSession(game.pitcherName);
-
   saveLocalGame();
   setSyncStatus("Google Sheets nog niet getest.");
   showGame();
@@ -1100,7 +1164,7 @@ function updateUI() {
   const history = document.getElementById("history");
   history.innerHTML = game.pitches.slice(0, 8).map(p => `
     <div class="history-item">
-      <span><b>${p.batterName} #${p.batterNumber}</b><br>${p.pitchType} · ${p.result} · x:${p.x}, y:${p.y}</span>
+      <span><b>${p.batterName} #${p.batterNumber}</b><br>${p.pitchType} · ${p.result} · ${getReadableZone(p)}</span>
       <span>${new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
     </div>
   `).join("") || `<p class="small-note">Nog geen pitches opgeslagen.</p>`;
@@ -1248,6 +1312,14 @@ function setSyncStatus(message, type = "") {
 
 
 
+
+
+
+
+
+
+
+
 function getStoredGames() {
   const activeGame = game && game.gameId && !game.closed ? [game] : [];
   const ids = new Set(activeGame.map(g => g.gameId));
@@ -1267,7 +1339,7 @@ function upsertStoredGame(gameToStore) {
 }
 
 function saveLocalGame() {
-  // Geen browseropslag meer. De actieve game leeft alleen tijdelijk in memory.
+  // Geen browseropslag meer. Actieve wedstrijd leeft alleen tijdelijk in geheugen.
   upsertStoredGame(game);
 }
 
@@ -1286,10 +1358,11 @@ function syncFromGoogleSheet() {
       if (document.getElementById("pitcherStatsScreen")?.classList.contains("active")) renderPitcherStats();
       if (document.getElementById("batterSearchScreen")?.classList.contains("active")) {
         populateBatterOpponentFilter();
+        populateBatterPlayerFilter();
         renderBatterSearch();
       }
       if (document.getElementById("previousGamesScreen")?.classList.contains("active")) renderPreviousGames();
-      if (document.getElementById("unfinishedGamesScreen")?.classList.contains("active")) showUnfinishedGames();
+      if (document.getElementById("unfinishedGamesScreen")?.classList.contains("active")) renderUnfinishedGames();
 
       return games;
     })
@@ -1423,7 +1496,7 @@ function convertSheetRowsToGames(payload) {
       firstPitchStrike: parseBool(get(record, ["First Pitch Strike", "firstPitchStrike"], 20)),
       totalBalls: Number(get(record, ["Total Balls", "totalBalls"], 21) || 0),
       totalStrikes: Number(get(record, ["Total Strikes", "totalStrikes"], 22) || 0),
-      totalOuts: Number(get(record, ["Total Outs", "totalOuts"], 23) || 0),
+      totalOuts: Number(get(record, ["Total Outs", "totalOuts"], rowType ? 24 : 23) || 0),
       inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
       walk: parseBool(get(record, ["Walk", "walk"], 25))
     };
@@ -1488,8 +1561,22 @@ function parseBool(value) {
 
 
 function loadLocalGame() {
-  // Niet meer gebruikt: Google Sheets is de enige databron.
   return null;
 }
 
 window.addEventListener("DOMContentLoaded", init);
+
+
+function showLoginScreen() {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
+
+  const login = document.getElementById("loginScreen");
+  if (login) login.classList.add("active");
+}
+
+window.addEventListener("load", async () => {
+  await fetchSitePassword();
+  showLoginScreen();
+});

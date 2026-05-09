@@ -15,7 +15,26 @@
       <p class="sub">Line-up, slagzone, pitch type en resultaat.</p>
     </section>
 
-    <section id="homeScreen" class="screen active">
+    
+    <section id="loginScreen" class="screen active">
+      <div class="card">
+        <div class="hero-logo-wrap">
+          <img src="logo.png" alt="OG Logo" class="hero-logo">
+        </div>
+
+        <label for="sitePasswordInput">Wachtwoord</label>
+        <input id="sitePasswordInput" type="password" placeholder="Voer wachtwoord in" />
+
+        <button onclick="verifySitePassword()">Inloggen</button>
+
+        <div id="loginError" class="sync-status error hidden">
+          Ongeldig wachtwoord
+        </div>
+      </div>
+    </section>
+
+
+    <section id="homeScreen" class="screen">
       <div class="card placeholder-card">
         <img class="home-logo" src="logo.png" alt="Onze Gezellen logo" />
         <h2 class="home-title">Onze Gezellen U21</h2>

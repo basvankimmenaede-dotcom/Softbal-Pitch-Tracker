@@ -1009,3 +1009,116 @@ button.danger {
 .search-heatmap-field .heatmap-zone {
   z-index: 1;
 }
+
+/* === Definitieve heatmap + slagvrouw fixes === */
+.field {
+  position: relative;
+}
+
+.batter-figure {
+  position: absolute !important;
+  left: 4px !important;
+  bottom: 16px !important;
+  width: 215px !important;
+  height: 350px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.45));
+}
+
+.field-batter-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: bottom center !important;
+  display: block !important;
+}
+
+.batter-figure .bat,
+.batter-figure .helmet,
+.batter-figure .head,
+.batter-figure .body,
+.batter-figure .arm,
+.batter-figure .glove,
+.batter-figure .leg,
+.batter-figure .shoe {
+  display: none !important;
+}
+
+.field .zone {
+  position: absolute !important;
+  right: 38px !important;
+  top: 78px !important;
+  width: 176px !important;
+  height: 232px !important;
+  z-index: 3 !important;
+}
+
+.pitch-dot {
+  z-index: 6 !important;
+}
+
+.search-heatmap-field {
+  position: relative !important;
+  min-height: 300px !important;
+  overflow: hidden !important;
+}
+
+.search-batter-figure {
+  position: absolute !important;
+  left: 4px !important;
+  bottom: 16px !important;
+  width: 170px !important;
+  height: 265px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.45));
+}
+
+.search-batter-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: bottom center !important;
+  display: block !important;
+}
+
+.search-heatmap-field .heatmap-zone {
+  position: absolute !important;
+  right: 28px !important;
+  top: 34px !important;
+  width: 132px !important;
+  height: 180px !important;
+  z-index: 3 !important;
+}
+
+.search-heatmap-field .heat-dot,
+.heatmap-field .heat-dot {
+  z-index: 7 !important;
+}
+
+
+/* Final safety fixes */
+.hidden {
+  display: none !important;
+}
+
+.hero {
+  cursor: pointer;
+}
+
+#subModal.hidden,
+#pitcherModal.hidden {
+  display: none !important;
+}
+
+#subModal.modal:not(.hidden),
+#pitcherModal.modal:not(.hidden) {
+  display: grid !important;
+}
