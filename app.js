@@ -565,6 +565,7 @@ function renderBatterSearch() {
     document.getElementById("batterSearchBalls").textContent = "0";
     document.getElementById("batterSearchStrikes").textContent = "0";
     document.getElementById("batterSearchGames").textContent = "0";
+    document.getElementById("batterSearchAverage").textContent = ".000";
     body.innerHTML = `<tr><td colspan="7">Kies een tegenstander en slagvrouw.</td></tr>`;
     return;
   }
@@ -583,9 +584,15 @@ function renderBatterSearch() {
   const strikes = matches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
   const games = new Set(matches.map(p => p.gameId || `${p.gameDate}-${p.gameOpponent}`)).size;
 
+  const battingAverage =
+    outs === 0
+      ? (hits > 0 ? "1.000" : ".000")
+      : (hits / outs).toFixed(3).replace(/^0/, "");
+
   document.getElementById("batterSearchPitches").textContent = matches.length;
   document.getElementById("batterSearchHits").textContent = hits;
   document.getElementById("batterSearchOuts").textContent = outs;
+  document.getElementById("batterSearchAverage").textContent = battingAverage;
   document.getElementById("batterSearchBalls").textContent = balls;
   document.getElementById("batterSearchStrikes").textContent = strikes;
   document.getElementById("batterSearchGames").textContent = matches.length ? games : 0;
