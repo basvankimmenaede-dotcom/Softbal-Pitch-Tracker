@@ -356,10 +356,20 @@ async function debugTegenstandersConnection() {
     setTeamsSyncStatus(`Test klaar: ${Object.keys(teams).length} teams, ${rows.length} speelsters.`, "ok");
   } catch (error) {
     if (output) output.textContent = `FOUT:\n${error.message}\n\nControleer of de web-app opnieuw is gedeployed en toegankelijk is voor Anyone.`;
-    setTeamsSyncStatus(`Test mislukt: ${error.message}`, "error");
+    if (typeof setTeamsSyncStatus === "function") setTeamsSyncStatus(`Test mislukt: ${error.message}`, "error");
   }
 }
 
+
+
+function setTeamsSyncStatus(message, type = "") {
+  const status = document.getElementById("teamsSyncStatus");
+  if (!status) return;
+
+  status.textContent = message;
+  status.className = `sync-status ${type}`;
+  status.classList.remove("hidden");
+}
 
 function normalizeTeamName(name) {
   return String(name || "").trim();
