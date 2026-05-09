@@ -325,40 +325,7 @@ async function removeTeamPlayerFromSheet(teamName, index) {
   return postTeamMutationToSheet("remove", teamName, {}, index);
 }
 
-async function debugTegenstandersConnection() {
-  const output = document.getElementById("teamsDebugOutput");
-  if (output) {
-    output.classList.remove("hidden");
-    output.textContent = "Database koppeling testen...";
-  }
 
-  try {
-    const payload = await loadJsonp(APPS_SCRIPT_URL);
-    const rows = Array.isArray(payload?.tegenstandersRows) ? payload.tegenstandersRows : [];
-    const headers = Array.isArray(payload?.tegenstandersHeaders) ? payload.tegenstandersHeaders : [];
-    const teams = convertTegenstandersRowsToTeams(payload);
-
-    const debug = {
-      appsScriptUrl: APPS_SCRIPT_URL,
-      hasTegenstandersHeaders: Array.isArray(payload?.tegenstandersHeaders),
-      tegenstandersHeaders: headers,
-      tegenstandersRowCount: rows.length,
-      firstTegenstandersRows: rows.slice(0, 5),
-      loadedTeams: Object.keys(teams),
-      loadedTeamsObject: teams
-    };
-
-    savedTeams = teams;
-    populateTeamSelect();
-    renderTeamPlayers();
-
-    if (output) output.textContent = JSON.stringify(debug, null, 2);
-    setTeamsSyncStatus(`Test klaar: ${Object.keys(teams).length} teams, ${rows.length} speelsters.`, "ok");
-  } catch (error) {
-    if (output) output.textContent = `FOUT:\n${error.message}\n\nControleer of de web-app opnieuw is gedeployed en toegankelijk is voor Anyone.`;
-    if (typeof setTeamsSyncStatus === "function") setTeamsSyncStatus(`Test mislukt: ${error.message}`, "error");
-  }
-}
 
 
 
