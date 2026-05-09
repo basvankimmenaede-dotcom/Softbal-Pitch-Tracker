@@ -604,20 +604,14 @@ button.good { background: var(--good); color: #072214; }
 }
 
 
-#loginScreen .card button {
+/* Login scherm: knop netjes onder het wachtwoordveld, zonder hoofdpagina te beïnvloeden */
+#loginScreen .hero-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#loginScreen button {
   width: 100%;
-  display: block;
   margin-top: 18px;
-}
-
-#loginScreen .card {
-  text-align: center;
-}
-
-#loginScreen label {
-  text-align: left;
-}
-
-#sitePasswordInput {
-  margin: 0 auto;
 }
