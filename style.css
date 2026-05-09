@@ -1143,3 +1143,22 @@ button.danger {
   width: 100%;
   margin-top: 18px;
 }
+
+
+.hero h1 {
+  margin-bottom: 0;
+}
+
+
+.hero {
+  text-align: center;
+}
+
+.eyebrow {
+  display: block;
+  text-align: center;
+}
+
+.hero h1 {
+  text-align: center;
+}

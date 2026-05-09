@@ -391,7 +391,7 @@ function renderPitcherStats() {
     document.getElementById("statsTotalFPS").textContent = "0";
     document.getElementById("statsSBRatio").textContent = "0.00";
     document.getElementById("statsWalks").textContent = "0";
-    document.getElementById("statsFPSBatters").textContent = "0/0";
+    document.getElementById("statsFPSBatters").textContent = "0%";
     body.innerHTML = `<tr><td colspan="11">Kies een pitcher.</td></tr>`;
     return;
   }
@@ -407,7 +407,7 @@ function renderPitcherStats() {
     document.getElementById("statsTotalFPS").textContent = "0";
     document.getElementById("statsSBRatio").textContent = "0.00";
     document.getElementById("statsWalks").textContent = "0";
-    document.getElementById("statsFPSBatters").textContent = "0/0";
+    document.getElementById("statsFPSBatters").textContent = "0%";
     body.innerHTML = `<tr><td colspan="11">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
@@ -432,7 +432,10 @@ function renderPitcherStats() {
   document.getElementById("statsTotalFPS").textContent = totals.fps;
   document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
   document.getElementById("statsWalks").textContent = totals.walks;
-  document.getElementById("statsFPSBatters").textContent = `${totals.fps}/${totals.totalBatters}`;
+  document.getElementById("statsFPSBatters").textContent =
+    totals.totalBatters === 0
+      ? "0%"
+      : `${Math.round((totals.fps / totals.totalBatters) * 100)}%`;
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -448,7 +451,11 @@ function renderPitcherStats() {
         <td>${s.fps}</td>
         <td>${s.sbRatio}</td>
         <td>${s.walks}</td>
-        <td>${s.fps}/${s.totalBatters}</td>
+        <td>${
+          s.totalBatters === 0
+            ? "0%"
+            : `${Math.round((s.fps / s.totalBatters) * 100)}%`
+        }</td>
       </tr>
     `;
   }).join("");
