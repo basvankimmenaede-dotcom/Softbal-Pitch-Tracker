@@ -3,28 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="logo.png">
   <title>Onze Gezellen U21 - Pitching Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="app">
-    <section class="hero">
+    <section class="hero" onclick="goHomeIfAuthenticated()"     role="button" tabindex="0" aria-label="Terug naar hoofdmenu">
       <div class="eyebrow">Onze Gezellen U21</div>
       <h1>Pitching Tracker</h1>
       <p class="sub">Line-up, slagzone, pitch type en resultaat.</p>
     </section>
 
-    <section id="homeScreen" class="screen active">
+    
+    <section id="loginScreen" class="screen active">
+      <div class="card">
+        <div class="hero-logo-wrap">
+          <img src="logo.png" alt="OG Logo" class="hero-logo">
+        </div>
+
+        <label for="sitePasswordInput">Wachtwoord</label>
+        <input id="sitePasswordInput" type="password" placeholder="Voer wachtwoord in" onkeydown="handlePasswordEnter(event)" />
+
+        <button onclick="verifySitePassword()">Inloggen</button>
+
+        <div id="loginError" class="sync-status error hidden">
+          Ongeldig wachtwoord
+        </div>
+      </div>
+    </section>
+
+
+    <section id="homeScreen" class="screen">
       <div class="card placeholder-card">
         <img class="home-logo" src="logo.png" alt="Onze Gezellen logo" />
         <h2 class="home-title">Onze Gezellen U21</h2>
         <p class="home-subtitle">Pitching Tracker</p>
         <div class="home-menu">
-          <button onclick="showPlaceholder('Pitcher stats')">Pitcher stats <span>→</span></button>
           <button onclick="showSetup()">Nieuwe game <span>→</span></button>
           <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
-          <button onclick="continuePreviousGame()">Vorige game <span>→</span></button>
-          <button onclick="showPlaceholder('Zoek op slagvrouw')">Zoek op slagvrouw <span>→</span></button>
+          <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
+          <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
+          <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
         </div>
       </div>
     </section>
@@ -38,6 +58,136 @@
       </div>
     </section>
 
+
+
+    <section id="pitcherStatsScreen" class="screen">
+      <div class="card">
+        <label for="statsPitcherName">Pitcher</label>
+        <select id="statsPitcherName" onchange="renderPitcherStats()">
+          <option value="" disabled selected>Kies pitcher</option>
+          <option>Amy Blom</option>
+          <option>Lottie Twisk</option>
+          <option>Elin Baas</option>
+          <option>Tessa Schenk</option>
+          <option>Annick Jansen</option>
+          <option>Nina van der Putten</option>
+          <option>Overig</option>
+        </select>
+
+        <div class="stats-grid">
+          <div class="stat"><small>Pitches</small><strong id="statsTotalPitches">0</strong></div>
+          <div class="stat"><small>Strikes</small><strong id="statsTotalStrikes">0</strong></div>
+          <div class="stat"><small>Balls</small><strong id="statsTotalBalls">0</strong></div>
+          <div class="stat"><small>Outs</small><strong id="statsTotalOuts">0</strong></div>
+          <div class="stat"><small>IP</small><strong id="statsTotalIP">0.000</strong></div>
+          <div class="stat"><small>FPS</small><strong id="statsTotalFPS">0</strong></div>
+          <div class="stat"><small>S/B Ratio</small><strong id="statsSBRatio">0.00</strong></div>
+          <div class="stat"><small>Walks</small><strong id="statsWalks">0</strong></div>
+          <div class="stat"><small>FPS / Batters</small><strong id="statsFPSBatters">0/0</strong></div>
+        </div>
+
+        <label>Stats per wedstrijd</label>
+        <div class="table-wrap">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Tegenstander</th>
+                <th>P</th>
+                <th>S</th>
+                <th>B</th>
+                <th>Outs</th>
+                <th>IP</th>
+                <th>FPS</th>
+                <th>S/B</th>
+                <th>BB</th>
+                <th>FPS/Batters</th>
+              </tr>
+            </thead>
+            <tbody id="statsPerGameBody">
+              <tr><td colspan="11">Kies een pitcher.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+      </div>
+    </section>
+
+
+    <section id="batterSearchScreen" class="screen">
+      <div class="card">
+        <label for="batterSearchOpponent">Tegenstander</label>
+        <select id="batterSearchOpponent" onchange="populateBatterPlayerFilter(); renderBatterSearch()">
+          <option value="">Kies tegenstander</option>
+        </select>
+
+        <label for="batterSearchPlayer">Slagvrouw</label>
+        <select id="batterSearchPlayer" onchange="renderBatterSearch()">
+          <option value="">Kies eerst een tegenstander</option>
+        </select>
+
+        <div class="stats-grid">
+          <div class="stat"><small>Pitches</small><strong id="batterSearchPitches">0</strong></div>
+          <div class="stat"><small>Hits</small><strong id="batterSearchHits">0</strong></div>
+          <div class="stat"><small>Outs</small><strong id="batterSearchOuts">0</strong></div>
+          <div class="stat"><small>Balls</small><strong id="batterSearchBalls">0</strong></div>
+          <div class="stat"><small>Strikes</small><strong id="batterSearchStrikes">0</strong></div>
+          <div class="stat"><small>Games</small><strong id="batterSearchGames">0</strong></div>
+        </div>
+
+        <label>Heatmap alle pitches</label>
+        <div class="heatmap-legend">
+          <div class="legend-item"><span class="legend-dot"></span> Pitch</div>
+          <div class="legend-item"><span class="legend-dot hit"></span> Hit</div>
+          <div class="legend-item"><span class="legend-dot out"></span> Out</div>
+        </div>
+        <div id="batterSearchHeatmap" class="search-heatmap-field">
+          <div class="search-batter-figure">
+            <img src="slagvrouw_transparant.png" alt="Slagvrouw" class="search-batter-image" />
+          </div>
+          <div class="heatmap-zone">
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+          </div>
+        </div>
+
+        <label>Gevonden pitches</label>
+        <div class="table-wrap">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Tegenstander</th>
+                <th>Pitcher</th>
+                <th>Pitch</th>
+                <th>Resultaat</th>
+                <th>Zone</th>
+              </tr>
+            </thead>
+            <tbody id="batterSearchTableBody">
+              <tr><td colspan="6">Kies een tegenstander en slagvrouw.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+      </div>
+    </section>
+
+
+    <section id="previousGamesScreen" class="screen">
+      <div class="card">
+        <label for="previousGamesSearch">Zoek vorige games</label>
+        <input id="previousGamesSearch" placeholder="Datum, tegenstander of pitcher" oninput="renderPreviousGames()" />
+
+        <label>Afgesloten pitching appearances</label>
+        <div id="previousGamesList" class="unfinished-list"></div>
+
+        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+      </div>
+    </section>
 
     <section id="unfinishedGamesScreen" class="screen">
       <div class="card placeholder-card">
@@ -77,9 +227,9 @@
           <option>Overig</option>
         </select>
 
-        <div id="syncStatus" class="sync-status">Google Sheets nog niet getest.</div>
+        <div id="syncStatus" class="sync-status">Google Sheets wordt geladen...</div>
 
-        <label>Line-up tegenstander</label>
+        <label>Line-up tegenstander</label><p class="small-note">Vul 1 t/m 9 als actieve slaglijst in. 10 t/m 16 zijn bench/wissels.</p>
         <div id="lineupRows"></div>
 
         <div class="actions">
@@ -102,6 +252,7 @@
         <div class="stat"><small>FPS</small><strong id="fpsCount">0</strong></div>
         <div class="stat"><small>IP</small><strong id="inningsPitched">0.000</strong></div>
       </div>
+      <div class="sync-status ok">Actieve pitcher: <strong id="activePitcherLabel">-</strong></div>
 
       <div class="card batter-heatmap-card">
         <div class="batter-info-panel">
@@ -135,17 +286,7 @@
 
       <div id="field" class="field" onclick="setPitchLocation(event)">
         <div class="batter-figure">
-          <div class="bat"></div>
-          <div class="helmet"></div>
-          <div class="head"></div>
-          <div class="body"></div>
-          <div class="arm left"></div>
-          <div class="arm right"></div>
-          <div class="glove"></div>
-          <div class="leg one"></div>
-          <div class="leg two"></div>
-          <div class="shoe left"></div>
-          <div class="shoe right"></div>
+          <img src="slagvrouw_transparant.png" alt="Slagvrouw" class="field-batter-image" />
         </div>
         <div class="zone">
           <div></div><div></div><div></div>
@@ -172,22 +313,68 @@
         </div>
       </div>
 
-      <div class="card">
-        <label>Slagbeurt / teller</label>
+      <section class="game-controls-card">
+        <h3>Wedstrijd bediening</h3>
         <div class="actions">
-          <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
-          <button class="secondary" onclick="resetCount()">Reset count</button>
-          <button class="secondary" onclick="addOut()">+ Out</button>
-          <button class="danger" onclick="resetGame()">Stop/reset</button>
-          <button class="secondary" onclick="backToMenu()">Terug naar hoofdmenu</button>
+          <button class="danger" onclick="resetGame()">Einde wedstrijd</button>
+          <button class="secondary" onclick="openSubModal()">Wissel speelster</button>
+          <button class="secondary" onclick="openPitcherModal()">Wijzig pitcher</button>
+          <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
         </div>
-      </div>
+      </section>
+
+
 
       <div class="card">
         <label>Laatste pitches</label>
         <div id="history" class="history"></div>
       </div>
     </section>
+
+  
+    <div id="subModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Wissel speelster</h2>
+        <p class="small-note">Kies een actieve slagvrouw uit 1 t/m 9 en wissel met iemand van de bench.</p>
+
+        <label for="activeSubSelect">Actieve slagvrouw</label>
+        <select id="activeSubSelect"></select>
+
+        <label for="benchSubSelect">Bench speelster</label>
+        <select id="benchSubSelect"></select>
+
+        <div class="actions">
+          <button class="secondary" onclick="closeSubModal()">Annuleren</button>
+          <button onclick="confirmSubstitution()">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
+  
+    <div id="pitcherModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Wijzig pitcher</h2>
+        <p class="small-note">De huidige pitcher-statistieken worden afgerond. Nieuwe pitches worden vanaf nu bij de gekozen pitcher opgeslagen.</p>
+
+        <label for="newPitcherSelect">Nieuwe pitcher</label>
+        <select id="newPitcherSelect">
+          <option value="" disabled selected>Kies pitcher</option>
+          <option>Amy Blom</option>
+          <option>Lottie Twisk</option>
+          <option>Elin Baas</option>
+          <option>Tessa Schenk</option>
+          <option>Annick Jansen</option>
+          <option>Nina van der Putten</option>
+          <option>Overig</option>
+        </select>
+
+        <div class="actions">
+          <button class="secondary" onclick="closePitcherModal()">Annuleren</button>
+          <button onclick="confirmPitcherChange()">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="app.js"></script>

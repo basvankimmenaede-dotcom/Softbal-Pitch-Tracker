@@ -145,13 +145,6 @@ function goHomeIfAuthenticated() {
 
 // OG Pitching Tracker
 
-
-async 
-
-
-async 
-
-
 function showLoginScreen() {
   document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
   const login = document.getElementById("loginScreen");
@@ -407,7 +400,7 @@ function renderPitcherStats() {
     const s = calculateGameStats(g);
     return `
       <tr>
-        <td>${formatPitcherStatsDate(g.date, g.startTime)}</td>
+        <td>${g.date || "-"}</td>
         <td>${g.opponent || "-"}</td>
         <td>${s.totalPitches}</td>
         <td>${s.strikes}</td>
@@ -533,17 +526,11 @@ function renderBatterSearch() {
 
   const [selectedName, selectedNumber] = selectedPlayer.split("|");
 
-  const matches = getAllPitchesFromStoredGames()
-    .filter(p => {
-      return p.gameOpponent === selectedOpponent &&
-        String(p.batterName || "") === selectedName &&
-        String(p.batterNumber || "") === selectedNumber;
-    })
-    .sort((a, b) => {
-      const aTime = new Date(a.timestamp || `${a.gameDate || a.date || ""}T${a.startTime || "00:00"}`).getTime();
-      const bTime = new Date(b.timestamp || `${b.gameDate || b.date || ""}T${b.startTime || "00:00"}`).getTime();
-      return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
-    });
+  const matches = getAllPitchesFromStoredGames().filter(p => {
+    return p.gameOpponent === selectedOpponent &&
+      String(p.batterName || "") === selectedName &&
+      String(p.batterNumber || "") === selectedNumber;
+  });
 
   const hits = matches.filter(p => p.result === "HIT").length;
   const outs = matches.filter(p => p.result === "Out").length;
@@ -577,7 +564,7 @@ function renderBatterSearch() {
     return;
   }
 
-  body.innerHTML = matches.map(p => `
+  body.innerHTML = matches.slice().reverse().map(p => `
     <tr>
       <td>${p.gameDate || "-"}</td>
       <td>${p.gameOpponent || "-"}</td>
@@ -587,39 +574,6 @@ function renderBatterSearch() {
       <td>${getReadableZone(p)}</td>
     </tr>
   `).join("");
-}
-
-
-function getReadableZone(p) {
-  const x = Number(p.x || 50);
-  const y = Number(p.y || 50);
-
-  // Buiten strikezone
-  if (x < 28 || x > 72 || y < 18 || y > 82) {
-    return "Wijd";
-  }
-
-  let horizontal = "";
-  let vertical = "";
-
-  // Horizontal finer tuning
-  if (x < 40) horizontal = "Inside";
-  else if (x > 60) horizontal = "Outside";
-  else horizontal = "Middle";
-
-  // Vertical finer tuning
-  if (y < 38) vertical = "Hoog";
-  else if (y > 62) vertical = "Laag";
-  else vertical = "Midden";
-
-  if (horizontal === "Middle" && vertical === "Midden") {
-    return "Middle-middle";
-  }
-
-  if (horizontal === "Middle") return vertical;
-  if (vertical === "Midden") return horizontal;
-
-  return `${vertical} ${horizontal}`;
 }
 
 
@@ -643,15 +597,23 @@ function renderLineupRows() {
 }
 
 function fillDemoLineup() {
+  if (!document.getElementById("name1")) {
+    renderLineupRows();
+  }
+
   const names = ["Emma", "Noor", "Lisa", "Sanne", "Mila", "Roos", "Tess", "Lotte", "Fleur", "Jade", "Isa", "Liv", "Zoë", "Nova", "Evi", "Sara"];
   const numbers = [12, 7, 21, 4, 18, 10, 3, 25, 9, 14, 6, 31, 22, 11, 15, 28];
 
   names.forEach((name, index) => {
-    document.getElementById(`name${index + 1}`).value = name;
-    document.getElementById(`num${index + 1}`).value = numbers[index];
+    const nameInput = document.getElementById(`name${index + 1}`);
+    const numInput = document.getElementById(`num${index + 1}`);
+
+    if (nameInput) nameInput.value = name;
+    if (numInput) numInput.value = numbers[index];
   });
 
-  document.getElementById("opponent").value = "Demo Team";
+  const opponentInput = document.getElementById("opponent");
+  if (opponentInput) opponentInput.value = "Demo Team";
 }
 
 function renderChoices(elementId, options, key) {
@@ -680,11 +642,6 @@ function requireEditPassword(message = "Voer wachtwoord in om deze game te opene
 
 // Oude naam blijft bestaan, maar gaat nu verplicht via wachtwoord.
 
-
-function requireEditPassword(message = "Voer wachtwoord in om deze game te openen/wijzigen:") {
-  const password = prompt(message);
-  return password === "Edit";
-}
 
 function showUnfinishedGames() {
   setActiveScreen("unfinishedGamesScreen");
@@ -800,11 +757,7 @@ function renderPreviousGames() {
     );
   }
 
-  rows.sort((a, b) => {
-    const aKey = `${a.date || ""} ${a.startTime || ""}`;
-    const bKey = `${b.date || ""} ${b.startTime || ""}`;
-    return bKey.localeCompare(aKey);
-  });
+  rows.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
 
   if (!rows.length) {
     list.innerHTML = `<p class="small-note">Geen afgesloten pitching appearances gevonden.</p>`;
@@ -1275,40 +1228,6 @@ function renderBatterHeatmap() {
   document.getElementById("batterOutCount").textContent = batterPitches.filter(p => p.result === "Out").length;
 }
 
-
-function formatPitcherStatsDate(dateValue, timeValue) {
-  if (!dateValue && !timeValue) return "-";
-
-  let day = "";
-  let month = "";
-  const rawDate = String(dateValue || "").trim();
-
-  if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
-    const parts = rawDate.slice(0, 10).split("-");
-    day = parts[2];
-    month = parts[1];
-  } else {
-    const d = new Date(rawDate);
-    if (!isNaN(d.getTime())) {
-      day = String(d.getDate()).padStart(2, "0");
-      month = String(d.getMonth() + 1).padStart(2, "0");
-    }
-  }
-
-  let hour = "00";
-  let minute = "00";
-  const rawTime = String(timeValue || "").trim();
-
-  if (/^\d{1,2}:\d{2}/.test(rawTime)) {
-    const parts = rawTime.split(":");
-    hour = String(parts[0]).padStart(2, "0");
-    minute = String(parts[1]).padStart(2, "0");
-  }
-
-  if (!day || !month) return "-";
-  return `${day}:${month}:${hour}:${minute}`;
-}
-
 function formatInningsPitched(totalOuts) {
   return (Number(totalOuts || 0) / 3).toFixed(3);
 }
@@ -1418,9 +1337,10 @@ function setSyncStatus(message, type = "") {
 
 
 function getStoredGames() {
-  const activeGame = game && game.gameId && !game.closed ? [game] : [];
+  const activeGame = (typeof game !== "undefined" && game && game.gameId && !game.closed) ? [game] : [];
   const ids = new Set(activeGame.map(g => g.gameId));
-  return [...activeGame, ...sheetGames.filter(g => !ids.has(g.gameId))];
+  const sheetList = Array.isArray(sheetGames) ? sheetGames : [];
+  return [...activeGame, ...sheetList.filter(g => !ids.has(g.gameId))];
 }
 
 function saveStoredGames(games) {
@@ -1475,9 +1395,10 @@ function loadSheetDataJsonp() {
 }
 
 function mergeGames(localGames, sheetGamesFromServer) {
-  const activeGame = game && game.gameId && !game.closed ? [game] : [];
+  const activeGame = (typeof game !== "undefined" && game && game.gameId && !game.closed) ? [game] : [];
   const activeIds = new Set(activeGame.map(g => g.gameId));
-  return [...activeGame, ...sheetGamesFromServer.filter(g => !activeIds.has(g.gameId))];
+  const sheetList = Array.isArray(sheetGamesFromServer) ? sheetGamesFromServer : [];
+  return [...activeGame, ...sheetList.filter(g => !activeIds.has(g.gameId))];
 }
 
 function convertSheetRowsToGames(payload) {
