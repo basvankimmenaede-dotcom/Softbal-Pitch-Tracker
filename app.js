@@ -221,63 +221,152 @@ function showLoginScreen() {
 let savedTeams = {};
 
 
+function convertTegenstandersRowsToTeams(payload) {
+  const teams = {};
+
+  if (!payload) return teams;
+
+  if (payload.teams && typeof payload.teams === "object") {
+    return payload.teams;
+  }
+
+  const sourceRows =
+    payload.tegenstandersRows ||
+    payload.teamsRows ||
+    payload.opponentsRows ||
+    payload.tegenstanders ||
+    [];
+
+  const sourceHeaders =
+    payload.tegenstandersHeaders ||
+    payload.teamsHeaders ||
+    payload.opponentsHeaders ||
+    [];
+
+  const rows = Array.isArray(sourceRows) && sourceRows.length
+    ? sourceRows
+    : [];
+
+  const headers = Array.isArray(sourceHeaders) ? sourceHeaders : [];
+
+  rows.forEach(row => {
+    const record = {};
+
+    if (Array.isArray(row)) {
+      headers.forEach((header, index) => {
+        record[String(header || "").trim()] = row[index];
+      });
+
+      record._0 = row[0];
+      record._1 = row[1];
+      record._2 = row[2];
+    } else {
+      Object.assign(record, row);
+    }
+
+    const teamName = String(
+      record["Team"] ||
+      record["Tegenstander"] ||
+      record["team"] ||
+      record["tegenstander"] ||
+      record._0 ||
+      ""
+    ).trim();
+
+    const playerName = String(
+      record["Naam"] ||
+      record["Speelster"] ||
+      record["Slagvrouw"] ||
+      record["name"] ||
+      record["playerName"] ||
+      record._1 ||
+      ""
+    ).trim();
+
+    const playerNumber = String(
+      record["Rugnummer"] ||
+      record["Nummer"] ||
+      record["number"] ||
+      record["playerNumber"] ||
+      record._2 ||
+      ""
+    ).trim();
+
+    if (!teamName || (!playerName && !playerNumber)) return;
+
+    if (!teams[teamName]) teams[teamName] = [];
+
+    const exists = teams[teamName].some(player =>
+      String(player.name || "").toLowerCase() === playerName.toLowerCase() &&
+      String(player.number || "") === playerNumber
+    );
+
+    if (!exists) {
+      teams[teamName].push({
+        name: playerName || "Onbekende slagvrouw",
+        number: playerNumber || "?"
+      });
+    }
+  });
+
+  return teams;
+}
+
 async function loadTeamsFromSheet() {
   try {
-    const response = await fetch(`${APPS_SCRIPT_URL}?action=getTeams`);
-    const data = await response.json();
-
-    savedTeams = data?.teams || {};
+    const payload = await loadJsonp(APPS_SCRIPT_URL + "?view=tegenstanders");
+    savedTeams = convertTegenstandersRowsToTeams(payload);
     return savedTeams;
   } catch (error) {
     console.error("Kon teams niet laden", error);
+    setSyncStatus("Kon teams niet laden uit Tegenstanders.", "error");
     return {};
   }
 }
 
-async function saveTeamPlayerToSheet(teamName, player) {
+async function postTeamMutationToSheet(action, teamName, player, index = null) {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
-        action: "saveTeamPlayer",
+        type: "tegenstander",
+        action,
         team: teamName,
-        player
-      })
-    });
-  } catch (error) {
-    console.error("Kon teamspeler niet opslaan", error);
-  }
-}
-
-async function updateTeamPlayerInSheet(teamName, index, player) {
-  try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "updateTeamPlayer",
-        team: teamName,
-        index,
-        player
-      })
-    });
-  } catch (error) {
-    console.error("Kon teamspeler niet wijzigen", error);
-  }
-}
-
-async function removeTeamPlayerFromSheet(teamName, index) {
-  try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "removeTeamPlayer",
-        team: teamName,
+        name: player?.name || "",
+        number: player?.number || "",
         index
       })
     });
+
+    setSyncStatus("Tegenstanders opgeslagen.", "ok");
   } catch (error) {
-    console.error("Kon teamspeler niet verwijderen", error);
+    console.error("Kon tegenstander niet opslaan", error);
+    setSyncStatus("Kon Tegenstanders niet opslaan.", "error");
   }
+}
+
+async function saveTeamPlayerToSheet(teamName, player) {
+  await postTeamMutationToSheet("add", teamName, player);
+}
+
+async function updateTeamPlayerInSheet(teamName, index, player) {
+  await postTeamMutationToSheet("update", teamName, player, index);
+}
+
+async function removeTeamPlayerFromSheet(teamName, index) {
+  await postTeamMutationToSheet("remove", teamName, {}, index);
+}
+
+
+function setTeamsSyncStatus(message, type = "") {
+  const status = document.getElementById("teamsSyncStatus");
+  if (!status) return;
+
+  status.textContent = message;
+  status.className = `sync-status ${type}`;
+  status.classList.remove("hidden");
 }
 
 function normalizeTeamName(name) {
@@ -290,8 +379,10 @@ function getTeamPlayers(teamName) {
 }
 
 async function showTeams() {
-  await loadTeamsFromSheet();
   setActiveScreen("teamsScreen");
+  setTeamsSyncStatus("Tegenstanders worden geladen...", "loading");
+  await loadTeamsFromSheet();
+  setTeamsSyncStatus("Tegenstanders geladen.", "ok");
   populateTeamSelect(game.opponent || "");
   renderTeamPlayers();
 }
@@ -379,6 +470,7 @@ async function addTeamPlayer() {
     number: number || "?"
   });
 
+  await loadTeamsFromSheet();
   populateTeamSelect(teamName);
 
   if (nameInput) nameInput.value = "";
@@ -397,6 +489,7 @@ async function removeTeamPlayer(index) {
     number: number || "?"
   });
 
+  await loadTeamsFromSheet();
   populateTeamSelect(teamName);
   renderTeamPlayers();
 }
@@ -479,6 +572,7 @@ async function confirmEditTeamPlayer() {
     number: number || "?"
   });
 
+  await loadTeamsFromSheet();
   closeEditTeamPlayerModal();
   populateTeamSelect(teamName);
   renderTeamPlayers();
