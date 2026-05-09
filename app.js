@@ -221,76 +221,20 @@ function showLoginScreen() {
 let savedTeams = {};
 
 
+
 function convertTegenstandersRowsToTeams(payload) {
   const teams = {};
 
   if (!payload) return teams;
 
-  if (payload.teams && typeof payload.teams === "object") {
-    return payload.teams;
-  }
-
-  const sourceRows =
-    payload.tegenstandersRows ||
-    payload.teamsRows ||
-    payload.opponentsRows ||
-    payload.tegenstanders ||
-    [];
-
-  const sourceHeaders =
-    payload.tegenstandersHeaders ||
-    payload.teamsHeaders ||
-    payload.opponentsHeaders ||
-    [];
-
-  const rows = Array.isArray(sourceRows) && sourceRows.length
-    ? sourceRows
+  const rows = Array.isArray(payload.tegenstandersRows)
+    ? payload.tegenstandersRows
     : [];
 
-  const headers = Array.isArray(sourceHeaders) ? sourceHeaders : [];
-
   rows.forEach(row => {
-    const record = {};
-
-    if (Array.isArray(row)) {
-      headers.forEach((header, index) => {
-        record[String(header || "").trim()] = row[index];
-      });
-
-      record._0 = row[0];
-      record._1 = row[1];
-      record._2 = row[2];
-    } else {
-      Object.assign(record, row);
-    }
-
-    const teamName = String(
-      record["Team"] ||
-      record["Tegenstander"] ||
-      record["team"] ||
-      record["tegenstander"] ||
-      record._0 ||
-      ""
-    ).trim();
-
-    const playerName = String(
-      record["Naam"] ||
-      record["Speelster"] ||
-      record["Slagvrouw"] ||
-      record["name"] ||
-      record["playerName"] ||
-      record._1 ||
-      ""
-    ).trim();
-
-    const playerNumber = String(
-      record["Rugnummer"] ||
-      record["Nummer"] ||
-      record["number"] ||
-      record["playerNumber"] ||
-      record._2 ||
-      ""
-    ).trim();
+    const teamName = String(row[0] || "").trim();
+    const playerName = String(row[1] || "").trim();
+    const playerNumber = String(row[2] || "").trim();
 
     if (!teamName || (!playerName && !playerNumber)) return;
 
@@ -314,17 +258,17 @@ function convertTegenstandersRowsToTeams(payload) {
 
 async function loadTeamsFromSheet() {
   try {
-    const payload = await loadJsonp(APPS_SCRIPT_URL + "?view=tegenstanders");
+    const payload = await loadJsonp(APPS_SCRIPT_URL);
     savedTeams = convertTegenstandersRowsToTeams(payload);
     return savedTeams;
   } catch (error) {
     console.error("Kon teams niet laden", error);
-    setSyncStatus("Kon teams niet laden uit Tegenstanders.", "error");
+    setTeamsSyncStatus("Kon teams niet laden uit Tegenstanders.", "error");
     return {};
   }
 }
 
-async function postTeamMutationToSheet(action, teamName, player, index = null) {
+async function postTeamMutationToSheet(action, teamName, player = {}, index = null) {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
@@ -334,36 +278,42 @@ async function postTeamMutationToSheet(action, teamName, player, index = null) {
         type: "tegenstander",
         action,
         team: teamName,
-        name: player?.name || "",
-        number: player?.number || "",
+        name: player.name || "",
+        number: player.number || "",
         index
       })
     });
 
-    setSyncStatus("Tegenstanders opgeslagen.", "ok");
+    // no-cors geeft geen leesbare response terug; daarom daarna opnieuw laden.
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await loadTeamsFromSheet();
+
+    setTeamsSyncStatus("Tegenstanders opgeslagen.", "ok");
+    return true;
   } catch (error) {
     console.error("Kon tegenstander niet opslaan", error);
-    setSyncStatus("Kon Tegenstanders niet opslaan.", "error");
+    setTeamsSyncStatus("Kon Tegenstanders niet opslaan.", "error");
+    return false;
   }
 }
 
 async function saveTeamPlayerToSheet(teamName, player) {
-  await postTeamMutationToSheet("add", teamName, player);
+  return postTeamMutationToSheet("add", teamName, player);
 }
 
 async function updateTeamPlayerInSheet(teamName, index, player) {
-  await postTeamMutationToSheet("update", teamName, player, index);
+  return postTeamMutationToSheet("update", teamName, player, index);
 }
 
 async function removeTeamPlayerFromSheet(teamName, index) {
-  await postTeamMutationToSheet("remove", teamName, {}, index);
+  return postTeamMutationToSheet("remove", teamName, {}, index);
 }
+
 
 
 function setTeamsSyncStatus(message, type = "") {
   const status = document.getElementById("teamsSyncStatus");
   if (!status) return;
-
   status.textContent = message;
   status.className = `sync-status ${type}`;
   status.classList.remove("hidden");
@@ -459,18 +409,12 @@ async function addTeamPlayer() {
   );
 
   if (!exists) {
-    savedTeams[teamName].push({
+    await saveTeamPlayerToSheet(teamName, {
       name: name || "Onbekende slagvrouw",
       number: number || "?"
     });
   }
 
-  await saveTeamPlayerToSheet(teamName, {
-    name: name || "Onbekende slagvrouw",
-    number: number || "?"
-  });
-
-  await loadTeamsFromSheet();
   populateTeamSelect(teamName);
 
   if (nameInput) nameInput.value = "";
@@ -489,7 +433,6 @@ async function removeTeamPlayer(index) {
     number: number || "?"
   });
 
-  await loadTeamsFromSheet();
   populateTeamSelect(teamName);
   renderTeamPlayers();
 }
