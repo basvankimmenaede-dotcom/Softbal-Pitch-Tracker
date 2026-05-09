@@ -1267,3 +1267,38 @@ button.danger {
   color: #15803d !important;
   font-weight: 950;
 }
+
+
+.team-player-list {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.team-player-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(243,244,246,.95);
+  border: 1px solid var(--line);
+}
+
+.team-player-row strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.team-player-row button {
+  padding: 9px 12px;
+  font-size: 12px;
+  border-radius: 12px;
+}
+
+@media (max-width: 420px) {
+  .team-player-row {
+    grid-template-columns: 1fr;
+  }
+}

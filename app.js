@@ -217,6 +217,228 @@ function showLoginScreen() {
 }
 
 
+
+let savedTeams = loadSavedTeams();
+
+function loadSavedTeams() {
+  try {
+    return JSON.parse(localStorage.getItem("ogSavedTeams") || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveSavedTeams() {
+  localStorage.setItem("ogSavedTeams", JSON.stringify(savedTeams || {}));
+}
+
+function normalizeTeamName(name) {
+  return String(name || "").trim();
+}
+
+function getTeamPlayers(teamName) {
+  const key = normalizeTeamName(teamName);
+  return Array.isArray(savedTeams[key]) ? savedTeams[key] : [];
+}
+
+function showTeams() {
+  setActiveScreen("teamsScreen");
+  const input = document.getElementById("teamOpponentName");
+  if (input && game.opponent) input.value = game.opponent;
+  renderTeamPlayers();
+}
+
+function addTeamPlayer() {
+  const teamInput = document.getElementById("teamOpponentName");
+  const nameInput = document.getElementById("teamPlayerName");
+  const numberInput = document.getElementById("teamPlayerNumber");
+
+  const teamName = normalizeTeamName(teamInput?.value);
+  const name = String(nameInput?.value || "").trim();
+  const number = String(numberInput?.value || "").trim();
+
+  if (!teamName) {
+    alert("Vul eerst een team/tegenstander in.");
+    return;
+  }
+
+  if (!name && !number) {
+    alert("Vul minimaal een naam of rugnummer in.");
+    return;
+  }
+
+  savedTeams[teamName] = getTeamPlayers(teamName);
+
+  const exists = savedTeams[teamName].some(player =>
+    String(player.name || "").toLowerCase() === name.toLowerCase() &&
+    String(player.number || "") === number
+  );
+
+  if (!exists) {
+    savedTeams[teamName].push({
+      name: name || "Onbekende slagvrouw",
+      number: number || "?"
+    });
+  }
+
+  saveSavedTeams();
+
+  if (nameInput) nameInput.value = "";
+  if (numberInput) numberInput.value = "";
+
+  renderTeamPlayers();
+}
+
+function removeTeamPlayer(index) {
+  const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
+  if (!teamName || !savedTeams[teamName]) return;
+
+  savedTeams[teamName].splice(index, 1);
+  saveSavedTeams();
+  renderTeamPlayers();
+}
+
+function renderTeamPlayers() {
+  const list = document.getElementById("teamPlayersList");
+  const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
+
+  if (!list) return;
+
+  if (!teamName) {
+    list.innerHTML = `<p class="small-note">Vul een team/tegenstander in.</p>`;
+    return;
+  }
+
+  const players = getTeamPlayers(teamName);
+
+  if (!players.length) {
+    list.innerHTML = `<p class="small-note">Nog geen speelsters opgeslagen voor dit team.</p>`;
+    return;
+  }
+
+  list.innerHTML = players.map((player, index) => `
+    <div class="team-player-row">
+      <strong>${player.name || "Onbekende slagvrouw"} #${player.number || "?"}</strong>
+      <button class="secondary" onclick="removeTeamPlayer(${index})">Verwijder</button>
+    </div>
+  `).join("");
+}
+
+function fillSetupFromTeam() {
+  const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
+  const players = getTeamPlayers(teamName);
+
+  if (!teamName) {
+    alert("Vul eerst een team/tegenstander in.");
+    return;
+  }
+
+  if (!players.length) {
+    alert("Er zijn nog geen speelsters opgeslagen voor dit team.");
+    return;
+  }
+
+  showSetup();
+
+  const opponentInput = document.getElementById("opponent");
+  if (opponentInput) opponentInput.value = teamName;
+
+  players.slice(0, 16).forEach((player, index) => {
+    const nameInput = document.getElementById(`name${index + 1}`);
+    const numInput = document.getElementById(`num${index + 1}`);
+
+    if (nameInput) nameInput.value = player.name || "";
+    if (numInput) numInput.value = player.number || "";
+  });
+}
+
+function openAddBatterModal() {
+  const modal = document.getElementById("addBatterModal");
+  const select = document.getElementById("addBatterTeamPlayer");
+  const nameInput = document.getElementById("addBatterName");
+  const numberInput = document.getElementById("addBatterNumber");
+
+  if (!modal || !select) return;
+
+  const players = getTeamPlayers(game.opponent);
+
+  select.innerHTML = `<option value="">Handmatig toevoegen</option>` + players.map((player, index) =>
+    `<option value="${index}">${player.name || "Onbekende slagvrouw"} #${player.number || "?"}</option>`
+  ).join("");
+
+  if (nameInput) nameInput.value = "";
+  if (numberInput) numberInput.value = "";
+
+  modal.classList.remove("hidden");
+}
+
+function closeAddBatterModal() {
+  const modal = document.getElementById("addBatterModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function fillAddBatterFromTeam() {
+  const select = document.getElementById("addBatterTeamPlayer");
+  const index = Number(select?.value);
+  if (Number.isNaN(index)) return;
+
+  const player = getTeamPlayers(game.opponent)[index];
+  if (!player) return;
+
+  const nameInput = document.getElementById("addBatterName");
+  const numberInput = document.getElementById("addBatterNumber");
+
+  if (nameInput) nameInput.value = player.name || "";
+  if (numberInput) numberInput.value = player.number || "";
+}
+
+function confirmAddBatter() {
+  const name = String(document.getElementById("addBatterName")?.value || "").trim();
+  const number = String(document.getElementById("addBatterNumber")?.value || "").trim();
+
+  if (!name && !number) {
+    alert("Vul minimaal een naam of rugnummer in.");
+    return;
+  }
+
+  game.lineup = game.lineup || [];
+
+  const nextOrder = game.lineup.length
+    ? Math.max(...game.lineup.map(player => Number(player.order || 0))) + 1
+    : 1;
+
+  game.lineup.push({
+    order: nextOrder,
+    name: name || `Slagvrouw ${nextOrder}`,
+    number: number || "?"
+  });
+
+  game.activeLineupSize = Math.max(Number(game.activeLineupSize || 9), game.lineup.length);
+
+  const teamName = normalizeTeamName(game.opponent);
+  if (teamName) {
+    savedTeams[teamName] = getTeamPlayers(teamName);
+    const exists = savedTeams[teamName].some(player =>
+      String(player.name || "").toLowerCase() === String(name || "").toLowerCase() &&
+      String(player.number || "") === String(number || "")
+    );
+
+    if (!exists) {
+      savedTeams[teamName].push({
+        name: name || `Slagvrouw ${nextOrder}`,
+        number: number || "?"
+      });
+      saveSavedTeams();
+    }
+  }
+
+  saveLocalGame();
+  closeAddBatterModal();
+  updateUI();
+  setSyncStatus(`Slagvrouw toegevoegd: ${name || `#${number}`}`, "ok");
+}
+
+
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Veld uit", "Strike out"];
 

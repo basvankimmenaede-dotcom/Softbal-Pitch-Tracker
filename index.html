@@ -45,6 +45,7 @@
           <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
           <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
           <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
+          <button onclick="showTeams()">Teams <span>→</span></button>
         </div>
       </div>
     </section>
@@ -233,6 +234,36 @@
       </div>
     </section>
 
+
+    <section id="teamsScreen" class="screen">
+      <div class="card">
+        <label for="teamOpponentName">Team / tegenstander</label>
+        <input id="teamOpponentName" placeholder="Bijv. Sparks Haarlem" oninput="renderTeamPlayers()" />
+
+        <div class="date-time-row">
+          <div>
+            <label for="teamPlayerName">Naam slagvrouw</label>
+            <input id="teamPlayerName" placeholder="Naam" />
+          </div>
+          <div>
+            <label for="teamPlayerNumber">Rugnummer</label>
+            <input id="teamPlayerNumber" placeholder="#" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button onclick="addTeamPlayer()">Speelster toevoegen</button>
+          <button class="secondary" onclick="fillSetupFromTeam()">Gebruik bij nieuwe game</button>
+        </div>
+
+        <label>Speelsters in dit team</label>
+        <div id="teamPlayersList" class="team-player-list"></div>
+
+        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+      </div>
+    </section>
+
+
     <section id="setupScreen" class="screen">
       <div class="card">
         <label for="opponent">Tegenstander</label>
@@ -353,6 +384,7 @@
           <button class="secondary" onclick="previousBatter()">Vorige slagvrouw</button>
           <button class="secondary" onclick="openPitcherModal()">Wissel pitcher</button>
           <button class="secondary" onclick="openSubModal()">Wissel slagvrouw</button>
+          <button class="secondary" onclick="openAddBatterModal()">Slagvrouw toevoegen</button>
           <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
           <button class="danger" onclick="resetGame()">Einde wedstrijd</button>
         </div>
@@ -406,6 +438,30 @@
         <div class="actions">
           <button class="secondary" onclick="closePitcherModal()">Annuleren</button>
           <button onclick="confirmPitcherChange()">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="addBatterModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Slagvrouw toevoegen</h2>
+        <p class="small-note">Voeg een extra speelster toe aan de geldende line-up van deze wedstrijd.</p>
+
+        <label for="addBatterTeamPlayer">Kies uit teamlijst</label>
+        <select id="addBatterTeamPlayer" onchange="fillAddBatterFromTeam()">
+          <option value="">Handmatig toevoegen</option>
+        </select>
+
+        <label for="addBatterName">Naam slagvrouw</label>
+        <input id="addBatterName" placeholder="Naam" />
+
+        <label for="addBatterNumber">Rugnummer</label>
+        <input id="addBatterNumber" placeholder="#" />
+
+        <div class="actions">
+          <button class="secondary" onclick="closeAddBatterModal()">Annuleren</button>
+          <button onclick="confirmAddBatter()">Toevoegen</button>
         </div>
       </div>
     </div>
