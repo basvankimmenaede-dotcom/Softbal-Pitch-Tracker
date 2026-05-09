@@ -100,14 +100,57 @@ function calculateGameStats(g) {
     p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)
   ).length;
 
+  const totalBatters = countTotalBatters(g);
+  const walks = countWalks(g);
+  const sbRatio = balls === 0 ? strikes.toFixed(2) : (strikes / balls).toFixed(2);
+
   return {
     totalPitches,
     strikes,
     balls,
     outs,
     ip: formatInningsPitched(outs),
-    fps
+    fps,
+    totalBatters,
+    walks,
+    sbRatio
   };
+}
+
+function countTotalBatters(g) {
+  const pitches = g.pitches || [];
+  return pitches.filter(p => p.firstPitch).length;
+}
+
+function countWalks(g) {
+  const pitches = (g.pitches || []).slice().reverse();
+  let balls = 0;
+  let strikes = 0;
+  let walks = 0;
+
+  pitches.forEach(p => {
+    if (p.firstPitch) {
+      balls = 0;
+      strikes = 0;
+    }
+
+    if (p.result === "Ball") balls += 1;
+    if (["Strike", "Swing"].includes(p.result)) strikes += 1;
+    if (p.result === "Foul" && strikes < 2) strikes += 1;
+
+    if (p.walk || balls >= 4) {
+      walks += 1;
+      balls = 0;
+      strikes = 0;
+    }
+
+    if (["HIT", "Out"].includes(p.result) || strikes >= 3) {
+      balls = 0;
+      strikes = 0;
+    }
+  });
+
+  return walks;
 }
 
 function renderPitcherStats() {
@@ -124,7 +167,10 @@ function renderPitcherStats() {
     document.getElementById("statsTotalOuts").textContent = "0";
     document.getElementById("statsTotalIP").textContent = "0.000";
     document.getElementById("statsTotalFPS").textContent = "0";
-    body.innerHTML = `<tr><td colspan="8">Kies een pitcher.</td></tr>`;
+    document.getElementById("statsSBRatio").textContent = "0.00";
+    document.getElementById("statsWalks").textContent = "0";
+    document.getElementById("statsFPSBatters").textContent = "0/0";
+    body.innerHTML = `<tr><td colspan="11">Kies een pitcher.</td></tr>`;
     return;
   }
 
@@ -137,7 +183,10 @@ function renderPitcherStats() {
     document.getElementById("statsTotalOuts").textContent = "0";
     document.getElementById("statsTotalIP").textContent = "0.000";
     document.getElementById("statsTotalFPS").textContent = "0";
-    body.innerHTML = `<tr><td colspan="8">Geen games gevonden voor ${pitcherName}.</td></tr>`;
+    document.getElementById("statsSBRatio").textContent = "0.00";
+    document.getElementById("statsWalks").textContent = "0";
+    document.getElementById("statsFPSBatters").textContent = "0/0";
+    body.innerHTML = `<tr><td colspan="11">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
 
@@ -148,8 +197,10 @@ function renderPitcherStats() {
     acc.balls += s.balls;
     acc.outs += s.outs;
     acc.fps += s.fps;
+    acc.walks += s.walks;
+    acc.totalBatters += s.totalBatters;
     return acc;
-  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0 });
+  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, totalBatters: 0 });
 
   document.getElementById("statsTotalPitches").textContent = totals.totalPitches;
   document.getElementById("statsTotalStrikes").textContent = totals.strikes;
@@ -157,6 +208,9 @@ function renderPitcherStats() {
   document.getElementById("statsTotalOuts").textContent = totals.outs;
   document.getElementById("statsTotalIP").textContent = formatInningsPitched(totals.outs);
   document.getElementById("statsTotalFPS").textContent = totals.fps;
+  document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
+  document.getElementById("statsWalks").textContent = totals.walks;
+  document.getElementById("statsFPSBatters").textContent = `${totals.fps}/${totals.totalBatters}`;
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -170,6 +224,9 @@ function renderPitcherStats() {
         <td>${s.outs}</td>
         <td>${s.ip}</td>
         <td>${s.fps}</td>
+        <td>${s.sbRatio}</td>
+        <td>${s.walks}</td>
+        <td>${s.fps}/${s.totalBatters}</td>
       </tr>
     `;
   }).join("");
@@ -178,8 +235,23 @@ function renderPitcherStats() {
 
 
 function showBatterSearch() {
+  populateBatterOpponentFilter();
   setActiveScreen("batterSearchScreen");
   renderBatterSearch();
+}
+
+function populateBatterOpponentFilter() {
+  const select = document.getElementById("batterSearchOpponent");
+  if (!select) return;
+
+  const opponents = [...new Set(getStoredGames().map(g => g.opponent).filter(Boolean))].sort();
+  const current = select.value;
+
+  select.innerHTML = `<option value="">Alle tegenstanders</option>` + opponents.map(o =>
+    `<option value="${o}">${o}</option>`
+  ).join("");
+
+  if (opponents.includes(current)) select.value = current;
 }
 
 function getAllPitchesFromStoredGames() {
@@ -196,9 +268,11 @@ function getAllPitchesFromStoredGames() {
 
 function renderBatterSearch() {
   const input = document.getElementById("batterSearchInput");
+  const opponentSelect = document.getElementById("batterSearchOpponent");
   if (!input) return;
 
   const query = input.value.trim().toLowerCase();
+  const selectedOpponent = opponentSelect ? opponentSelect.value : "";
   const heatmap = document.getElementById("batterSearchHeatmap");
   const body = document.getElementById("batterSearchTableBody");
 
@@ -211,11 +285,16 @@ function renderBatterSearch() {
     document.getElementById("batterSearchBalls").textContent = "0";
     document.getElementById("batterSearchStrikes").textContent = "0";
     document.getElementById("batterSearchGames").textContent = "0";
-    body.innerHTML = `<tr><td colspan="7">Zoek op naam of rugnummer.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6">Kies tegenstander en zoek op naam of rugnummer.</td></tr>`;
     return;
   }
 
-  const allPitches = getAllPitchesFromStoredGames();
+  let allPitches = getAllPitchesFromStoredGames();
+
+  if (selectedOpponent) {
+    allPitches = allPitches.filter(p => p.gameOpponent === selectedOpponent);
+  }
+
   const matches = allPitches.filter(p => {
     const name = String(p.batterName || "").toLowerCase();
     const number = String(p.batterNumber || "").toLowerCase();
@@ -244,13 +323,13 @@ function renderBatterSearch() {
     if (p.result === "Out") dot.classList.add("out");
     dot.style.left = `${p.x}%`;
     dot.style.top = `${p.y}%`;
-    dot.title = `${p.batterName} #${p.batterNumber} · ${p.pitchType} · ${p.result}`;
+    dot.title = `${p.batterName} #${p.batterNumber} · ${p.pitcherName || "Pitcher onbekend"} · ${p.pitchType} · ${p.result} · ${getReadableZone(p)}`;
     dot.textContent = index + 1;
     heatmap.appendChild(dot);
   });
 
   if (!matches.length) {
-    body.innerHTML = `<tr><td colspan="7">Geen pitches gevonden.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6">Geen pitches gevonden.</td></tr>`;
     return;
   }
 
@@ -258,80 +337,18 @@ function renderBatterSearch() {
     <tr>
       <td>${p.gameDate || "-"}</td>
       <td>${p.gameOpponent || "-"}</td>
-      <td>${p.batterName || "-"}</td>
-      <td>${p.batterNumber || "-"}</td>
+      <td>${p.pitcherName || "-"}</td>
       <td>${p.pitchType || "-"}</td>
       <td>${p.result || "-"}</td>
-      <td>${p.zoneLabel || `x:${p.x}, y:${p.y}`}</td>
+      <td>${getReadableZone(p)}</td>
     </tr>
   `).join("");
 }
 
-
-function showPreviousGames() {
-  setActiveScreen("previousGamesScreen");
-  renderPreviousGames();
-}
-
-function renderPreviousGames() {
-  const list = document.getElementById("previousGamesList");
-  const input = document.getElementById("previousGamesSearch");
-  if (!list) return;
-
-  const query = (input?.value || "").trim().toLowerCase();
-  let games = getStoredGames().filter(g => g.closed);
-
-  if (query) {
-    games = games.filter(g =>
-      String(g.date || "").toLowerCase().includes(query) ||
-      String(g.opponent || "").toLowerCase().includes(query) ||
-      String(g.pitcherName || "").toLowerCase().includes(query)
-    );
-  }
-
-  if (!games.length) {
-    list.innerHTML = `<p class="small-note">Geen afgesloten games gevonden.</p>`;
-    return;
-  }
-
-  list.innerHTML = games.map(g => {
-    const pitches = g.pitches || [];
-    const strikes = pitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
-    const balls = pitches.filter(p => p.result === "Ball").length;
-    const outs = Number(g.totalOuts || 0);
-
-    return `
-      <button class="game-list-button" onclick="loadArchivedGame('${g.gameId}')">
-        <strong>${g.opponent || "Onbekende tegenstander"}</strong>
-        <small>${g.date || "-"} ${g.startTime || ""} · ${g.pitcherName || "Pitcher onbekend"}</small>
-        <div class="game-meta-row">
-          <div class="game-meta-pill">${pitches.length} P</div>
-          <div class="game-meta-pill">${strikes} S</div>
-          <div class="game-meta-pill">${balls} B</div>
-          <div class="game-meta-pill">${outs} Outs</div>
-          <div class="game-meta-pill">${formatInningsPitched(outs)} IP</div>
-          <div class="game-meta-pill">Afgesloten</div>
-        </div>
-      </button>
-    `;
-  }).join("");
-}
-
-function loadArchivedGame(gameId) {
-  const games = getStoredGames();
-  const selected = games.find(g => g.gameId === gameId);
-  if (!selected) {
-    alert("Deze game kon niet worden geladen.");
-    return;
-  }
-
-  game = {
-    ...game,
-    ...selected,
-    appsScriptUrl: APPS_SCRIPT_URL
-  };
-
-  showGame();
+function getReadableZone(p) {
+  if (p.zoneLabel) return p.zoneLabel;
+  if (p.x != null && p.y != null) return getPitchZone(Number(p.x), Number(p.y)).label;
+  return "-";
 }
 
 function continuePreviousGame() {
@@ -529,7 +546,8 @@ function savePitch() {
     ballsBefore: game.balls,
     strikesBefore: game.strikes,
     outsBefore: game.totalOuts,
-    firstPitch: isFirstPitch
+    firstPitch: isFirstPitch,
+    walk: game.balls === 3 && game.result === "Ball"
   };
 
   game.pitches.unshift(pitch);

@@ -774,3 +774,17 @@ button.good { background: var(--good); color: #072214; }
   font-weight: 900;
   text-align: center;
 }
+
+
+.locked-game-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.locked-game-actions button {
+  min-height: 40px;
+  font-size: 12px;
+  padding: 10px 12px;
+}

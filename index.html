@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="logo.png">
   <title>Onze Gezellen U21 - Pitching Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -61,6 +62,9 @@
           <div class="stat"><small>Outs</small><strong id="statsTotalOuts">0</strong></div>
           <div class="stat"><small>IP</small><strong id="statsTotalIP">0.000</strong></div>
           <div class="stat"><small>FPS</small><strong id="statsTotalFPS">0</strong></div>
+          <div class="stat"><small>S/B Ratio</small><strong id="statsSBRatio">0.00</strong></div>
+          <div class="stat"><small>Walks</small><strong id="statsWalks">0</strong></div>
+          <div class="stat"><small>FPS / Batters</small><strong id="statsFPSBatters">0/0</strong></div>
         </div>
 
         <label>Stats per wedstrijd</label>
@@ -76,10 +80,13 @@
                 <th>Outs</th>
                 <th>IP</th>
                 <th>FPS</th>
+                <th>S/B</th>
+                <th>BB</th>
+                <th>FPS/Batters</th>
               </tr>
             </thead>
             <tbody id="statsPerGameBody">
-              <tr><td colspan="8">Kies een pitcher.</td></tr>
+              <tr><td colspan="11">Kies een pitcher.</td></tr>
             </tbody>
           </table>
         </div>
@@ -91,6 +98,11 @@
 
     <section id="batterSearchScreen" class="screen">
       <div class="card">
+        <label for="batterSearchOpponent">Tegenstander</label>
+        <select id="batterSearchOpponent" onchange="renderBatterSearch()">
+          <option value="">Alle tegenstanders</option>
+        </select>
+
         <label for="batterSearchInput">Zoek slagvrouw</label>
         <input id="batterSearchInput" placeholder="Naam of rugnummer" oninput="renderBatterSearch()" />
 
@@ -124,15 +136,14 @@
               <tr>
                 <th>Datum</th>
                 <th>Tegenstander</th>
-                <th>Naam</th>
-                <th>#</th>
+                <th>Pitcher</th>
                 <th>Pitch</th>
                 <th>Resultaat</th>
                 <th>Zone</th>
               </tr>
             </thead>
             <tbody id="batterSearchTableBody">
-              <tr><td colspan="7">Zoek op naam of rugnummer.</td></tr>
+              <tr><td colspan="6">Kies tegenstander en zoek op naam of rugnummer.</td></tr>
             </tbody>
           </table>
         </div>
@@ -146,6 +157,8 @@
       <div class="card">
         <label for="previousGamesSearch">Zoek vorige games</label>
         <input id="previousGamesSearch" placeholder="Datum, tegenstander of pitcher" oninput="renderPreviousGames()" />
+
+        <div class="sync-status">Afgesloten games zijn alleen-lezen. Wachtwoord voor wijzigen: Edit</div>
 
         <label>Afgesloten games</label>
         <div id="previousGamesList" class="unfinished-list"></div>
