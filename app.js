@@ -218,18 +218,66 @@ function showLoginScreen() {
 
 
 
-let savedTeams = loadSavedTeams();
+let savedTeams = {};
 
-function loadSavedTeams() {
+
+async function loadTeamsFromSheet() {
   try {
-    return JSON.parse(localStorage.getItem("ogSavedTeams") || "{}");
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getTeams`);
+    const data = await response.json();
+
+    savedTeams = data?.teams || {};
+    return savedTeams;
   } catch (error) {
+    console.error("Kon teams niet laden", error);
     return {};
   }
 }
 
-function saveSavedTeams() {
-  localStorage.setItem("ogSavedTeams", JSON.stringify(savedTeams || {}));
+async function saveTeamPlayerToSheet(teamName, player) {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveTeamPlayer",
+        team: teamName,
+        player
+      })
+    });
+  } catch (error) {
+    console.error("Kon teamspeler niet opslaan", error);
+  }
+}
+
+async function updateTeamPlayerInSheet(teamName, index, player) {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "updateTeamPlayer",
+        team: teamName,
+        index,
+        player
+      })
+    });
+  } catch (error) {
+    console.error("Kon teamspeler niet wijzigen", error);
+  }
+}
+
+async function removeTeamPlayerFromSheet(teamName, index) {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "removeTeamPlayer",
+        team: teamName,
+        index
+      })
+    });
+  } catch (error) {
+    console.error("Kon teamspeler niet verwijderen", error);
+  }
 }
 
 function normalizeTeamName(name) {
@@ -241,7 +289,8 @@ function getTeamPlayers(teamName) {
   return Array.isArray(savedTeams[key]) ? savedTeams[key] : [];
 }
 
-function showTeams() {
+async function showTeams() {
+  await loadTeamsFromSheet();
   setActiveScreen("teamsScreen");
   populateTeamSelect(game.opponent || "");
   renderTeamPlayers();
@@ -292,7 +341,7 @@ function handleTeamSelectChange() {
   renderTeamPlayers();
 }
 
-function addTeamPlayer() {
+async function addTeamPlayer() {
   const teamInput = document.getElementById("teamOpponentName");
   const nameInput = document.getElementById("teamPlayerName");
   const numberInput = document.getElementById("teamPlayerNumber");
@@ -325,7 +374,11 @@ function addTeamPlayer() {
     });
   }
 
-  saveSavedTeams();
+  await saveTeamPlayerToSheet(teamName, {
+    name: name || "Onbekende slagvrouw",
+    number: number || "?"
+  });
+
   populateTeamSelect(teamName);
 
   if (nameInput) nameInput.value = "";
@@ -334,12 +387,16 @@ function addTeamPlayer() {
   renderTeamPlayers();
 }
 
-function removeTeamPlayer(index) {
+async function removeTeamPlayer(index) {
   const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
   if (!teamName || !savedTeams[teamName]) return;
 
   savedTeams[teamName].splice(index, 1);
-  saveSavedTeams();
+  await saveTeamPlayerToSheet(teamName, {
+    name: name || "Onbekende slagvrouw",
+    number: number || "?"
+  });
+
   populateTeamSelect(teamName);
   renderTeamPlayers();
 }
@@ -396,7 +453,7 @@ function closeEditTeamPlayerModal() {
   if (modal) modal.classList.add("hidden");
 }
 
-function confirmEditTeamPlayer() {
+async function confirmEditTeamPlayer() {
   const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
   const index = Number(document.getElementById("editTeamPlayerIndex")?.value);
   const name = String(document.getElementById("editTeamPlayerName")?.value || "").trim();
@@ -417,7 +474,11 @@ function confirmEditTeamPlayer() {
     number: number || "?"
   };
 
-  saveSavedTeams();
+  await updateTeamPlayerInSheet(teamName, index, {
+    name: name || "Onbekende slagvrouw",
+    number: number || "?"
+  });
+
   closeEditTeamPlayerModal();
   populateTeamSelect(teamName);
   renderTeamPlayers();
@@ -493,7 +554,7 @@ function fillAddBatterFromTeam() {
   if (numberInput) numberInput.value = player.number || "";
 }
 
-function confirmAddBatter() {
+async function confirmAddBatter() {
   const name = String(document.getElementById("addBatterName")?.value || "").trim();
   const number = String(document.getElementById("addBatterNumber")?.value || "").trim();
 
@@ -525,11 +586,13 @@ function confirmAddBatter() {
     );
 
     if (!exists) {
-      savedTeams[teamName].push({
+      const newPlayer = {
         name: name || `Slagvrouw ${nextOrder}`,
         number: number || "?"
-      });
-      saveSavedTeams();
+      };
+
+      savedTeams[teamName].push(newPlayer);
+      await saveTeamPlayerToSheet(teamName, newPlayer);
     }
   }
 
@@ -593,7 +656,8 @@ function setActiveScreen(screenId) {
 }
 
 
-function showSetup() {
+async function showSetup() {
+  await loadTeamsFromSheet();
   prepareNewGameForm();
   populateSetupTeamSelect();
   setActiveScreen("setupScreen");
