@@ -1,6 +1,5 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqKuIfSHLqByP-pGXgANZKaAWHnh1WrUrUx_XxoSAaD51EBk0p_C07F-Q/exec";
 
-
 const STRIKE_ZONE = {
   left: 28,
   right: 72,
@@ -8,93 +7,49 @@ const STRIKE_ZONE = {
   bottom: 82
 };
 
-function getReadableZone(p) {
-  const x = Number(p.x || 50);
-  const y = Number(p.y || 50);
+function getPitchZoneFromPoint(x, y) {
+  x = Number(x || 50);
+  y = Number(y || 50);
 
-  // Buiten strikezone = wijd
   if (
     x < STRIKE_ZONE.left ||
     x > STRIKE_ZONE.right ||
     y < STRIKE_ZONE.top ||
     y > STRIKE_ZONE.bottom
   ) {
-    return "Wijd";
+    return { horizontal: "Wijd", vertical: "Wijd", label: "Wijd" };
   }
 
   const zoneWidth = STRIKE_ZONE.right - STRIKE_ZONE.left;
   const zoneHeight = STRIKE_ZONE.bottom - STRIKE_ZONE.top;
-
   const relativeX = (x - STRIKE_ZONE.left) / zoneWidth;
   const relativeY = (y - STRIKE_ZONE.top) / zoneHeight;
 
-  // Horizontaal:
-  // 25% inside
-  // 50% midden
-  // 25% outside
   let horizontal = "Middle";
+  if (relativeX <= 0.25) horizontal = "Inside";
+  else if (relativeX >= 0.75) horizontal = "Outside";
 
-  if (relativeX <= 0.25) {
-    horizontal = "Inside";
-  } else if (relativeX >= 0.75) {
-    horizontal = "Outside";
-  }
-
-  // Verticaal:
-  // 25% hoog
-  // 50% midden
-  // 25% laag
   let vertical = "Midden";
+  if (relativeY <= 0.25) vertical = "Hoog";
+  else if (relativeY >= 0.75) vertical = "Laag";
 
-  if (relativeY <= 0.25) {
-    vertical = "Hoog";
-  } else if (relativeY >= 0.75) {
-    vertical = "Laag";
-  }
+  let label = "Middle-middle";
+  if (horizontal === "Middle" && vertical === "Midden") label = "Middle-middle";
+  else if (horizontal === "Middle") label = vertical;
+  else if (vertical === "Midden") label = horizontal;
+  else label = `${vertical} ${horizontal}`;
 
-  if (horizontal === "Middle" && vertical === "Midden") {
-    return "Middle-middle";
-  }
-
-  if (horizontal === "Middle") {
-    return vertical;
-  }
-
-  if (vertical === "Midden") {
-    return horizontal;
-  }
-
-  return `${vertical} ${horizontal}`;
+  return { horizontal, vertical, label };
 }
 
+function getReadableZone(p) {
+  if (p && p.zoneLabel) return p.zoneLabel;
+  return getPitchZoneFromPoint(p?.x, p?.y).label;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-async 
-
-
-async 
-
-
-
-
-
-
-async 
-
-
-async 
-
-
+function getPitchZone(x, y) {
+  return getPitchZoneFromPoint(x, y);
+}
 
 // OG Pitching Tracker
 let sitePassword = "";
@@ -104,8 +59,11 @@ function loadJsonp(url) {
   return new Promise((resolve, reject) => {
     const callbackName = "ogJsonp_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
     const script = document.createElement("script");
+    let finished = false;
 
     const timeout = setTimeout(() => {
+      if (finished) return;
+      finished = true;
       cleanup();
       reject(new Error("Timeout bij laden van Apps Script"));
     }, 12000);
@@ -117,11 +75,15 @@ function loadJsonp(url) {
     }
 
     window[callbackName] = function(data) {
+      if (finished) return;
+      finished = true;
       cleanup();
       resolve(data);
     };
 
     script.onerror = function() {
+      if (finished) return;
+      finished = true;
       cleanup();
       reject(new Error("Apps Script script-tag kon niet laden"));
     };
@@ -158,7 +120,8 @@ async function verifySitePassword() {
       isAuthenticated = true;
       if (error) error.classList.add("hidden");
       setActiveScreen("homeScreen");
-          return;
+      syncFromGoogleSheet().catch(() => {});
+      return;
     }
 
     if (error) {
@@ -191,6 +154,12 @@ function showHome() {
 function goHomeIfAuthenticated() {
   showHome();
 }
+
+async 
+
+
+async 
+
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
@@ -244,7 +213,6 @@ function setActiveScreen(screenId) {
 }
 
 
-
 function showSetup() {
   prepareNewGameForm();
   setActiveScreen("setupScreen");
@@ -294,7 +262,6 @@ function getPitcherGames(pitcherName) {
     })
     .filter(Boolean);
 }
-
 
 
 function getPitcherOutsFromPitches(pitches) {
@@ -459,7 +426,6 @@ function renderPitcherStats() {
 }
 
 
-
 function showBatterSearch() {
   setActiveScreen("batterSearchScreen");
   syncFromGoogleSheet().then(() => {
@@ -620,67 +586,7 @@ function renderBatterSearch() {
 }
 
 
-function getReadableZone(p) {
-  const x = Number(p.x || 50);
-  const y = Number(p.y || 50);
-
-  // Buiten strikezone
-  if (x < 28 || x > 72 || y < 18 || y > 82) {
-    return "Wijd";
-  }
-
-  let horizontal = "";
-  let vertical = "";
-
-  // Horizontal finer tuning
-  if (x < 40) horizontal = "Inside";
-  else if (x > 60) horizontal = "Outside";
-  else horizontal = "Middle";
-
-  // Vertical finer tuning
-  if (y < 38) vertical = "Hoog";
-  else if (y > 62) vertical = "Laag";
-  else vertical = "Midden";
-
-  if (horizontal === "Middle" && vertical === "Midden") {
-    return "Middle-middle";
-  }
-
-  if (horizontal === "Middle") return vertical;
-  if (vertical === "Midden") return horizontal;
-
-  return `${vertical} ${horizontal}`;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Backwards compatible oude naam
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function renderLineupRows() {
@@ -729,26 +635,7 @@ function selectChoice(key, value) {
 }
 
 
-function requireEditPassword(message = "Voer wachtwoord in om deze game te openen/wijzigen:") {
-  const password = prompt(message);
-  return password === "Edit";
-}
-
-
-
-
-
-
-
 // Oude naam blijft bestaan, maar gaat nu verplicht via wachtwoord.
-
-
-
-
-
-
-
-
 
 
 function requireEditPassword(message = "Voer wachtwoord in om deze game te openen/wijzigen:") {
@@ -1011,6 +898,9 @@ function savePitch() {
     batterNumber: batter.number,
     x: game.pitchLocation.x,
     y: game.pitchLocation.y,
+    zoneHorizontal: getPitchZoneFromPoint(game.pitchLocation.x, game.pitchLocation.y).horizontal,
+    zoneVertical: getPitchZoneFromPoint(game.pitchLocation.x, game.pitchLocation.y).vertical,
+    zoneLabel: getPitchZoneFromPoint(game.pitchLocation.x, game.pitchLocation.y).label,
     pitchType: game.pitchType,
     result: game.result,
     ballsBefore: game.balls,
@@ -1102,11 +992,6 @@ function undoPitch() {
   saveLocalGame();
   updateUI();
 }
-
-
-
-
-
 
 
 function startPitcherSession(pitcherName) {
@@ -1350,31 +1235,6 @@ function formatInningsPitched(totalOuts) {
   return (Number(totalOuts || 0) / 3).toFixed(3);
 }
 
-function getPitchZone(x, y) {
-  const zoneLeft = 54;
-  const zoneRight = 92;
-  const zoneTop = 18;
-  const zoneBottom = 72;
-
-  const insideZone = x >= zoneLeft && x <= zoneRight && y >= zoneTop && y <= zoneBottom;
-
-  if (!insideZone) {
-    return { horizontal: "Wijd", vertical: "Wijd", label: "Wijd" };
-  }
-
-  const zoneWidth = zoneRight - zoneLeft;
-  const zoneHeight = zoneBottom - zoneTop;
-
-  let horizontal = "Midden";
-  if (x < zoneLeft + zoneWidth / 3) horizontal = "Inside";
-  else if (x > zoneLeft + (zoneWidth / 3) * 2) horizontal = "Outside";
-
-  let vertical = "Midden";
-  if (y < zoneTop + zoneHeight / 3) vertical = "Hoog";
-  else if (y > zoneTop + (zoneHeight / 3) * 2) vertical = "Laag";
-
-  return { horizontal, vertical, label: `${horizontal} ${vertical}` };
-}
 
 async function sendGameStatusToGoogleSheet() {
   if (!game.appsScriptUrl) {
@@ -1452,15 +1312,6 @@ function setSyncStatus(message, type = "") {
   status.textContent = message;
   status.className = `sync-status ${type}`;
 }
-
-
-
-
-
-
-
-
-
 
 
 function getStoredGames() {
@@ -1598,32 +1449,32 @@ function convertSheetRowsToGames(payload) {
     }
 
     const pitch = {
-      timestamp: get(record, ["Timestamp", "timestamp"], 0),
+      timestamp: get(record, ["Timestamp", "timestamp"], 1),
       gameId,
       date,
       startTime,
       opponent,
       pitcherName,
-      batterOrder: Number(get(record, ["Batter Order", "batterOrder"], 6) || 0),
-      batterName: get(record, ["Slagvrouw", "batterName"], 7),
-      batterNumber: get(record, ["Rugnummer", "batterNumber"], 8),
-      x: Number(get(record, ["X", "x"], 9)),
-      y: Number(get(record, ["Y", "y"], 10)),
-      zoneHorizontal: get(record, ["Zone Horizontal", "zoneHorizontal"], 11),
-      zoneVertical: get(record, ["Zone Vertical", "zoneVertical"], 12),
-      zoneLabel: get(record, ["Zone Label", "zoneLabel"], 13),
-      pitchType: get(record, ["Pitch Type", "pitchType"], 14),
-      result: get(record, ["Resultaat", "result"], 15),
-      ballsBefore: Number(get(record, ["Balls Before", "ballsBefore"], 16) || 0),
-      strikesBefore: Number(get(record, ["Strikes Before", "strikesBefore"], 17) || 0),
-      outsBefore: Number(get(record, ["Outs Before", "outsBefore"], 18) || 0),
-      firstPitch: parseBool(get(record, ["First Pitch", "firstPitch"], 19)),
-      firstPitchStrike: parseBool(get(record, ["First Pitch Strike", "firstPitchStrike"], 20)),
-      totalBalls: Number(get(record, ["Total Balls", "totalBalls"], 21) || 0),
-      totalStrikes: Number(get(record, ["Total Strikes", "totalStrikes"], 22) || 0),
-      totalOuts: Number(get(record, ["Total Outs", "totalOuts"], rowType ? 24 : 23) || 0),
-      inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
-      walk: parseBool(get(record, ["Walk", "walk"], 25))
+      batterOrder: Number(get(record, ["Batter Order", "batterOrder"], 7) || 0),
+      batterName: get(record, ["Slagvrouw", "batterName"], 8),
+      batterNumber: get(record, ["Rugnummer", "batterNumber"], 9),
+      x: Number(get(record, ["X", "x"], 10)),
+      y: Number(get(record, ["Y", "y"], 11)),
+      zoneHorizontal: get(record, ["Zone Horizontal", "zoneHorizontal"], 12),
+      zoneVertical: get(record, ["Zone Vertical", "zoneVertical"], 13),
+      zoneLabel: get(record, ["Zone Label", "zoneLabel"], 14),
+      pitchType: get(record, ["Pitch Type", "pitchType"], 15),
+      result: get(record, ["Resultaat", "result"], 16),
+      ballsBefore: Number(get(record, ["Balls Before", "ballsBefore"], 17) || 0),
+      strikesBefore: Number(get(record, ["Strikes Before", "strikesBefore"], 18) || 0),
+      outsBefore: Number(get(record, ["Outs Before", "outsBefore"], 19) || 0),
+      firstPitch: parseBool(get(record, ["First Pitch", "firstPitch"], 20)),
+      firstPitchStrike: parseBool(get(record, ["First Pitch Strike", "firstPitchStrike"], 21)),
+      totalBalls: Number(get(record, ["Total Balls", "totalBalls"], 22) || 0),
+      totalStrikes: Number(get(record, ["Total Strikes", "totalStrikes"], 23) || 0),
+      totalOuts: Number(get(record, ["Total Outs", "totalOuts"], 24) || 0),
+      inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 25),
+      walk: parseBool(get(record, ["Walk", "walk"], 26))
     };
 
     if (!games.has(gameId)) {
@@ -1683,17 +1534,11 @@ function parseBool(value) {
 }
 
 
-
-
 function loadLocalGame() {
   return null;
 }
 
 window.addEventListener("DOMContentLoaded", init);
-
-
-
-
 
 
 function handlePasswordEnter(event) {
