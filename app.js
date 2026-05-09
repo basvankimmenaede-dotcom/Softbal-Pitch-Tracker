@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqKuIfSHLqByP-pGXgANZKaAWHnh1WrUrUx_XxoSAaD51EBk0p_C07F-Q/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxioW-DGTZyuJ537C3H9zEv22yeaijzZ6I19b2F4mJiPCnytWpo-ov9SbNC9iKaTIZ5Gg/exec";
 let sitePassword = "";
 let isAuthenticated = false;
 
