@@ -1,17 +1,17 @@
 /* OG Pitching Tracker */
 
 :root {
-  --bg: #07111f;
-  --bg-2: #0b1b32;
-  --card: rgba(11, 27, 50, 0.92);
+  --bg: #f3f4f6;
+  --bg-2: #e5e7eb;
+  --card: rgba(255, 255, 255, 0.96);
   --orange: #ff7a18;
   --orange-2: #ff9b3d;
-  --blue: #123a68;
-  --text: #f8fafc;
-  --muted: #9fb3c8;
-  --line: rgba(255,255,255,.16);
-  --danger: #ff4d4d;
-  --good: #37d67a;
+  --blue: #d1d5db;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --line: rgba(31,41,55,.12);
+  --danger: #ef4444;
+  --good: #22c55e;
 }
 
 * { box-sizing: border-box; }
@@ -22,8 +22,8 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 50% 0%, rgba(255,122,24,.24), transparent 32%),
-    linear-gradient(180deg, #07111f 0%, #04070d 100%);
+    radial-gradient(circle at 50% 0%, rgba(255,122,24,.10), transparent 28%),
+    linear-gradient(180deg, #f9fafb 0%, #e5e7eb 100%);
 }
 
 .app {
@@ -39,7 +39,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 26px;
   background:
-    linear-gradient(135deg, rgba(255,122,24,.25), rgba(18,58,104,.62)),
+    linear-gradient(135deg, rgba(255,122,24,.18), rgba(255,255,255,.95)),
     var(--card);
   box-shadow: 0 20px 60px rgba(0,0,0,.38);
   overflow: hidden;
@@ -87,7 +87,7 @@ h1 {
   border-radius: 24px;
   background: var(--card);
   border: 1px solid var(--line);
-  box-shadow: 0 18px 48px rgba(0,0,0,.28);
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
 }
 
 label {
@@ -104,7 +104,7 @@ input, select {
   width: 100%;
   max-width: 100%;
   border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.08);
+  background: rgba(243,244,246,.95);
   color: var(--text);
   border-radius: 16px;
   padding: 13px 14px;
@@ -112,7 +112,7 @@ input, select {
   outline: none;
 }
 
-select option { color: #111827; }
+select option { color: white; }
 input::placeholder { color: rgba(255,255,255,.38); }
 
 .date-time-row {
@@ -157,7 +157,7 @@ input::placeholder { color: rgba(255,255,255,.38); }
   place-items: center;
   border-radius: 50%;
   background: var(--orange);
-  color: #111827;
+  color: white;
   font-weight: 950;
 }
 
@@ -167,7 +167,7 @@ button {
   padding: 14px 16px;
   font-weight: 950;
   font-size: 15px;
-  color: #111827;
+  color: white;
   background: var(--orange);
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(255,122,24,.24);
@@ -175,7 +175,7 @@ button {
 
 button.secondary {
   color: var(--text);
-  background: rgba(255,255,255,.10);
+  background: #f3f4f6;
   box-shadow: none;
   border: 1px solid var(--line);
 }
@@ -200,7 +200,7 @@ button.good { background: var(--good); color: #072214; }
 .stat {
   padding: 12px;
   border-radius: 18px;
-  background: rgba(255,255,255,.08);
+  background: rgba(243,244,246,.95);
   text-align: center;
   border: 1px solid var(--line);
 }
@@ -254,7 +254,7 @@ button.good { background: var(--good); color: #072214; }
   gap: 10px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,.08);
+  background: rgba(243,244,246,.95);
   border: 1px solid rgba(255,255,255,.12);
   font-size: 11px;
   font-weight: 900;
@@ -296,7 +296,7 @@ button.good { background: var(--good); color: #072214; }
 .compact-stat {
   padding: 8px 9px;
   border-radius: 14px;
-  background: rgba(255,255,255,.08);
+  background: rgba(243,244,246,.95);
   border: 1px solid var(--line);
 }
 
@@ -679,7 +679,7 @@ button.good { background: var(--good); color: #072214; }
   display: block;
   text-align: left;
   color: var(--text);
-  background: rgba(255,255,255,.10);
+  background: #f3f4f6;
   border: 1px solid var(--line);
   box-shadow: none;
 }
