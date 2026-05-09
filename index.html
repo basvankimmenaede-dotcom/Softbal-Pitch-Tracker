@@ -184,10 +184,41 @@
         <label for="previousGamesSearch">Zoek vorige games</label>
         <input id="previousGamesSearch" placeholder="Datum, tegenstander of pitcher" oninput="renderPreviousGames()" />
 
-        <label>Afgesloten pitching appearances</label>
+        <label>Game overview</label>
         <div id="previousGamesList" class="unfinished-list"></div>
 
         <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+      </div>
+    </section>
+
+
+    <section id="previousGameOverviewScreen" class="screen">
+      <div class="card">
+        <h2 id="overviewGameTitle" class="overview-title">Game overview</h2>
+        <p id="overviewGameMeta" class="home-subtitle"></p>
+
+        <div class="stats-grid overview-grid">
+          <div class="stat"><small>Pitches</small><strong id="overviewTotalPitches">0</strong></div>
+          <div class="stat"><small>Strikes</small><strong id="overviewTotalStrikes">0</strong></div>
+          <div class="stat"><small>Balls</small><strong id="overviewTotalBalls">0</strong></div>
+          <div class="stat"><small>Outs</small><strong id="overviewTotalOuts">0</strong></div>
+          <div class="stat"><small>IP</small><strong id="overviewTotalIP">0.000</strong></div>
+          <div class="stat"><small>FPS %</small><strong id="overviewFPSPercent">0%</strong></div>
+          <div class="stat"><small>Hits tegen</small><strong id="overviewHits">0</strong></div>
+          <div class="stat"><small>Walks</small><strong id="overviewWalks">0</strong></div>
+          <div class="stat"><small>S/B</small><strong id="overviewSBRatio">0.00</strong></div>
+        </div>
+
+        <label>Pitchers in deze game</label>
+        <div id="overviewPitchersList" class="overview-list"></div>
+
+        <label>Resultaten</label>
+        <div id="overviewResultsList" class="overview-list"></div>
+
+        <div class="actions">
+          <button class="secondary" onclick="showPreviousGames()">Terug naar vorige games</button>
+          <button onclick="editOverviewGame()">Game wijzigen</button>
+        </div>
       </div>
     </section>
 
@@ -317,7 +348,8 @@
 
       <section class="game-controls-card">
         <h3>Wedstrijd bediening</h3>
-        <div class="actions">
+        <div class="actions game-controls-actions">
+          <button class="secondary" onclick="previousBatter()">Vorige slagvrouw</button>
           <button class="secondary" onclick="openPitcherModal()">Wissel pitcher</button>
           <button class="secondary" onclick="openSubModal()">Wissel slagvrouw</button>
           <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>

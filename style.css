@@ -1162,3 +1162,74 @@ button.danger {
 .hero h1 {
   text-align: center;
 }
+
+
+.game-controls-actions {
+  grid-template-columns: 1fr;
+}
+
+.game-controls-actions button:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 420px) {
+  .game-controls-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+.overview-title {
+  text-align: center;
+  margin: 0 0 6px;
+  font-size: 30px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+
+.overview-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.overview-list {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+
+.overview-row {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(243,244,246,.95);
+  border: 1px solid var(--line);
+}
+
+.overview-row strong {
+  display: block;
+  color: var(--orange);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.overview-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.overview-row.compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.overview-row.compact strong {
+  margin-bottom: 0;
+}
+
+.overview-row.compact span {
+  color: var(--text);
+  font-size: 16px;
+}

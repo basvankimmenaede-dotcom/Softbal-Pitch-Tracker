@@ -195,6 +195,7 @@ const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
 
 let sheetSyncLoaded = false;
 let sheetGames = [];
+let selectedOverviewGameId = "";
 
 let game = {
   opponent: "",
@@ -772,70 +773,144 @@ function renderPreviousGames() {
   if (!list) return;
 
   const query = (input?.value || "").trim().toLowerCase();
-  let rows = [];
 
-  getStoredGames()
+  let games = getStoredGames()
     .filter(g => Boolean(g.closed))
-    .forEach(g => {
+    .map(g => {
       const pitches = g.pitches || [];
+      const stats = calculateGameStats({ ...g, pitches });
       const pitchers = [...new Set(pitches.map(p => p.pitcherName).filter(Boolean))];
+      const hits = pitches.filter(p => p.result === "HIT").length;
+      const fpsPercent = stats.totalBatters === 0 ? "0%" : `${Math.round((stats.fps / stats.totalBatters) * 100)}%`;
 
-      pitchers.forEach(pitcherName => {
-        const pitcherPitches = pitches.filter(p => p.pitcherName === pitcherName);
-        const strikes = pitcherPitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
-        const balls = pitcherPitches.filter(p => p.result === "Ball").length;
-        const outs = getPitcherOutsFromPitches(pitcherPitches);
-        const fps = pitcherPitches.filter(p => p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
-        const batters = pitcherPitches.filter(p => p.firstPitch).length;
-
-        rows.push({
-          gameId: g.gameId,
-          date: g.date || "",
-          startTime: g.startTime || "",
-          opponent: g.opponent || "Onbekende tegenstander",
-          pitcherName,
-          pitches: pitcherPitches.length,
-          strikes,
-          balls,
-          outs,
-          ip: formatInningsPitched(outs),
-          fps,
-          batters
-        });
-      });
+      return {
+        ...g,
+        date: g.date || "",
+        startTime: g.startTime || "",
+        opponent: g.opponent || "Onbekende tegenstander",
+        pitchers,
+        totalPitches: stats.totalPitches,
+        strikes: stats.strikes,
+        balls: stats.balls,
+        outs: stats.outs,
+        ip: stats.ip,
+        fpsPercent,
+        walks: stats.walks,
+        hits
+      };
     });
 
   if (query) {
-    rows = rows.filter(row =>
-      String(row.date).toLowerCase().includes(query) ||
-      String(row.opponent).toLowerCase().includes(query) ||
-      String(row.pitcherName).toLowerCase().includes(query) ||
-      String(row.startTime).toLowerCase().includes(query)
+    games = games.filter(g =>
+      String(g.date).toLowerCase().includes(query) ||
+      String(g.opponent).toLowerCase().includes(query) ||
+      String(g.startTime).toLowerCase().includes(query) ||
+      g.pitchers.some(p => String(p).toLowerCase().includes(query))
     );
   }
 
-  rows.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  games.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
 
-  if (!rows.length) {
-    list.innerHTML = `<p class="small-note">Geen afgesloten pitching appearances gevonden.</p>`;
+  if (!games.length) {
+    list.innerHTML = `<p class="small-note">Geen afgesloten games gevonden.</p>`;
     return;
   }
 
-  list.innerHTML = rows.map(row => `
-    <button class="game-list-button" onclick="loadArchivedGame('${row.gameId}')">
-      <strong>${row.pitcherName}</strong>
-      <small>${row.date || "-"} ${row.startTime || ""} · vs ${row.opponent}</small>
+  list.innerHTML = games.map(g => `
+    <button class="game-list-button" onclick="showPreviousGameOverview('${g.gameId}')">
+      <strong>${g.opponent}</strong>
+      <small>${formatDateTimeCompact(g.date, g.startTime)} · ${g.pitchers.join(", ") || "Pitcher onbekend"}</small>
       <div class="game-meta-row">
-        <div class="game-meta-pill">${row.pitches} P</div>
-        <div class="game-meta-pill">${row.strikes} S</div>
-        <div class="game-meta-pill">${row.balls} B</div>
-        <div class="game-meta-pill">${row.outs} Outs</div>
-        <div class="game-meta-pill">${row.ip} IP</div>
-        <div class="game-meta-pill">FPS ${row.fps}/${row.batters}</div>
+        <div class="game-meta-pill">${g.totalPitches} P</div>
+        <div class="game-meta-pill">${g.strikes} S</div>
+        <div class="game-meta-pill">${g.balls} B</div>
+        <div class="game-meta-pill">${g.outs} Outs</div>
+        <div class="game-meta-pill">${g.ip} IP</div>
+        <div class="game-meta-pill">FPS ${g.fpsPercent}</div>
       </div>
     </button>
   `).join("");
 }
+
+
+function getResultBreakdown(pitches) {
+  return resultOptions.map(result => ({
+    result,
+    count: pitches.filter(p => p.result === result).length
+  })).filter(item => item.count > 0);
+}
+
+function showPreviousGameOverview(gameId) {
+  selectedOverviewGameId = gameId;
+  const selected = getStoredGames().find(g => g.gameId === gameId);
+
+  if (!selected) {
+    alert("Deze game kon niet worden geladen.");
+    return;
+  }
+
+  const pitches = selected.pitches || [];
+  const stats = calculateGameStats({ ...selected, pitches });
+  const hits = pitches.filter(p => p.result === "HIT").length;
+  const fpsPercent = stats.totalBatters === 0 ? "0%" : `${Math.round((stats.fps / stats.totalBatters) * 100)}%`;
+
+  document.getElementById("overviewGameTitle").textContent = selected.opponent || "Onbekende tegenstander";
+  document.getElementById("overviewGameMeta").textContent =
+    `${formatDateTimeCompact(selected.date, selected.startTime)} · ${pitches.length} pitches`;
+
+  document.getElementById("overviewTotalPitches").textContent = stats.totalPitches;
+  document.getElementById("overviewTotalStrikes").textContent = stats.strikes;
+  document.getElementById("overviewTotalBalls").textContent = stats.balls;
+  document.getElementById("overviewTotalOuts").textContent = stats.outs;
+  document.getElementById("overviewTotalIP").textContent = stats.ip;
+  document.getElementById("overviewFPSPercent").textContent = fpsPercent;
+  document.getElementById("overviewHits").textContent = hits;
+  document.getElementById("overviewWalks").textContent = stats.walks;
+  document.getElementById("overviewSBRatio").textContent = stats.sbRatio;
+
+  const pitchers = [...new Set(pitches.map(p => p.pitcherName).filter(Boolean))];
+  const pitchersList = document.getElementById("overviewPitchersList");
+
+  pitchersList.innerHTML = pitchers.length
+    ? pitchers.map(pitcherName => {
+        const pitcherPitches = pitches.filter(p => p.pitcherName === pitcherName);
+        const pitcherStats = calculateGameStats({ ...selected, pitches: pitcherPitches });
+        const pitcherFpsPercent = pitcherStats.totalBatters === 0
+          ? "0%"
+          : `${Math.round((pitcherStats.fps / pitcherStats.totalBatters) * 100)}%`;
+
+        return `
+          <div class="overview-row">
+            <strong>${pitcherName}</strong>
+            <span>${pitcherStats.totalPitches} P · ${pitcherStats.strikes} S · ${pitcherStats.balls} B · ${pitcherStats.outs} Outs · ${pitcherStats.ip} IP · FPS ${pitcherFpsPercent}</span>
+          </div>
+        `;
+      }).join("")
+    : `<p class="small-note">Geen pitchers gevonden.</p>`;
+
+  const resultsList = document.getElementById("overviewResultsList");
+  const breakdown = getResultBreakdown(pitches);
+
+  resultsList.innerHTML = breakdown.length
+    ? breakdown.map(item => `
+        <div class="overview-row compact">
+          <strong>${item.result}</strong>
+          <span>${item.count}</span>
+        </div>
+      `).join("")
+    : `<p class="small-note">Geen resultaten gevonden.</p>`;
+
+  setActiveScreen("previousGameOverviewScreen");
+}
+
+function editOverviewGame() {
+  if (!selectedOverviewGameId) {
+    alert("Geen game geselecteerd.");
+    return;
+  }
+  loadArchivedGame(selectedOverviewGameId);
+}
+
 
 function loadArchivedGame(gameId) {
   if (!requireEditPassword("Deze vorige game is afgesloten. Voer wachtwoord in om te wijzigen:")) {
@@ -1016,6 +1091,20 @@ function applyResult(result) {
     addOut(false);
     nextBatter(false);
   }
+}
+
+
+function previousBatter(shouldSave = true) {
+  const lineupSize = Number(game.activeLineupSize || 9);
+  game.batterIndex = (game.batterIndex - 1 + lineupSize) % lineupSize;
+  resetCount(false);
+  game.pitchLocation = null;
+
+  const dot = document.querySelector(".pitch-dot");
+  if (dot) dot.remove();
+
+  if (shouldSave) saveLocalGame();
+  updateUI();
 }
 
 function nextBatter(shouldSave = true) {
