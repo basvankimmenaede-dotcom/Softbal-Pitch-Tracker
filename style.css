@@ -602,3 +602,22 @@ button.good { background: var(--good); color: #072214; }
   height: auto;
   display: block;
 }
+
+
+#loginScreen .card button {
+  width: 100%;
+  display: block;
+  margin-top: 18px;
+}
+
+#loginScreen .card {
+  text-align: center;
+}
+
+#loginScreen label {
+  text-align: left;
+}
+
+#sitePasswordInput {
+  margin: 0 auto;
+}
