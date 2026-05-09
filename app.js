@@ -18,6 +18,7 @@ function getReadableZone(p) {
   const x = Number(p.x || 50);
   const y = Number(p.y || 50);
 
+  // Buiten strikezone = wijd
   if (
     x < STRIKE_ZONE.left ||
     x > STRIKE_ZONE.right ||
@@ -34,16 +35,22 @@ function getReadableZone(p) {
   const relativeY = (y - STRIKE_ZONE.top) / zoneHeight;
 
   let horizontal = "Middle";
-  if (relativeX <= 0.25) horizontal = "Inside";
-  else if (relativeX >= 0.75) horizontal = "Outside";
+  if (relativeX <= 0.25) {
+    horizontal = "Inside";
+  } else if (relativeX >= 0.75) {
+    horizontal = "Outside";
+  }
 
   let vertical = "Midden";
-  if (relativeY <= 0.25) vertical = "Hoog";
-  else if (relativeY >= 0.75) vertical = "Laag";
+  if (relativeY <= 0.25) {
+    vertical = "Hoog";
+  } else if (relativeY >= 0.75) {
+    vertical = "Laag";
+  }
 
-  if (horizontal === "Middle" && vertical === "Midden") return "Middle-middle";
-  if (horizontal === "Middle") return vertical;
-  if (vertical === "Midden") return horizontal;
+  if (horizontal === "Middle" && vertical === "Midden") {
+    return "Middle-middle";
+  }
 
   return `${vertical} ${horizontal}`;
 }
