@@ -1,0 +1,20 @@
+/* OG Pitching Tracker Styles */
+
+:root {
+  --orange: #ff7a18;
+  --orange-2: #ff9b3d;
+  --bg: #07111f;
+  --card: #0f1d31;
+  --line: rgba(255,255,255,.12);
+  --text: #f7fafc;
+  --muted: #94a3b8;
+  --good: #37d67a;
+  --danger: #ff4d4d;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, sans-serif;
+}
