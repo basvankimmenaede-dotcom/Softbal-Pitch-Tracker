@@ -238,6 +238,8 @@
     <section id="teamsScreen" class="screen">
       <div class="card">
         <label for="teamOpponentSelect">Team / tegenstander</label><p class="small-note">Teams worden opgeslagen in databasepagina: Tegenstanders</p><div id="teamsSyncStatus" class="sync-status hidden"></div>
+        <button class="secondary" onclick="debugTegenstandersConnection()">Test database koppeling</button>
+        <pre id="teamsDebugOutput" class="debug-output hidden"></pre>
         <select id="teamOpponentSelect" onchange="handleTeamSelectChange()">
           <option value="">Kies team</option>
         </select>

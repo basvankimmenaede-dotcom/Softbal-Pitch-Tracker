@@ -222,6 +222,7 @@ let savedTeams = {};
 
 
 
+
 function convertTegenstandersRowsToTeams(payload) {
   const teams = {};
 
@@ -232,9 +233,19 @@ function convertTegenstandersRowsToTeams(payload) {
     : [];
 
   rows.forEach(row => {
-    const teamName = String(row[0] || "").trim();
-    const playerName = String(row[1] || "").trim();
-    const playerNumber = String(row[2] || "").trim();
+    let teamName = "";
+    let playerName = "";
+    let playerNumber = "";
+
+    if (Array.isArray(row)) {
+      teamName = String(row[0] || "").trim();
+      playerName = String(row[1] || "").trim();
+      playerNumber = String(row[2] || "").trim();
+    } else if (row && typeof row === "object") {
+      teamName = String(row.Team || row.Tegenstander || row.team || row.tegenstander || "").trim();
+      playerName = String(row.Naam || row.Speelster || row.Slagvrouw || row.name || "").trim();
+      playerNumber = String(row.Rugnummer || row.Nummer || row.number || "").trim();
+    }
 
     if (!teamName || (!playerName && !playerNumber)) return;
 
@@ -271,7 +282,7 @@ async function loadTeamsFromSheet() {
     return savedTeams;
   } catch (error) {
     console.error("Kon teams niet laden", error);
-    setTeamsSyncStatus("Kon teams niet laden uit Tegenstanders. Controleer deployment en rechten.", "error");
+    setTeamsSyncStatus(`Kon teams niet laden: ${error.message}`, "error");
     return {};
   }
 }
@@ -290,14 +301,14 @@ async function postTeamMutationToSheet(action, teamName, player = {}, index = nu
       params.set("index", String(index));
     }
 
-    await loadJsonp(`${APPS_SCRIPT_URL}?${params.toString()}`);
-    await loadTeamsFromSheet();
+    const payload = await loadJsonp(`${APPS_SCRIPT_URL}?${params.toString()}`);
+    savedTeams = convertTegenstandersRowsToTeams(payload);
 
-    setTeamsSyncStatus("Tegenstanders opgeslagen.", "ok");
+    setTeamsSyncStatus("Tegenstanders opgeslagen en opnieuw geladen.", "ok");
     return true;
   } catch (error) {
     console.error("Kon tegenstander niet opslaan", error);
-    setTeamsSyncStatus("Kon Tegenstanders niet opslaan. Controleer Apps Script deployment.", "error");
+    setTeamsSyncStatus(`Kon Tegenstanders niet opslaan: ${error.message}`, "error");
     return false;
   }
 }
@@ -314,15 +325,41 @@ async function removeTeamPlayerFromSheet(teamName, index) {
   return postTeamMutationToSheet("remove", teamName, {}, index);
 }
 
+async function debugTegenstandersConnection() {
+  const output = document.getElementById("teamsDebugOutput");
+  if (output) {
+    output.classList.remove("hidden");
+    output.textContent = "Database koppeling testen...";
+  }
 
+  try {
+    const payload = await loadJsonp(APPS_SCRIPT_URL);
+    const rows = Array.isArray(payload?.tegenstandersRows) ? payload.tegenstandersRows : [];
+    const headers = Array.isArray(payload?.tegenstandersHeaders) ? payload.tegenstandersHeaders : [];
+    const teams = convertTegenstandersRowsToTeams(payload);
 
-function setTeamsSyncStatus(message, type = "") {
-  const status = document.getElementById("teamsSyncStatus");
-  if (!status) return;
-  status.textContent = message;
-  status.className = `sync-status ${type}`;
-  status.classList.remove("hidden");
+    const debug = {
+      appsScriptUrl: APPS_SCRIPT_URL,
+      hasTegenstandersHeaders: Array.isArray(payload?.tegenstandersHeaders),
+      tegenstandersHeaders: headers,
+      tegenstandersRowCount: rows.length,
+      firstTegenstandersRows: rows.slice(0, 5),
+      loadedTeams: Object.keys(teams),
+      loadedTeamsObject: teams
+    };
+
+    savedTeams = teams;
+    populateTeamSelect();
+    renderTeamPlayers();
+
+    if (output) output.textContent = JSON.stringify(debug, null, 2);
+    setTeamsSyncStatus(`Test klaar: ${Object.keys(teams).length} teams, ${rows.length} speelsters.`, "ok");
+  } catch (error) {
+    if (output) output.textContent = `FOUT:\n${error.message}\n\nControleer of de web-app opnieuw is gedeployed en toegankelijk is voor Anyone.`;
+    setTeamsSyncStatus(`Test mislukt: ${error.message}`, "error");
+  }
 }
+
 
 function normalizeTeamName(name) {
   return String(name || "").trim();

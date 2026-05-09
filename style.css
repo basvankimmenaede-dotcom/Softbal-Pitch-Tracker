@@ -1349,3 +1349,16 @@ button.danger {
 #lineupPickerSelect option:disabled {
   color: #9ca3af;
 }
+
+.debug-output {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(17,24,39,.08);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  text-align: left;
+}
