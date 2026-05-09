@@ -1,3 +1,4 @@
+const OG_FIXED_APP_VERSION = "2026-05-09-auth-syntax-fix";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqKuIfSHLqByP-pGXgANZKaAWHnh1WrUrUx_XxoSAaD51EBk0p_C07F-Q/exec";
 
 const STRIKE_ZONE = {
@@ -154,12 +155,6 @@ function showHome() {
 function goHomeIfAuthenticated() {
   showHome();
 }
-
-async 
-
-
-async 
-
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
