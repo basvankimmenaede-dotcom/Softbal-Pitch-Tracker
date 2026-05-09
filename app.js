@@ -628,7 +628,9 @@ async function confirmAddBatter() {
     number: number || "?"
   });
 
-  game.activeLineupSize = Math.max(Number(game.activeLineupSize || 9), game.lineup.length);
+  // Extra toegevoegde speelsters komen op de bench.
+  // Alleen slagposities 1 t/m 9 zijn actief totdat je via Wissel slagvrouw iemand inbrengt.
+  game.activeLineupSize = 9;
 
   const teamName = normalizeTeamName(game.opponent);
   if (teamName) {
@@ -1779,7 +1781,7 @@ function applyResult(result) {
 
 
 function previousBatter(shouldSave = true) {
-  const lineupSize = Number(game.activeLineupSize || 9);
+  const lineupSize = Math.min(Number(game.activeLineupSize || 9), 9);
   game.batterIndex = (game.batterIndex - 1 + lineupSize) % lineupSize;
   resetCount(false);
   game.pitchLocation = null;
@@ -1792,7 +1794,7 @@ function previousBatter(shouldSave = true) {
 }
 
 function nextBatter(shouldSave = true) {
-  game.batterIndex = (game.batterIndex + 1) % Number(game.activeLineupSize || 9);
+  game.batterIndex = (game.batterIndex + 1) % Math.min(Number(game.activeLineupSize || 9), 9);
   resetCount(false);
   if (shouldSave) saveLocalGame();
   updateUI();
@@ -1903,8 +1905,8 @@ function openSubModal() {
   const activeSelect = document.getElementById("activeSubSelect");
   const benchSelect = document.getElementById("benchSubSelect");
 
-  const activePlayers = game.lineup.filter(player => player.order <= Number(game.activeLineupSize || 9));
-  const benchPlayers = game.lineup.filter(player => player.order > Number(game.activeLineupSize || 9));
+  const activePlayers = game.lineup.filter(player => Number(player.order) <= 9);
+  const benchPlayers = game.lineup.filter(player => Number(player.order) > 9);
 
   activeSelect.innerHTML = activePlayers.map((player, index) =>
     `<option value="${index}">${player.order}. ${player.name} #${player.number}</option>`
