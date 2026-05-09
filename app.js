@@ -10,6 +10,44 @@ const STRIKE_ZONE = {
   bottom: 72
 };
 
+
+function formatDateTimeCompact(dateValue, timeValue) {
+  const rawDate = String(dateValue || "").trim();
+  const rawTime = String(timeValue || "").trim();
+
+  let day = "--";
+  let month = "--";
+
+  if (rawDate) {
+    const isoMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+    if (isoMatch) {
+      month = isoMatch[2];
+      day = isoMatch[3];
+    } else {
+      const parsed = new Date(rawDate);
+      if (!Number.isNaN(parsed.getTime())) {
+        day = String(parsed.getDate()).padStart(2, "0");
+        month = String(parsed.getMonth() + 1).padStart(2, "0");
+      }
+    }
+  }
+
+  let hourMinute = "--:--";
+
+  if (rawTime) {
+    const timeMatch = rawTime.match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      const hour = timeMatch[1].padStart(2, "0");
+      const minute = timeMatch[2];
+      hourMinute = `${hour}:${minute}`;
+    }
+  }
+
+  return `${day}-${month} ${hourMinute}`;
+}
+
+
 function getReadableZone(p) {
   const x = Number(p.x || 50);
   const y = Number(p.y || 50);
@@ -400,7 +438,7 @@ function renderPitcherStats() {
     const s = calculateGameStats(g);
     return `
       <tr>
-        <td>${g.date || "-"}</td>
+        <td>${formatDateTimeCompact(g.date, g.startTime)}</td>
         <td>${g.opponent || "-"}</td>
         <td>${s.totalPitches}</td>
         <td>${s.strikes}</td>
@@ -566,7 +604,7 @@ function renderBatterSearch() {
 
   body.innerHTML = matches.slice().reverse().map(p => `
     <tr>
-      <td>${p.gameDate || "-"}</td>
+      <td>${formatDateTimeCompact(p.gameDate, p.startTime)}</td>
       <td>${p.gameOpponent || "-"}</td>
       <td>${p.pitcherName || "-"}</td>
       <td>${p.pitchType || "-"}</td>
