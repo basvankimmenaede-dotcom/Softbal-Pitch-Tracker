@@ -100,7 +100,7 @@
       <div class="card">
         <label for="batterSearchOpponent">Tegenstander</label>
         <select id="batterSearchOpponent" onchange="populateBatterPlayerFilter(); renderBatterSearch()">
-          <option value="">Alle tegenstanders</option>
+          <option value="">Kies tegenstander</option>
         </select>
 
         <label for="batterSearchPlayer">Slagvrouw</label>
@@ -161,9 +161,9 @@
     <section id="previousGamesScreen" class="screen">
       <div class="card">
         <label for="previousGamesSearch">Zoek vorige games</label>
-        <input id="previousGamesSearch" placeholder="Datum, tegenstander of pitcher" oninput="renderPreviousGames()" /
+        <input id="previousGamesSearch" placeholder="Datum, tegenstander of pitcher" oninput="renderPreviousGames()" />
 
-        <label>Afgesloten games</label>
+        <label>Afgesloten pitching appearances</label>
         <div id="previousGamesList" class="unfinished-list"></div>
 
         <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>

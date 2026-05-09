@@ -98,7 +98,7 @@ function getPitcherGames(pitcherName) {
         ...g,
         pitcherName,
         pitches: pitcherPitches,
-        totalOuts: Math.max(0, ...pitcherPitches.map(p => Number(p.totalOuts || 0))),
+        totalOuts: getPitcherOutsFromPitches(pitcherPitches),
         totalBalls: pitcherPitches.filter(p => p.result === "Ball").length,
         totalStrikes: pitcherPitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length,
         firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length
@@ -111,6 +111,20 @@ function countPitcherOutsFromPitches(pitches) {
   return pitches.filter(p => p.result === "Out" || (p.result !== "Out" && false)).length;
 }
 
+
+function getPitcherOutsFromPitches(pitches) {
+  if (!pitches || !pitches.length) return 0;
+
+  const totals = pitches
+    .map(p => Number(p.totalOuts || 0))
+    .filter(n => !Number.isNaN(n));
+
+  if (totals.length) return Math.max(...totals);
+
+  // Fallback voor oudere data zonder totalOuts.
+  return pitches.filter(p => p.result === "Out").length;
+}
+
 function calculateGameStats(g) {
   const pitches = g.pitches || [];
   const totalPitches = pitches.length;
@@ -120,7 +134,7 @@ function calculateGameStats(g) {
   ).length;
 
   const balls = pitches.filter(p => p.result === "Ball").length;
-  const outs = Number(g.totalOuts || Math.max(0, ...pitches.map(p => Number(p.totalOuts || 0))));
+  const outs = Number(g.totalOuts || getPitcherOutsFromPitches(pitches));
 
   const fps = pitches.filter(p =>
     p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)
@@ -421,9 +435,35 @@ function renderBatterSearch() {
 
 
 function getReadableZone(p) {
-  if (p.zoneLabel) return p.zoneLabel;
-  if (p.x != null && p.y != null) return getPitchZone(Number(p.x), Number(p.y)).label;
-  return "-";
+  const x = Number(p.x || 50);
+  const y = Number(p.y || 50);
+
+  // Buiten strikezone
+  if (x < 28 || x > 72 || y < 18 || y > 82) {
+    return "Wijd";
+  }
+
+  let horizontal = "";
+  let vertical = "";
+
+  // Horizontal finer tuning
+  if (x < 40) horizontal = "Inside";
+  else if (x > 60) horizontal = "Outside";
+  else horizontal = "Middle";
+
+  // Vertical finer tuning
+  if (y < 38) vertical = "Hoog";
+  else if (y > 62) vertical = "Laag";
+  else vertical = "Midden";
+
+  if (horizontal === "Middle" && vertical === "Midden") {
+    return "Middle-middle";
+  }
+
+  if (horizontal === "Middle") return vertical;
+  if (vertical === "Midden") return horizontal;
+
+  return `${vertical} ${horizontal}`;
 }
 
 
@@ -582,47 +622,69 @@ function renderPreviousGames() {
 
   const query = (input?.value || "").trim().toLowerCase();
 
-  let games = getStoredGames().filter(g => Boolean(g.closed));
+  let rows = [];
+
+  getStoredGames()
+    .filter(g => Boolean(g.closed))
+    .forEach(g => {
+      const pitches = g.pitches || [];
+      const pitchers = [...new Set(pitches.map(p => p.pitcherName).filter(Boolean))];
+
+      pitchers.forEach(pitcherName => {
+        const pitcherPitches = pitches.filter(p => p.pitcherName === pitcherName);
+        const strikes = pitcherPitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
+        const balls = pitcherPitches.filter(p => p.result === "Ball").length;
+        const outs = getPitcherOutsFromPitches(pitcherPitches);
+        const fps = pitcherPitches.filter(p => p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
+        const batters = pitcherPitches.filter(p => p.firstPitch).length;
+
+        rows.push({
+          gameId: g.gameId,
+          date: g.date || "",
+          startTime: g.startTime || "",
+          opponent: g.opponent || "Onbekende tegenstander",
+          pitcherName,
+          pitches: pitcherPitches.length,
+          strikes,
+          balls,
+          outs,
+          ip: formatInningsPitched(outs),
+          fps,
+          batters
+        });
+      });
+    });
 
   if (query) {
-    games = games.filter(g =>
-      String(g.date || "").toLowerCase().includes(query) ||
-      String(g.opponent || "").toLowerCase().includes(query) ||
-      String(g.pitcherName || "").toLowerCase().includes(query) ||
-      String(g.startTime || "").toLowerCase().includes(query)
+    rows = rows.filter(row =>
+      String(row.date).toLowerCase().includes(query) ||
+      String(row.opponent).toLowerCase().includes(query) ||
+      String(row.pitcherName).toLowerCase().includes(query) ||
+      String(row.startTime).toLowerCase().includes(query)
     );
   }
 
-  games.sort((a, b) => String(b.closedAt || b.date || "").localeCompare(String(a.closedAt || a.date || "")));
+  rows.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
 
-  if (!games.length) {
-    list.innerHTML = `<p class="small-note">Geen afgesloten games gevonden.</p>`;
+  if (!rows.length) {
+    list.innerHTML = `<p class="small-note">Geen afgesloten pitching appearances gevonden.</p>`;
     return;
   }
 
-  list.innerHTML = games.map(g => {
-    const pitches = g.pitches || [];
-    const strikes = pitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
-    const balls = pitches.filter(p => p.result === "Ball").length;
-    const outs = Number(g.totalOuts || Math.max(0, ...pitches.map(p => Number(p.totalOuts || 0))));
-    const pitcherNames = [...new Set(pitches.map(p => p.pitcherName).filter(Boolean))];
-    const pitcherText = pitcherNames.length ? pitcherNames.join(", ") : (g.pitcherName || "Pitcher onbekend");
-
-    return `
-      <button class="game-list-button" onclick="loadArchivedGame('${g.gameId}')">
-        <strong>${g.opponent || "Onbekende tegenstander"}</strong>
-        <small>${g.date || "-"} ${g.startTime || ""} · ${pitcherText}</small>
-        <div class="game-meta-row">
-          <div class="game-meta-pill">${pitches.length} P</div>
-          <div class="game-meta-pill">${strikes} S</div>
-          <div class="game-meta-pill">${balls} B</div>
-          <div class="game-meta-pill">${outs} Outs</div>
-          <div class="game-meta-pill">${formatInningsPitched(outs)} IP</div>
-          <div class="game-meta-pill">Afgesloten</div>
-        </div>
-      </button>
-    `;
-  }).join("");
+  list.innerHTML = rows.map(row => `
+    <button class="game-list-button" onclick="loadArchivedGame('${row.gameId}')">
+      <strong>${row.pitcherName}</strong>
+      <small>${row.date || "-"} ${row.startTime || ""} · vs ${row.opponent}</small>
+      <div class="game-meta-row">
+        <div class="game-meta-pill">${row.pitches} P</div>
+        <div class="game-meta-pill">${row.strikes} S</div>
+        <div class="game-meta-pill">${row.balls} B</div>
+        <div class="game-meta-pill">${row.outs} Outs</div>
+        <div class="game-meta-pill">${row.ip} IP</div>
+        <div class="game-meta-pill">FPS ${row.fps}/${row.batters}</div>
+      </div>
+    </button>
+  `).join("");
 }
 
 function loadArchivedGame(gameId) {
@@ -1006,6 +1068,11 @@ function resetGame() {
   showHome();
 }
 
+function getActivePitcherPitchCount() {
+  if (!game.pitcherName) return 0;
+  return (game.pitches || []).filter(p => p.pitcherName === game.pitcherName).length;
+}
+
 function updateUI() {
   game.totalBalls = Number(game.totalBalls || 0);
   game.totalStrikes = Number(game.totalStrikes || 0);
@@ -1018,7 +1085,7 @@ function updateUI() {
   document.getElementById("balls").textContent = game.totalBalls;
   document.getElementById("totalStrikes").textContent = game.totalStrikes;
   document.getElementById("outs").textContent = game.totalOuts;
-  document.getElementById("totalPitches").textContent = game.pitches.length;
+  document.getElementById("totalPitches").textContent = getActivePitcherPitchCount();
   document.getElementById("fpsCount").textContent = game.firstPitchStrikes;
   document.getElementById("inningsPitched").textContent = formatInningsPitched(game.totalOuts);
   const activePitcherLabel = document.getElementById("activePitcherLabel");
@@ -1126,7 +1193,7 @@ async function sendGameStatusToGoogleSheet() {
         totalStrikes: game.totalStrikes,
         totalOuts: game.totalOuts,
         inningsPitched: formatInningsPitched(game.totalOuts),
-        totalPitches: game.pitches?.length || 0,
+        totalPitches: getActivePitcherPitchCount(),
         firstPitchStrikes: game.firstPitchStrikes || 0
       })
     });
