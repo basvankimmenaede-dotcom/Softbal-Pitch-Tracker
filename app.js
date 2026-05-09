@@ -145,13 +145,6 @@ function goHomeIfAuthenticated() {
 
 // OG Pitching Tracker
 
-
-async 
-
-
-async 
-
-
 function showLoginScreen() {
   document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
   const login = document.getElementById("loginScreen");
