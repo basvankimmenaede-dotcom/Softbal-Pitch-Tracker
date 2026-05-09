@@ -558,7 +558,7 @@ function renderBatterSearch() {
     document.getElementById("batterSearchBalls").textContent = "0";
     document.getElementById("batterSearchStrikes").textContent = "0";
     document.getElementById("batterSearchGames").textContent = "0";
-    body.innerHTML = `<tr><td colspan="6">Kies een tegenstander en slagvrouw.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7">Kies een tegenstander en slagvrouw.</td></tr>`;
     return;
   }
 
@@ -598,20 +598,25 @@ function renderBatterSearch() {
   });
 
   if (!matches.length) {
-    body.innerHTML = `<tr><td colspan="6">Geen pitches gevonden.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7">Geen pitches gevonden.</td></tr>`;
     return;
   }
 
-  body.innerHTML = matches.slice().reverse().map(p => `
-    <tr>
-      <td>${formatDateTimeCompact(p.gameDate, p.startTime)}</td>
-      <td>${p.gameOpponent || "-"}</td>
-      <td>${p.pitcherName || "-"}</td>
-      <td>${p.pitchType || "-"}</td>
-      <td>${p.result || "-"}</td>
-      <td>${getReadableZone(p)}</td>
-    </tr>
-  `).join("");
+  body.innerHTML = matches
+    .map((p, index) => ({ ...p, heatmapNumber: index + 1 }))
+    .slice()
+    .reverse()
+    .map(p => `
+      <tr>
+        <td>${p.heatmapNumber}</td>
+        <td>${formatDateTimeCompact(p.gameDate, p.startTime)}</td>
+        <td>${p.gameOpponent || "-"}</td>
+        <td>${p.pitcherName || "-"}</td>
+        <td>${p.pitchType || "-"}</td>
+        <td>${p.result || "-"}</td>
+        <td>${getReadableZone(p)}</td>
+      </tr>
+    `).join("");
 }
 
 
