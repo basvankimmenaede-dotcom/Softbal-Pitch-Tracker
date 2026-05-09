@@ -1,5 +1,83 @@
 
+const STRIKE_ZONE = {
+  left: 28,
+  right: 72,
+  top: 18,
+  bottom: 82
+};
+
+function getReadableZone(p) {
+  const x = Number(p.x || 50);
+  const y = Number(p.y || 50);
+
+  // Buiten strikezone = wijd
+  if (
+    x < STRIKE_ZONE.left ||
+    x > STRIKE_ZONE.right ||
+    y < STRIKE_ZONE.top ||
+    y > STRIKE_ZONE.bottom
+  ) {
+    return "Wijd";
+  }
+
+  const zoneWidth = STRIKE_ZONE.right - STRIKE_ZONE.left;
+  const zoneHeight = STRIKE_ZONE.bottom - STRIKE_ZONE.top;
+
+  const relativeX = (x - STRIKE_ZONE.left) / zoneWidth;
+  const relativeY = (y - STRIKE_ZONE.top) / zoneHeight;
+
+  // Horizontaal:
+  // 25% inside
+  // 50% midden
+  // 25% outside
+  let horizontal = "Middle";
+
+  if (relativeX <= 0.25) {
+    horizontal = "Inside";
+  } else if (relativeX >= 0.75) {
+    horizontal = "Outside";
+  }
+
+  // Verticaal:
+  // 25% hoog
+  // 50% midden
+  // 25% laag
+  let vertical = "Midden";
+
+  if (relativeY <= 0.25) {
+    vertical = "Hoog";
+  } else if (relativeY >= 0.75) {
+    vertical = "Laag";
+  }
+
+  if (horizontal === "Middle" && vertical === "Midden") {
+    return "Middle-middle";
+  }
+
+  if (horizontal === "Middle") {
+    return vertical;
+  }
+
+  if (vertical === "Midden") {
+    return horizontal;
+  }
+
+  return `${vertical} ${horizontal}`;
+}
+
+
+
+function goHomeIfAuthenticated() {
+  if (!isAuthenticated) {
+    showLoginScreen();
+    return;
+  }
+  showHome();
+}
+
+
 let sitePassword = "";
+let isAuthenticated = false;
 
 async function fetchSitePassword() {
   try {
@@ -99,6 +177,10 @@ function setActiveScreen(screenId) {
 }
 
 function showHome() {
+  if (!isAuthenticated) {
+    showLoginScreen();
+    return;
+  }
   setActiveScreen("homeScreen");
 }
 
