@@ -48,6 +48,33 @@ function formatDateTimeCompact(dateValue, timeValue) {
 }
 
 
+
+function isStrikeResult(result) {
+  return ["Strike", "Swing", "Foul", "HIT", "Out", "Veld uit", "Strike out"].includes(result);
+}
+
+function isOutResult(result) {
+  return ["Out", "Veld uit", "Strike out"].includes(result);
+}
+
+
+function getFpsPercentValue(fps, totalBatters) {
+  const batters = Number(totalBatters || 0);
+  if (!batters) return 0;
+  return Math.round((Number(fps || 0) / batters) * 100);
+}
+
+function getGoodStatClass(condition) {
+  return condition ? " good-stat" : "";
+}
+
+function setStatHighlight(elementId, condition) {
+  const el = document.getElementById(elementId);
+  const stat = el ? el.closest(".stat") : null;
+  if (!stat) return;
+  stat.classList.toggle("good-stat", Boolean(condition));
+}
+
 function getReadableZone(p) {
   const x = Number(p.x || 50);
   const y = Number(p.y || 50);
@@ -191,7 +218,7 @@ function showLoginScreen() {
 
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
-const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
+const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Veld uit", "Strike out"];
 
 let sheetSyncLoaded = false;
 let sheetGames = [];
@@ -286,8 +313,8 @@ function getPitcherGames(pitcherName) {
         pitches: pitcherPitches,
         totalOuts: getPitcherOutsFromPitches(pitcherPitches),
         totalBalls: pitcherPitches.filter(p => p.result === "Ball").length,
-        totalStrikes: pitcherPitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length,
-        firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length
+        totalStrikes: pitcherPitches.filter(p => isStrikeResult(p.result)).length,
+        firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length
       };
     })
     .filter(Boolean);
@@ -305,7 +332,7 @@ function getPitcherOutsFromPitches(pitches) {
     return Math.max(...totals);
   }
 
-  return pitches.filter(p => p.result === "Out").length;
+  return pitches.filter(p => isOutResult(p.result)).length;
 }
 
 function calculateGameStats(g) {
@@ -313,14 +340,14 @@ function calculateGameStats(g) {
   const totalPitches = pitches.length;
 
   const strikes = pitches.filter(p =>
-    ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)
+    isStrikeResult(p.result)
   ).length;
 
   const balls = pitches.filter(p => p.result === "Ball").length;
   const outs = getPitcherOutsFromPitches(pitches);
 
   const fps = pitches.filter(p =>
-    p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)
+    p.firstPitch && isStrikeResult(p.result)
   ).length;
 
   const totalBatters = countTotalBatters(g);
@@ -393,11 +420,13 @@ function renderPitcherStats() {
     document.getElementById("statsSBRatio").textContent = "0.00";
     document.getElementById("statsWalks").textContent = "0";
     document.getElementById("statsFPSBatters").textContent = "0%";
+    setStatHighlight("statsFPSBatters", false);
+    setStatHighlight("statsSBRatio", false);
     body.innerHTML = `<tr><td colspan="11">Kies een pitcher.</td></tr>`;
     return;
   }
 
-  const games = getPitcherGames(pitcherName);
+  const games = getPitcherGames(pitcherName).sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
 
   if (!games.length) {
     document.getElementById("statsTotalPitches").textContent = "0";
@@ -409,6 +438,8 @@ function renderPitcherStats() {
     document.getElementById("statsSBRatio").textContent = "0.00";
     document.getElementById("statsWalks").textContent = "0";
     document.getElementById("statsFPSBatters").textContent = "0%";
+    setStatHighlight("statsFPSBatters", false);
+    setStatHighlight("statsSBRatio", false);
     body.innerHTML = `<tr><td colspan="11">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
@@ -433,10 +464,10 @@ function renderPitcherStats() {
   document.getElementById("statsTotalFPS").textContent = totals.fps;
   document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
   document.getElementById("statsWalks").textContent = totals.walks;
-  document.getElementById("statsFPSBatters").textContent =
-    totals.totalBatters === 0
-      ? "0%"
-      : `${Math.round((totals.fps / totals.totalBatters) * 100)}%`;
+  const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
+  document.getElementById("statsFPSBatters").textContent = `${totalsFpsPercent}%`;
+  setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
+  setStatHighlight("statsSBRatio", Number(document.getElementById("statsSBRatio").textContent || 0) > 1);
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -450,13 +481,9 @@ function renderPitcherStats() {
         <td>${s.outs}</td>
         <td>${s.ip}</td>
         <td>${s.fps}</td>
-        <td>${s.sbRatio}</td>
+        <td class="${getGoodStatClass(Number(s.sbRatio) > 1)}">${s.sbRatio}</td>
         <td>${s.walks}</td>
-        <td>${
-          s.totalBatters === 0
-            ? "0%"
-            : `${Math.round((s.fps / s.totalBatters) * 100)}%`
-        }</td>
+        <td class="${getGoodStatClass(getFpsPercentValue(s.fps, s.totalBatters) > 50)}">${getFpsPercentValue(s.fps, s.totalBatters)}%</td>
       </tr>
     `;
   }).join("");
@@ -582,7 +609,7 @@ function renderBatterSearch() {
   const hits = matches.filter(p => p.result === "HIT").length;
   const outs = matches.filter(p => p.result === "Out").length;
   const balls = matches.filter(p => p.result === "Ball").length;
-  const strikes = matches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
+  const strikes = matches.filter(p => isStrikeResult(p.result)).length;
   const games = new Set(matches.map(p => p.gameId || `${p.gameDate}-${p.gameOpponent}`)).size;
 
   const battingAverage =
@@ -809,7 +836,7 @@ function renderPreviousGames() {
     );
   }
 
-  games.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  games.sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
 
   if (!games.length) {
     list.innerHTML = `<p class="small-note">Geen afgesloten games gevonden.</p>`;
@@ -826,18 +853,80 @@ function renderPreviousGames() {
         <div class="game-meta-pill">${g.balls} B</div>
         <div class="game-meta-pill">${g.outs} Outs</div>
         <div class="game-meta-pill">${g.ip} IP</div>
-        <div class="game-meta-pill">FPS ${g.fpsPercent}</div>
+        <div class="game-meta-pill${getGoodStatClass(Number(String(g.fpsPercent).replace("%", "")) > 50)}">FPS ${g.fpsPercent}</div>
       </div>
     </button>
   `).join("");
 }
 
 
+
+function countStrikeoutsFromPitches(pitches) {
+  let balls = 0;
+  let strikes = 0;
+  let strikeouts = 0;
+
+  (pitches || []).slice().reverse().forEach(p => {
+    if (p.firstPitch) {
+      balls = 0;
+      strikes = 0;
+    }
+
+    if (p.result === "Strike out") {
+      strikeouts += 1;
+      balls = 0;
+      strikes = 0;
+      return;
+    }
+
+    if (p.result === "Ball") balls += 1;
+    if (["Strike", "Swing"].includes(p.result)) strikes += 1;
+    if (p.result === "Foul" && strikes < 2) strikes += 1;
+
+    if (strikes >= 3) {
+      strikeouts += 1;
+      balls = 0;
+      strikes = 0;
+      return;
+    }
+
+    if (p.walk || balls >= 4 || ["HIT", "Out", "Veld uit"].includes(p.result)) {
+      balls = 0;
+      strikes = 0;
+    }
+  });
+
+  return strikeouts;
+}
+
+function getGameSortValue(g) {
+  const date = String(g.date || "").trim();
+  const time = String(g.startTime || "00:00").trim() || "00:00";
+  const value = Date.parse(`${date}T${time}`);
+
+  if (!Number.isNaN(value)) return value;
+
+  const fallback = Date.parse(g.closedAt || g.startedAt || "");
+  return Number.isNaN(fallback) ? 0 : fallback;
+}
+
 function getResultBreakdown(pitches) {
-  return resultOptions.map(result => ({
+  const baseResults = resultOptions.map(result => ({
     result,
     count: pitches.filter(p => p.result === result).length
-  })).filter(item => item.count > 0);
+  }));
+
+  baseResults.push({
+    result: "Walks",
+    count: countWalks({ pitches })
+  });
+
+  baseResults.push({
+    result: "Strikeouts",
+    count: countStrikeoutsFromPitches(pitches)
+  });
+
+  return baseResults.filter(item => item.count > 0);
 }
 
 function showPreviousGameOverview(gameId) {
@@ -864,9 +953,11 @@ function showPreviousGameOverview(gameId) {
   document.getElementById("overviewTotalOuts").textContent = stats.outs;
   document.getElementById("overviewTotalIP").textContent = stats.ip;
   document.getElementById("overviewFPSPercent").textContent = fpsPercent;
+  setStatHighlight("overviewFPSPercent", Number(String(fpsPercent).replace("%", "")) > 50);
   document.getElementById("overviewHits").textContent = hits;
   document.getElementById("overviewWalks").textContent = stats.walks;
   document.getElementById("overviewSBRatio").textContent = stats.sbRatio;
+  setStatHighlight("overviewSBRatio", Number(stats.sbRatio) > 1);
 
   const pitchers = [...new Set(pitches.map(p => p.pitcherName).filter(Boolean))];
   const pitchersList = document.getElementById("overviewPitchersList");
@@ -880,9 +971,9 @@ function showPreviousGameOverview(gameId) {
           : `${Math.round((pitcherStats.fps / pitcherStats.totalBatters) * 100)}%`;
 
         return `
-          <div class="overview-row">
+          <div class="overview-row${getGoodStatClass(Number(String(pitcherFpsPercent).replace("%", "")) > 50 || Number(pitcherStats.sbRatio) > 1)}">
             <strong>${pitcherName}</strong>
-            <span>${pitcherStats.totalPitches} P · ${pitcherStats.strikes} S · ${pitcherStats.balls} B · ${pitcherStats.outs} Outs · ${pitcherStats.ip} IP · FPS ${pitcherFpsPercent}</span>
+            <span>${pitcherStats.totalPitches} P · ${pitcherStats.strikes} S · ${pitcherStats.balls} B · ${pitcherStats.outs} Outs · ${pitcherStats.ip} IP · FPS ${pitcherFpsPercent} · S/B ${pitcherStats.sbRatio}</span>
           </div>
         `;
       }).join("")
@@ -1041,7 +1132,7 @@ function savePitch() {
 
   game.pitches.unshift(pitch);
 
-  if (isFirstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(game.result)) {
+  if (isFirstPitch && isStrikeResult(game.result)) {
     game.firstPitchStrikes += 1;
   }
 
@@ -1072,20 +1163,33 @@ function applyResult(result) {
     game.totalStrikes += 1;
   }
 
-  if (result === "Out") {
-    game.strikes += 1;
-    game.totalStrikes += 1;
-    addOut(false);
-    nextBatter(false);
-  }
-
   if (result === "HIT") {
     game.strikes += 1;
     game.totalStrikes += 1;
     nextBatter(false);
+    return;
   }
 
-  if (game.balls >= 4) nextBatter(false);
+  if (result === "Veld uit") {
+    game.strikes += 1;
+    game.totalStrikes += 1;
+    addOut(false);
+    nextBatter(false);
+    return;
+  }
+
+  if (result === "Strike out") {
+    game.strikes += 1;
+    game.totalStrikes += 1;
+    addOut(false);
+    nextBatter(false);
+    return;
+  }
+
+  if (game.balls >= 4) {
+    nextBatter(false);
+    return;
+  }
 
   if (game.strikes >= 3) {
     addOut(false);
@@ -1459,7 +1563,7 @@ async function sendPitchToGoogleSheet(pitch) {
         totalStrikes: game.totalStrikes,
         totalOuts: game.totalOuts,
         inningsPitched: formatInningsPitched(game.totalOuts),
-        firstPitchStrike: pitch.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(pitch.result),
+        firstPitchStrike: pitch.firstPitch && isStrikeResult(pitch.result),
         zoneHorizontal: pitch.zoneHorizontal,
         zoneVertical: pitch.zoneVertical,
         zoneLabel: pitch.zoneLabel,

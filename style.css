@@ -1233,3 +1233,30 @@ button.danger {
   color: var(--text);
   font-size: 16px;
 }
+
+
+#results {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 420px) {
+  #results {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+.stat.good-stat,
+.game-meta-pill.good-stat,
+.overview-row.good-stat {
+  background: rgba(34,197,94,.14) !important;
+  border-color: rgba(34,197,94,.38) !important;
+}
+
+.stat.good-stat small,
+.stat.good-stat strong,
+.game-meta-pill.good-stat,
+.overview-row.good-stat strong,
+.overview-row.good-stat span {
+  color: #15803d !important;
+}
