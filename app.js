@@ -243,8 +243,52 @@ function getTeamPlayers(teamName) {
 
 function showTeams() {
   setActiveScreen("teamsScreen");
+  populateTeamSelect(game.opponent || "");
+  renderTeamPlayers();
+}
+
+function populateTeamSelect(selectedTeam = "") {
+  const select = document.getElementById("teamOpponentSelect");
+  if (!select) return;
+
+  const teams = Object.keys(savedTeams || {}).sort((a, b) => a.localeCompare(b));
+  const current = normalizeTeamName(selectedTeam);
+
+  select.innerHTML =
+    `<option value="">Kies team</option>` +
+    teams.map(team => `<option value="${team}">${team}</option>`).join("") +
+    `<option value="__new__">+ Team toevoegen</option>`;
+
+  if (current && teams.includes(current)) {
+    select.value = current;
+    const input = document.getElementById("teamOpponentName");
+    const newTeamRow = document.getElementById("newTeamRow");
+    if (input) input.value = current;
+    if (newTeamRow) newTeamRow.classList.add("hidden");
+  } else if (current) {
+    select.value = "__new__";
+    const input = document.getElementById("teamOpponentName");
+    const newTeamRow = document.getElementById("newTeamRow");
+    if (input) input.value = current;
+    if (newTeamRow) newTeamRow.classList.remove("hidden");
+  }
+}
+
+function handleTeamSelectChange() {
+  const select = document.getElementById("teamOpponentSelect");
   const input = document.getElementById("teamOpponentName");
-  if (input && game.opponent) input.value = game.opponent;
+  const newTeamRow = document.getElementById("newTeamRow");
+
+  if (!select || !input) return;
+
+  if (select.value === "__new__") {
+    input.value = "";
+    if (newTeamRow) newTeamRow.classList.remove("hidden");
+  } else {
+    input.value = select.value || "";
+    if (newTeamRow) newTeamRow.classList.add("hidden");
+  }
+
   renderTeamPlayers();
 }
 
@@ -282,6 +326,7 @@ function addTeamPlayer() {
   }
 
   saveSavedTeams();
+  populateTeamSelect(teamName);
 
   if (nameInput) nameInput.value = "";
   if (numberInput) numberInput.value = "";
@@ -295,6 +340,7 @@ function removeTeamPlayer(index) {
 
   savedTeams[teamName].splice(index, 1);
   saveSavedTeams();
+  populateTeamSelect(teamName);
   renderTeamPlayers();
 }
 
@@ -319,10 +365,64 @@ function renderTeamPlayers() {
   list.innerHTML = players.map((player, index) => `
     <div class="team-player-row">
       <strong>${player.name || "Onbekende slagvrouw"} #${player.number || "?"}</strong>
-      <button class="secondary" onclick="removeTeamPlayer(${index})">Verwijder</button>
+      <div class="team-player-actions">
+        <button class="secondary" onclick="openEditTeamPlayerModal(${index})">Aanpassen</button>
+        <button class="secondary" onclick="removeTeamPlayer(${index})">Verwijder</button>
+      </div>
     </div>
   `).join("");
 }
+
+
+function openEditTeamPlayerModal(index) {
+  const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
+  const player = getTeamPlayers(teamName)[index];
+
+  if (!teamName || !player) {
+    alert("Speelster kon niet worden gevonden.");
+    return;
+  }
+
+  document.getElementById("editTeamPlayerIndex").value = index;
+  document.getElementById("editTeamPlayerName").value = player.name || "";
+  document.getElementById("editTeamPlayerNumber").value = player.number || "";
+
+  const modal = document.getElementById("editTeamPlayerModal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeEditTeamPlayerModal() {
+  const modal = document.getElementById("editTeamPlayerModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function confirmEditTeamPlayer() {
+  const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
+  const index = Number(document.getElementById("editTeamPlayerIndex")?.value);
+  const name = String(document.getElementById("editTeamPlayerName")?.value || "").trim();
+  const number = String(document.getElementById("editTeamPlayerNumber")?.value || "").trim();
+
+  if (!teamName || Number.isNaN(index) || !savedTeams[teamName] || !savedTeams[teamName][index]) {
+    alert("Speelster kon niet worden opgeslagen.");
+    return;
+  }
+
+  if (!name && !number) {
+    alert("Vul minimaal een naam of rugnummer in.");
+    return;
+  }
+
+  savedTeams[teamName][index] = {
+    name: name || "Onbekende slagvrouw",
+    number: number || "?"
+  };
+
+  saveSavedTeams();
+  closeEditTeamPlayerModal();
+  populateTeamSelect(teamName);
+  renderTeamPlayers();
+}
+
 
 function fillSetupFromTeam() {
   const teamName = normalizeTeamName(document.getElementById("teamOpponentName")?.value);
@@ -340,16 +440,17 @@ function fillSetupFromTeam() {
 
   showSetup();
 
+  populateSetupTeamSelect();
+
+  const setupTeamSelect = document.getElementById("setupTeamSelect");
+  const manualRow = document.getElementById("manualOpponentRow");
   const opponentInput = document.getElementById("opponent");
+
+  if (setupTeamSelect) setupTeamSelect.value = teamName;
+  if (manualRow) manualRow.classList.add("hidden");
   if (opponentInput) opponentInput.value = teamName;
 
-  players.slice(0, 16).forEach((player, index) => {
-    const nameInput = document.getElementById(`name${index + 1}`);
-    const numInput = document.getElementById(`num${index + 1}`);
-
-    if (nameInput) nameInput.value = player.name || "";
-    if (numInput) numInput.value = player.number || "";
-  });
+  fillLineupFromPlayers(players);
 }
 
 function openAddBatterModal() {
@@ -494,21 +595,78 @@ function setActiveScreen(screenId) {
 
 function showSetup() {
   prepareNewGameForm();
+  populateSetupTeamSelect();
   setActiveScreen("setupScreen");
 }
 
-function prepareNewGameForm() {
-  document.getElementById("opponent").value = "";
-  document.getElementById("pitcherName").value = "";
-  document.getElementById("gameDate").valueAsDate = new Date();
-  document.getElementById("gameTime").value = new Date().toTimeString().slice(0, 5);
 
+function populateSetupTeamSelect() {
+  const select = document.getElementById("setupTeamSelect");
+  if (!select) return;
+
+  const teams = Object.keys(savedTeams || {}).sort((a, b) => a.localeCompare(b));
+
+  select.innerHTML =
+    `<option value="">Kies opgeslagen team</option>` +
+    teams.map(team => `<option value="${team}">${team}</option>`).join("") +
+    `<option value="__manual__">Handmatig invoeren</option>`;
+
+  select.value = "";
+}
+
+function handleSetupTeamSelectChange() {
+  const select = document.getElementById("setupTeamSelect");
+  const opponentInput = document.getElementById("opponent");
+  const manualRow = document.getElementById("manualOpponentRow");
+  if (!select || !opponentInput) return;
+
+  if (!select.value || select.value === "__manual__") {
+    opponentInput.value = "";
+    if (manualRow) manualRow.classList.remove("hidden");
+    clearLineupInputs();
+    return;
+  }
+
+  opponentInput.value = select.value;
+  if (manualRow) manualRow.classList.add("hidden");
+  fillLineupFromPlayers(getTeamPlayers(select.value));
+}
+
+function clearLineupInputs() {
   for (let i = 1; i <= 16; i++) {
     const name = document.getElementById(`name${i}`);
     const num = document.getElementById(`num${i}`);
     if (name) name.value = "";
     if (num) num.value = "";
   }
+}
+
+function fillLineupFromPlayers(players) {
+  clearLineupInputs();
+
+  (players || []).slice(0, 16).forEach((player, index) => {
+    const nameInput = document.getElementById(`name${index + 1}`);
+    const numInput = document.getElementById(`num${index + 1}`);
+
+    if (nameInput) nameInput.value = player.name || "";
+    if (numInput) numInput.value = player.number || "";
+  });
+}
+
+
+function prepareNewGameForm() {
+  const setupTeamSelect = document.getElementById("setupTeamSelect");
+  const manualRow = document.getElementById("manualOpponentRow");
+
+  if (setupTeamSelect) setupTeamSelect.value = "";
+  if (manualRow) manualRow.classList.remove("hidden");
+
+  document.getElementById("opponent").value = "";
+  document.getElementById("pitcherName").value = "";
+  document.getElementById("gameDate").valueAsDate = new Date();
+  document.getElementById("gameTime").value = new Date().toTimeString().slice(0, 5);
+
+  clearLineupInputs();
 
   setSyncStatus("Google Sheets nog niet getest.");
 }
@@ -889,6 +1047,87 @@ function renderBatterSearch() {
 // Backwards compatible oude naam
 
 
+
+function getSelectedSetupTeamName() {
+  const select = document.getElementById("setupTeamSelect");
+  const opponentInput = document.getElementById("opponent");
+
+  if (select && select.value && select.value !== "__manual__") return select.value;
+  return normalizeTeamName(opponentInput?.value);
+}
+
+function openLineupPicker(slot) {
+  const select = document.getElementById("lineupPickerSelect");
+  const modal = document.getElementById("lineupPickerModal");
+  const slotInput = document.getElementById("lineupPickerSlot");
+  const meta = document.getElementById("lineupPickerMeta");
+
+  if (!select || !modal || !slotInput) return;
+
+  const teamName = getSelectedSetupTeamName();
+  const players = getTeamPlayers(teamName);
+
+  if (!teamName || !players.length) {
+    alert("Kies eerst een opgeslagen team met speelsters.");
+    return;
+  }
+
+  const usedKeys = new Set();
+  for (let i = 1; i <= 16; i++) {
+    if (i === Number(slot)) continue;
+    const name = String(document.getElementById(`name${i}`)?.value || "").trim();
+    const number = String(document.getElementById(`num${i}`)?.value || "").trim();
+    if (name || number) usedKeys.add(`${name}|${number}`);
+  }
+
+  slotInput.value = slot;
+  if (meta) meta.textContent = `Positie ${slot} · ${teamName}`;
+
+  select.innerHTML = `<option value="">Kies speelster</option>` + players.map((player, index) => {
+    const key = `${player.name || ""}|${player.number || ""}`;
+    const disabled = usedKeys.has(key) ? " disabled" : "";
+    const suffix = usedKeys.has(key) ? " (al gekozen)" : "";
+    return `<option value="${index}"${disabled}>${player.name || "Onbekende slagvrouw"} #${player.number || "?"}${suffix}</option>`;
+  }).join("");
+
+  const currentName = String(document.getElementById(`name${slot}`)?.value || "").trim();
+  const currentNumber = String(document.getElementById(`num${slot}`)?.value || "").trim();
+  const currentIndex = players.findIndex(player =>
+    String(player.name || "") === currentName &&
+    String(player.number || "") === currentNumber
+  );
+
+  if (currentIndex >= 0) select.value = String(currentIndex);
+
+  modal.classList.remove("hidden");
+}
+
+function closeLineupPicker() {
+  const modal = document.getElementById("lineupPickerModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function confirmLineupPicker() {
+  const slot = Number(document.getElementById("lineupPickerSlot")?.value);
+  const selectedIndex = Number(document.getElementById("lineupPickerSelect")?.value);
+  const teamName = getSelectedSetupTeamName();
+  const player = getTeamPlayers(teamName)[selectedIndex];
+
+  if (!slot || Number.isNaN(selectedIndex) || !player) {
+    alert("Kies eerst een speelster.");
+    return;
+  }
+
+  const nameInput = document.getElementById(`name${slot}`);
+  const numInput = document.getElementById(`num${slot}`);
+
+  if (nameInput) nameInput.value = player.name || "";
+  if (numInput) numInput.value = player.number || "";
+
+  closeLineupPicker();
+}
+
+
 function renderLineupRows() {
   const holder = document.getElementById("lineupRows");
   if (!holder) return;
@@ -896,10 +1135,10 @@ function renderLineupRows() {
   holder.innerHTML = "";
   for (let i = 1; i <= 16; i++) {
     holder.innerHTML += `
-      <div class="lineup-row">
-        <div class="spot">${i}</div>
-        <input id="name${i}" placeholder="${i <= 9 ? 'Naam slagvrouw' : 'Bench speler'}" />
-        <input id="num${i}" placeholder="#" />
+      <div class="lineup-row lineup-row-selectable">
+        <button type="button" class="spot lineup-spot-button" onclick="openLineupPicker(${i})">${i}</button>
+        <input id="name${i}" placeholder="${i <= 9 ? 'Naam slagvrouw' : 'Bench speler'}" onclick="openLineupPicker(${i})" readonly />
+        <input id="num${i}" placeholder="#" onclick="openLineupPicker(${i})" readonly />
       </div>
     `;
   }

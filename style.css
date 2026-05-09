@@ -1302,3 +1302,50 @@ button.danger {
     grid-template-columns: 1fr;
   }
 }
+
+
+.new-team-row {
+  margin-top: 10px;
+}
+
+
+.team-player-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.team-player-actions button {
+  min-width: 92px;
+}
+
+
+#setupTeamSelect {
+  margin-bottom: 4px;
+}
+
+
+.lineup-row-selectable input {
+  cursor: pointer;
+}
+
+.lineup-row-selectable input[readonly] {
+  opacity: 1;
+}
+
+.lineup-spot-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  color: #111827;
+}
+
+#lineupPickerSelect option:disabled {
+  color: #9ca3af;
+}

@@ -237,8 +237,15 @@
 
     <section id="teamsScreen" class="screen">
       <div class="card">
-        <label for="teamOpponentName">Team / tegenstander</label>
-        <input id="teamOpponentName" placeholder="Bijv. Sparks Haarlem" oninput="renderTeamPlayers()" />
+        <label for="teamOpponentSelect">Team / tegenstander</label>
+        <select id="teamOpponentSelect" onchange="handleTeamSelectChange()">
+          <option value="">Kies team</option>
+        </select>
+
+        <div id="newTeamRow" class="new-team-row hidden">
+          <label for="teamOpponentName">Nieuw team toevoegen</label>
+          <input id="teamOpponentName" placeholder="Bijv. Sparks Haarlem" oninput="renderTeamPlayers()" />
+        </div>
 
         <div class="date-time-row">
           <div>
@@ -266,8 +273,15 @@
 
     <section id="setupScreen" class="screen">
       <div class="card">
-        <label for="opponent">Tegenstander</label>
-        <input id="opponent" placeholder="Bijv. Sparks Haarlem" />
+        <label for="setupTeamSelect">Tegenstander / team</label>
+        <select id="setupTeamSelect" onchange="handleSetupTeamSelectChange()">
+          <option value="">Kies opgeslagen team</option>
+        </select>
+
+        <div id="manualOpponentRow" class="new-team-row">
+          <label for="opponent">Of vul handmatig tegenstander in</label>
+          <input id="opponent" placeholder="Bijv. Sparks Haarlem" />
+        </div>
 
         <div class="date-time-row">
           <div>
@@ -462,6 +476,44 @@
         <div class="actions">
           <button class="secondary" onclick="closeAddBatterModal()">Annuleren</button>
           <button onclick="confirmAddBatter()">Toevoegen</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="editTeamPlayerModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Speelster aanpassen</h2>
+
+        <input id="editTeamPlayerIndex" type="hidden" />
+
+        <label for="editTeamPlayerName">Naam slagvrouw</label>
+        <input id="editTeamPlayerName" placeholder="Naam" />
+
+        <label for="editTeamPlayerNumber">Rugnummer</label>
+        <input id="editTeamPlayerNumber" placeholder="#" />
+
+        <div class="actions">
+          <button class="secondary" onclick="closeEditTeamPlayerModal()">Annuleren</button>
+          <button onclick="confirmEditTeamPlayer()">Opslaan</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="lineupPickerModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Slaglijst positie kiezen</h2>
+        <p id="lineupPickerMeta" class="small-note">Kies een speelster uit het geselecteerde team.</p>
+
+        <input id="lineupPickerSlot" type="hidden" />
+
+        <label for="lineupPickerSelect">Speelster</label>
+        <select id="lineupPickerSelect"></select>
+
+        <div class="actions">
+          <button class="secondary" onclick="closeLineupPicker()">Annuleren</button>
+          <button onclick="confirmLineupPicker()">Toevoegen</button>
         </div>
       </div>
     </div>
