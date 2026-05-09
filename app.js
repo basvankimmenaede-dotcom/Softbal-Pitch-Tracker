@@ -84,7 +84,7 @@ function showPlaceholder(title) {
 
 function showPitcherStats() {
   setActiveScreen("pitcherStatsScreen");
-  renderPitcherStats();
+  syncFromGoogleSheet().then(() => renderPitcherStats());
 }
 
 function getPitcherGames(pitcherName) {
@@ -97,7 +97,7 @@ function getPitcherGames(pitcherName) {
         ...g,
         pitcherName,
         pitches: pitcherPitches,
-        totalOuts: countPitcherOutsFromPitches(pitcherPitches),
+        totalOuts: Math.max(0, ...pitcherPitches.map(p => Number(p.totalOuts || 0))),
         totalBalls: pitcherPitches.filter(p => p.result === "Ball").length,
         totalStrikes: pitcherPitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length,
         firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length
@@ -260,9 +260,11 @@ function renderPitcherStats() {
 
 
 function showBatterSearch() {
-  populateBatterOpponentFilter();
   setActiveScreen("batterSearchScreen");
-  renderBatterSearch();
+  syncFromGoogleSheet().then(() => {
+    populateBatterOpponentFilter();
+    renderBatterSearch();
+  });
 }
 
 function populateBatterOpponentFilter() {
@@ -376,6 +378,146 @@ function getReadableZone(p) {
   return "-";
 }
 
+
+function showPreviousGames() {
+  setActiveScreen("previousGamesScreen");
+  const list = document.getElementById("previousGamesList");
+  if (list) list.innerHTML = `<p class="small-note">Vorige games worden geladen...</p>`;
+
+  syncFromGoogleSheet().then(() => renderPreviousGames());
+}
+
+function renderPreviousGames() {
+  const list = document.getElementById("previousGamesList");
+  const input = document.getElementById("previousGamesSearch");
+  if (!list) return;
+
+  const query = (input?.value || "").trim().toLowerCase();
+
+  let games = getStoredGames().filter(g => Boolean(g.closed));
+
+  if (query) {
+    games = games.filter(g =>
+      String(g.date || "").toLowerCase().includes(query) ||
+      String(g.opponent || "").toLowerCase().includes(query) ||
+      String(g.pitcherName || "").toLowerCase().includes(query)
+    );
+  }
+
+  games.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+  if (!games.length) {
+    list.innerHTML = `<p class="small-note">Geen afgesloten games gevonden.</p>`;
+    return;
+  }
+
+  list.innerHTML = games.map(g => {
+    const pitches = g.pitches || [];
+    const strikes = pitches.filter(p => ["Strike", "Swing", "Foul", "HIT", "Out"].includes(p.result)).length;
+    const balls = pitches.filter(p => p.result === "Ball").length;
+    const outs = Number(g.totalOuts || Math.max(0, ...pitches.map(p => Number(p.totalOuts || 0))));
+    const pitcherNames = [...new Set(pitches.map(p => p.pitcherName).filter(Boolean))];
+    const pitcherText = pitcherNames.length ? pitcherNames.join(", ") : (g.pitcherName || "Pitcher onbekend");
+
+    return `
+      <button class="game-list-button" onclick="loadArchivedGame('${g.gameId}')">
+        <strong>${g.opponent || "Onbekende tegenstander"}</strong>
+        <small>${g.date || "-"} ${g.startTime || ""} · ${pitcherText}</small>
+        <div class="game-meta-row">
+          <div class="game-meta-pill">${pitches.length} P</div>
+          <div class="game-meta-pill">${strikes} S</div>
+          <div class="game-meta-pill">${balls} B</div>
+          <div class="game-meta-pill">${outs} Outs</div>
+          <div class="game-meta-pill">${formatInningsPitched(outs)} IP</div>
+          <div class="game-meta-pill">Afgesloten</div>
+        </div>
+      </button>
+    `;
+  }).join("");
+}
+
+function loadArchivedGame(gameId) {
+  const password = prompt("Deze vorige game is afgesloten. Voer wachtwoord in om te wijzigen:");
+  if (password !== "Edit") {
+    alert("Geen toegang om vorige games aan te passen.");
+    return;
+  }
+
+  const games = getStoredGames();
+  const selected = games.find(g => g.gameId === gameId);
+  if (!selected) {
+    alert("Deze game kon niet worden geladen.");
+    return;
+  }
+
+  game = {
+    ...game,
+    ...selected,
+    closed: false,
+    appsScriptUrl: APPS_SCRIPT_URL
+  };
+
+  saveLocalGame();
+  showGame();
+}
+
+
+function showUnfinishedGames() {
+  setActiveScreen("unfinishedGamesScreen");
+  const list = document.getElementById("unfinishedGamesList");
+  if (list) list.innerHTML = `<p class="small-note">Niet afgesloten games worden geladen...</p>`;
+
+  syncFromGoogleSheet().then(() => renderUnfinishedGames());
+}
+
+function renderUnfinishedGames() {
+  const list = document.getElementById("unfinishedGamesList");
+  if (!list) return;
+
+  const games = getStoredGames().filter(g => !g.closed);
+
+  if (!games.length) {
+    list.innerHTML = `<p class="small-note">Geen niet afgesloten games gevonden.</p>`;
+  } else {
+    list.innerHTML = games.map(g => `
+      <button class="game-list-button" onclick="loadUnfinishedGame('${g.gameId}')">
+        <strong>${g.opponent || "Onbekende tegenstander"}</strong>
+        <small>${g.date || "-"} ${g.startTime || ""} · ${g.pitcherName || "Pitcher onbekend"} · ${g.pitches?.length || 0} pitches</small>
+      </button>
+    `).join("");
+  }
+}
+
+function loadUnfinishedGame(gameId) {
+  const password = prompt("Voer wachtwoord in om deze niet afgesloten game te openen/wijzigen:");
+  if (password !== "Edit") {
+    alert("Geen toegang om deze game te openen.");
+    return;
+  }
+
+  const games = getStoredGames();
+  const selected = games.find(g => g.gameId === gameId);
+  if (!selected) {
+    alert("Deze game kon niet worden geladen.");
+    return;
+  }
+
+  game = {
+    ...game,
+    ...selected,
+    appsScriptUrl: APPS_SCRIPT_URL
+  };
+
+  localStorage.setItem("ogActiveGameId", game.gameId);
+  localStorage.setItem("ogSoftbalGame", JSON.stringify(game));
+  showGame();
+}
+
+// Backwards compatible oude naam
+function loadGameById(gameId) {
+  loadUnfinishedGame(gameId);
+}
+
 function continuePreviousGame() {
   showUnfinishedGames();
 }
@@ -402,46 +544,11 @@ function upsertStoredGame(gameToStore) {
   localStorage.setItem("ogSoftbalGame", JSON.stringify(gameToStore));
 }
 
-function showUnfinishedGames() {
-  syncFromGoogleSheet().then(() => renderUnfinishedGames());
-}
 
-function renderUnfinishedGames() {
-  const list = document.getElementById("unfinishedGamesList");
-  const games = getStoredGames().filter(g => !g.closed);
 
-  if (!games.length) {
-    list.innerHTML = `<p class="small-note">Geen niet afgesloten games gevonden.</p>`;
-  } else {
-    list.innerHTML = games.map(g => `
-      <button class="game-list-button" onclick="loadGameById('${g.gameId}')">
-        <strong>${g.opponent || "Onbekende tegenstander"}</strong>
-        <small>${g.date || "-"} ${g.startTime || ""} · ${g.pitcherName || "Pitcher onbekend"} · ${g.pitches?.length || 0} pitches</small>
-      </button>
-    `).join("");
-  }
 
-  setActiveScreen("unfinishedGamesScreen");
-}
 
-function loadGameById(gameId) {
-  const games = getStoredGames();
-  const selected = games.find(g => g.gameId === gameId);
-  if (!selected) {
-    alert("Deze game kon niet worden geladen.");
-    return;
-  }
 
-  game = {
-    ...game,
-    ...selected,
-    appsScriptUrl: APPS_SCRIPT_URL
-  };
-
-  localStorage.setItem("ogActiveGameId", game.gameId);
-  localStorage.setItem("ogSoftbalGame", JSON.stringify(game));
-  showGame();
-}
 
 function renderLineupRows() {
   const holder = document.getElementById("lineupRows");
@@ -672,6 +779,10 @@ function undoPitch() {
 
 
 
+
+
+
+
 function startPitcherSession(pitcherName) {
   game.pitcherSessions = game.pitcherSessions || [];
   game.pitcherSessions.push({
@@ -693,23 +804,30 @@ function closeCurrentPitcherSession() {
 }
 
 function openPitcherModal() {
+  const modal = document.getElementById("pitcherModal");
   const select = document.getElementById("newPitcherSelect");
-  if (select) {
-    select.value = "";
-    [...select.options].forEach(option => {
-      option.disabled = option.value === game.pitcherName && option.value !== "";
-    });
+
+  if (!modal || !select) {
+    alert("Pitcher popup kon niet worden geopend.");
+    return;
   }
-  document.getElementById("pitcherModal").classList.remove("hidden");
+
+  select.value = "";
+  [...select.options].forEach(option => {
+    option.disabled = option.value === game.pitcherName && option.value !== "";
+  });
+
+  modal.classList.remove("hidden");
 }
 
 function closePitcherModal() {
-  document.getElementById("pitcherModal").classList.add("hidden");
+  const modal = document.getElementById("pitcherModal");
+  if (modal) modal.classList.add("hidden");
 }
 
 function confirmPitcherChange() {
   const select = document.getElementById("newPitcherSelect");
-  const newPitcher = select.value;
+  const newPitcher = select?.value;
 
   if (!newPitcher) {
     alert("Kies eerst een nieuwe pitcher.");
@@ -725,7 +843,7 @@ function confirmPitcherChange() {
 
   game.pitcherName = newPitcher;
 
-  // Nieuwe pitcher begint met eigen pitching count/statline.
+  // Pitching-count/statline opnieuw beginnen voor de nieuwe pitcher.
   game.balls = 0;
   game.strikes = 0;
   game.totalBalls = 0;
@@ -1075,8 +1193,14 @@ function mergeGames(localGames, sheetGames) {
 
     const existingPitchCount = existing.pitches?.length || 0;
     const newPitchCount = g.pitches?.length || 0;
+    const merged = {
+      ...existing,
+      ...g,
+      closed: Boolean(existing.closed || g.closed),
+      pitches: newPitchCount >= existingPitchCount ? (g.pitches || []) : (existing.pitches || [])
+    };
 
-    if (newPitchCount >= existingPitchCount) byId.set(g.gameId, { ...existing, ...g });
+    byId.set(g.gameId, merged);
   });
 
   return Array.from(byId.values());
@@ -1145,7 +1269,7 @@ function convertSheetRowsToGames(payload) {
       }
 
       const g = games.get(gameId);
-      g.closed = parseBool(get(record, ["Closed", "closed"], 28)) || true;
+      g.closed = true;
       g.closedAt = get(record, ["Closed At", "closedAt"], 29) || g.closedAt;
       g.totalBalls = Number(get(record, ["Total Balls", "totalBalls"], 25) || g.totalBalls || 0);
       g.totalStrikes = Number(get(record, ["Total Strikes", "totalStrikes"], 26) || g.totalStrikes || 0);

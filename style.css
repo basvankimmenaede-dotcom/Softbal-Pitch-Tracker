@@ -918,3 +918,66 @@ button.danger {
 #pitcherModal.modal:not(.hidden) {
   display: grid !important;
 }
+
+
+/* Definitieve pitcher popup fix */
+#pitcherModal.hidden {
+  display: none !important;
+}
+
+#pitcherModal.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0,0,0,.62);
+  backdrop-filter: blur(6px);
+}
+
+#pitcherModal.modal:not(.hidden) {
+  display: grid !important;
+}
+
+#subModal.hidden {
+  display: none !important;
+}
+
+#subModal.modal:not(.hidden) {
+  display: grid !important;
+}
+
+
+/* Slagvrouw afbeelding in live pitch-map */
+.batter-figure {
+  position: absolute !important;
+  left: 10px !important;
+  bottom: 28px !important;
+  width: 210px !important;
+  height: 330px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.45));
+}
+
+.field-batter-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: bottom center !important;
+  display: block !important;
+}
+
+.batter-figure .bat,
+.batter-figure .helmet,
+.batter-figure .head,
+.batter-figure .body,
+.batter-figure .arm,
+.batter-figure .glove,
+.batter-figure .leg,
+.batter-figure .shoe {
+  display: none !important;
+}
