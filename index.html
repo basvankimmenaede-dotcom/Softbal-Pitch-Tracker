@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OG Softbal Pitch Tracker</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-2: #0b1b32;
+      --card: rgba(11, 27, 50, 0.92);
+      --orange: #ff7a18;
+      --orange-2: #ff9b3d;
+      --blue: #123a68;
+      --text: #f8fafc;
+      --muted: #9fb3c8;
+      --line: rgba(255,255,255,.16);
+      --danger: #ff4d4d;
+      --good: #37d67a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,122,24,.24), transparent 32%),
+        linear-gradient(180deg, #07111f 0%, #04070d 100%);
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .hero {
+      padding: 22px 18px;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background:
+        linear-gradient(135deg, rgba(255,122,24,.25), rgba(18,58,104,.62)),
+        var(--card);
+      box-shadow: 0 20px 60px rgba(0,0,0,.38);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -30px -70px auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 999px;
+      border: 18px solid rgba(255,255,255,.06);
+    }
+
+    .eyebrow {
+      color: var(--orange-2);
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    h1 {
+      margin: 8px 0 6px;
+      font-size: 34px;
+      line-height: .95;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .card {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 24px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 48px rgba(0,0,0,.28);
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 13px 14px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input::placeholder { color: rgba(255,255,255,.38); }
+
+    .lineup-row {
+      display: grid;
+      grid-template-columns: 34px 1fr 82px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .spot {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--orange);
+      color: #111827;
+      font-weight: 950;
+    }
+
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-weight: 950;
+      font-size: 15px;
+      color: #111827;
+      background: var(--orange);
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(255,122,24,.24);
+    }
+
+    button.secondary {
+      color: var(--text);
+      background: rgba(255,255,255,.10);
+      box-shadow: none;
+      border: 1px solid var(--line);
+    }
+
+    button.danger { background: var(--danger); color: white; }
+    button.good { background: var(--good); color: #072214; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .stat {
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.08);
+      text-align: center;
+      border: 1px solid var(--line);
+    }
+
+    .stat small {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: .08em;
+      font-size: 10px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1.05;
+    }
+
+    .batter-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .batter-card h2 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .batter-card p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .number {
+      min-width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      background: var(--orange);
+      color: #111827;
+      font-weight: 1000;
+      font-size: 30px;
+    }
+
+    .field {
+      margin-top: 16px;
+      position: relative;
+      height: 430px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 100%, rgba(255,122,24,.18), transparent 40%),
+        linear-gradient(180deg, #132d4d 0%, #07111f 62%, #05070c 100%);
+      touch-action: manipulation;
+    }
+
+    .batter-figure {
+      position: absolute;
+      left: 34px;
+      bottom: 42px;
+      width: 132px;
+      height: 285px;
+      opacity: .95;
+    }
+
+    .head, .body, .leg, .arm, .bat {
+      position: absolute;
+      background: rgba(255,255,255,.88);
+    }
+
+    .head { width: 42px; height: 42px; border-radius: 50%; left: 45px; top: 0; background: var(--orange-2); }
+    .body { width: 48px; height: 98px; left: 42px; top: 48px; border-radius: 24px 24px 18px 18px; background: #eef2f7; }
+    .arm { width: 18px; height: 90px; left: 80px; top: 58px; border-radius: 999px; transform: rotate(-48deg); transform-origin: top; }
+    .leg { width: 18px; height: 112px; top: 138px; border-radius: 999px; }
+    .leg.one { left: 48px; transform: rotate(11deg); }
+    .leg.two { left: 76px; transform: rotate(-12deg); }
+    .bat { width: 12px; height: 170px; left: 110px; top: 5px; border-radius: 999px; background: #c8a15a; transform: rotate(-38deg); }
+
+    .zone {
+      position: absolute;
+      right: 38px;
+      top: 78px;
+      width: 176px;
+      height: 232px;
+      border: 4px solid rgba(255,122,24,.95);
+      border-radius: 12px;
+      background: rgba(255,122,24,.06);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      box-shadow: 0 0 30px rgba(255,122,24,.2);
+    }
+
+    .zone div { border: 1px solid rgba(255,255,255,.22); }
+
+    .tap-hint {
+      position: absolute;
+      right: 40px;
+      top: 322px;
+      width: 176px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .pitch-dot {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      margin-left: -9px;
+      margin-top: -9px;
+      border-radius: 50%;
+      background: var(--orange);
+      border: 3px solid white;
+      box-shadow: 0 0 0 6px rgba(255,122,24,.22);
+      pointer-events: none;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .choices button.selected {
+      outline: 3px solid white;
+      background: var(--orange-2);
+    }
+
+    .history {
+      max-height: 220px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .history-item b { color: var(--orange-2); }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 10px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="eyebrow">Onze Gezellen stijl</div>
+      <h1>Softbal Pitch Tracker</h1>
+      <p class="sub">Line-up, slagzone, pitch type en resultaat.</p>
+    </section>
+
+    <section id="setupScreen" class="screen active">
+      <div class="card">
+        <label for="opponent">Tegenstander</label>
+        <input id="opponent" placeholder="Bijv. Sparks Haarlem" />
+
+        <label for="gameDate">Datum</label>
+        <input id="gameDate" type="date" />
+
+        <label>Line-up tegenstander</label>
+        <div id="lineupRows"></div>
+
+        <div class="actions">
+          <button class="secondary" onclick="fillDemoLineup()">Demo vullen</button>
+          <button onclick="startGame()">Start wedstrijd</button>
+        </div>
+        <p class="small-note">Eerste versie: data wordt lokaal in deze browser opgeslagen. Later koppelen we dit aan Google Sheets.</p>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="topbar">
+        <div class="stat"><small>Balls</small><strong id="balls">0</strong></div>
+        <div class="stat"><small>Strikes</small><strong id="strikes">0</strong></div>
+        <div class="stat"><small>Outs</small><strong id="outs">0</strong></div>
+      </div>
+
+      <div class="card batter-card">
+        <div>
+          <h2 id="batterName">Slagvrouw</h2>
+          <p id="batterMeta">#00 · Line-up 1</p>
+        </div>
+        <div id="batterNumber" class="number">#</div>
+      </div>
+
+      <div id="field" class="field" onclick="setPitchLocation(event)">
+        <div class="batter-figure">
+          <div class="bat"></div>
+          <div class="head"></div>
+          <div class="body"></div>
+          <div class="arm"></div>
+          <div class="leg one"></div>
+          <div class="leg two"></div>
+        </div>
+        <div class="zone">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+        <div class="tap-hint">Tik waar de bal kwam</div>
+      </div>
+
+      <div class="card">
+        <label>Pitch type</label>
+        <div id="pitchTypes" class="choices"></div>
+
+        <label>Resultaat</label>
+        <div id="results" class="choices"></div>
+
+        <div class="actions">
+          <button class="secondary" onclick="undoPitch()">Undo</button>
+          <button class="good" onclick="savePitch()">Pitch opslaan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Slagbeurt / teller</label>
+        <div class="actions">
+          <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
+          <button class="secondary" onclick="resetCount()">Reset count</button>
+          <button class="secondary" onclick="addOut()">+ Out</button>
+          <button class="danger" onclick="resetGame()">Stop/reset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Laatste pitches</label>
+        <div id="history" class="history"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const pitchTypeOptions = ["Fastball", "Slowball", "Change-up", "Rise", "Drop", "Curve", "Screw"];
+    const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
+
+    let game = {
+      opponent: "",
+      date: "",
+      lineup: [],
+      batterIndex: 0,
+      balls: 0,
+      strikes: 0,
+      outs: 0,
+      pitchLocation: null,
+      pitchType: "Fastball",
+      result: "Ball",
+      pitches: []
+    };
+
+    function init() {
+      document.getElementById("gameDate").valueAsDate = new Date();
+      renderLineupRows();
+      renderChoices("pitchTypes", pitchTypeOptions, "pitchType");
+      renderChoices("results", resultOptions, "result");
+      loadLocalGame();
+    }
+
+    function renderLineupRows() {
+      const holder = document.getElementById("lineupRows");
+      holder.innerHTML = "";
+      for (let i = 1; i <= 9; i++) {
+        holder.innerHTML += `
+          <div class="lineup-row">
+            <div class="spot">${i}</div>
+            <input id="name${i}" placeholder="Naam slagvrouw" />
+            <input id="num${i}" placeholder="#" />
+          </div>
+        `;
+      }
+    }
+
+    function fillDemoLineup() {
+      const names = ["Emma", "Noor", "Lisa", "Sanne", "Mila", "Roos", "Tess", "Lotte", "Fleur"];
+      names.forEach((name, index) => {
+        document.getElementById(`name${index + 1}`).value = name;
+        document.getElementById(`num${index + 1}`).value = [12, 7, 21, 4, 18, 10, 3, 25, 9][index];
+      });
+      document.getElementById("opponent").value = "Demo Team";
+    }
+
+    function renderChoices(elementId, options, key) {
+      const holder = document.getElementById(elementId);
+      holder.innerHTML = "";
+      options.forEach(option => {
+        const selected = game[key] === option ? "selected" : "";
+        holder.innerHTML += `<button class="secondary ${selected}" onclick="selectChoice('${key}', '${option}')">${option}</button>`;
+      });
+    }
+
+    function selectChoice(key, value) {
+      game[key] = value;
+      renderChoices("pitchTypes", pitchTypeOptions, "pitchType");
+      renderChoices("results", resultOptions, "result");
+    }
+
+    function startGame() {
+      const lineup = [];
+      for (let i = 1; i <= 9; i++) {
+        const name = document.getElementById(`name${i}`).value.trim();
+        const number = document.getElementById(`num${i}`).value.trim();
+        if (name || number) lineup.push({ order: i, name: name || `Slagvrouw ${i}`, number: number || "?" });
+      }
+
+      if (lineup.length === 0) {
+        alert("Vul minimaal één slagvrouw in.");
+        return;
+      }
+
+      game.opponent = document.getElementById("opponent").value.trim() || "Onbekende tegenstander";
+      game.date = document.getElementById("gameDate").value;
+      game.lineup = lineup;
+      game.batterIndex = 0;
+      game.balls = 0;
+      game.strikes = 0;
+      game.outs = 0;
+      game.pitches = [];
+      saveLocalGame();
+      showGame();
+    }
+
+    function showGame() {
+      document.getElementById("setupScreen").classList.remove("active");
+      document.getElementById("gameScreen").classList.add("active");
+      updateUI();
+    }
+
+    function setPitchLocation(event) {
+      const field = document.getElementById("field");
+      const rect = field.getBoundingClientRect();
+      const x = Math.round(((event.clientX - rect.left) / rect.width) * 100);
+      const y = Math.round(((event.clientY - rect.top) / rect.height) * 100);
+      game.pitchLocation = { x, y };
+
+      const oldDot = field.querySelector(".pitch-dot");
+      if (oldDot) oldDot.remove();
+
+      const dot = document.createElement("div");
+      dot.className = "pitch-dot";
+      dot.style.left = `${x}%`;
+      dot.style.top = `${y}%`;
+      field.appendChild(dot);
+    }
+
+    function savePitch() {
+      if (!game.pitchLocation) {
+        alert("Tik eerst op de plek waar de bal kwam.");
+        return;
+      }
+
+      const batter = game.lineup[game.batterIndex];
+      const pitch = {
+        timestamp: new Date().toISOString(),
+        opponent: game.opponent,
+        date: game.date,
+        batterOrder: batter.order,
+        batterName: batter.name,
+        batterNumber: batter.number,
+        x: game.pitchLocation.x,
+        y: game.pitchLocation.y,
+        pitchType: game.pitchType,
+        result: game.result,
+        ballsBefore: game.balls,
+        strikesBefore: game.strikes,
+        outsBefore: game.outs
+      };
+
+      game.pitches.unshift(pitch);
+      applyResult(game.result);
+      game.pitchLocation = null;
+      const dot = document.querySelector(".pitch-dot");
+      if (dot) dot.remove();
+      saveLocalGame();
+      updateUI();
+    }
+
+    function applyResult(result) {
+      if (result === "Ball") game.balls += 1;
+      if (["Strike", "Swing"].includes(result)) game.strikes += 1;
+      if (result === "Foul" && game.strikes < 2) game.strikes += 1;
+      if (result === "Out") {
+        addOut(false);
+        nextBatter(false);
+      }
+      if (result === "HIT") nextBatter(false);
+      if (game.balls >= 4) nextBatter(false);
+      if (game.strikes >= 3) {
+        addOut(false);
+        nextBatter(false);
+      }
+    }
+
+    function nextBatter(shouldSave = true) {
+      game.batterIndex = (game.batterIndex + 1) % game.lineup.length;
+      resetCount(false);
+      if (shouldSave) saveLocalGame();
+      updateUI();
+    }
+
+    function addOut(shouldSave = true) {
+      game.outs += 1;
+      if (game.outs >= 3) game.outs = 0;
+      if (shouldSave) saveLocalGame();
+      updateUI();
+    }
+
+    function resetCount(shouldSave = true) {
+      game.balls = 0;
+      game.strikes = 0;
+      if (shouldSave) saveLocalGame();
+      updateUI();
+    }
+
+    function undoPitch() {
+      if (game.pitches.length === 0) return;
+      game.pitches.shift();
+      alert("Pitch verwijderd. Let op: count wordt in deze eerste versie niet automatisch teruggezet.");
+      saveLocalGame();
+      updateUI();
+    }
+
+    function resetGame() {
+      if (!confirm("Weet je zeker dat je de wedstrijd wilt resetten?")) return;
+      localStorage.removeItem("ogSoftbalGame");
+      location.reload();
+    }
+
+    function updateUI() {
+      document.getElementById("balls").textContent = game.balls;
+      document.getElementById("strikes").textContent = game.strikes;
+      document.getElementById("outs").textContent = game.outs;
+
+      const batter = game.lineup[game.batterIndex] || { name: "Slagvrouw", number: "?", order: 1 };
+      document.getElementById("batterName").textContent = batter.name;
+      document.getElementById("batterMeta").textContent = `#${batter.number} · Line-up ${batter.order} · vs ${game.opponent}`;
+      document.getElementById("batterNumber").textContent = `#${batter.number}`;
+
+      const history = document.getElementById("history");
+      history.innerHTML = game.pitches.slice(0, 12).map(p => `
+        <div class="history-item">
+          <span><b>${p.batterName} #${p.batterNumber}</b><br>${p.pitchType} · ${p.result} · x:${p.x}, y:${p.y}</span>
+          <span>${new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      `).join("") || `<p class="small-note">Nog geen pitches opgeslagen.</p>`;
+    }
+
+    function saveLocalGame() {
+      localStorage.setItem("ogSoftbalGame", JSON.stringify(game));
+    }
+
+    function loadLocalGame() {
+      const saved = localStorage.getItem("ogSoftbalGame");
+      if (!saved) return;
+      try {
+        const loaded = JSON.parse(saved);
+        if (loaded.lineup && loaded.lineup.length) {
+          game = loaded;
+          showGame();
+        }
+      } catch (error) {
+        console.warn("Kon opgeslagen wedstrijd niet laden", error);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
