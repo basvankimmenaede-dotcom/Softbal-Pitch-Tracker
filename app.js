@@ -2,6 +2,42 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqK
 let sitePassword = "";
 let isAuthenticated = false;
 
+async function verifySitePassword() {
+  const input = document.getElementById("sitePasswordInput");
+  const error = document.getElementById("loginError");
+
+  try {
+    const response = await loadJsonp(APPS_SCRIPT_URL);
+    const correctPassword = String(response.sitePassword || "").trim();
+    const enteredPassword = String(input?.value || "").trim();
+
+    if (enteredPassword === correctPassword) {
+      isAuthenticated = true;
+
+      if (error) {
+        error.classList.add("hidden");
+      }
+
+      setActiveScreen("homeScreen");
+      return;
+    }
+
+    if (error) {
+      error.textContent = "Ongeldig wachtwoord";
+      error.classList.remove("hidden");
+    }
+
+  } catch (err) {
+    console.error(err);
+
+    if (error) {
+      error.textContent = "Wachtwoord kon niet worden geladen";
+      error.classList.remove("hidden");
+    }
+  }
+}
+
+
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
 
