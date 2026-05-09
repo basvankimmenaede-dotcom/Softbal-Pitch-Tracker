@@ -99,12 +99,14 @@
     <section id="batterSearchScreen" class="screen">
       <div class="card">
         <label for="batterSearchOpponent">Tegenstander</label>
-        <select id="batterSearchOpponent" onchange="renderBatterSearch()">
+        <select id="batterSearchOpponent" onchange="populateBatterPlayerFilter(); renderBatterSearch()">
           <option value="">Alle tegenstanders</option>
         </select>
 
-        <label for="batterSearchInput">Zoek slagvrouw</label>
-        <input id="batterSearchInput" placeholder="Naam of rugnummer" oninput="renderBatterSearch()" />
+        <label for="batterSearchPlayer">Slagvrouw</label>
+        <select id="batterSearchPlayer" onchange="renderBatterSearch()">
+          <option value="">Kies eerst een tegenstander</option>
+        </select>
 
         <div class="stats-grid">
           <div class="stat"><small>Pitches</small><strong id="batterSearchPitches">0</strong></div>
@@ -122,6 +124,9 @@
           <div class="legend-item"><span class="legend-dot out"></span> Out</div>
         </div>
         <div id="batterSearchHeatmap" class="search-heatmap-field">
+          <div class="search-batter-figure">
+            <img src="slagvrouw_transparant.png" alt="Slagvrouw" class="search-batter-image" />
+          </div>
           <div class="heatmap-zone">
             <div></div><div></div><div></div>
             <div></div><div></div><div></div>
@@ -143,7 +148,7 @@
               </tr>
             </thead>
             <tbody id="batterSearchTableBody">
-              <tr><td colspan="6">Kies tegenstander en zoek op naam of rugnummer.</td></tr>
+              <tr><td colspan="6">Kies een tegenstander en slagvrouw.</td></tr>
             </tbody>
           </table>
         </div>
