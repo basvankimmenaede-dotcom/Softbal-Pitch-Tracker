@@ -664,3 +664,113 @@ button.good { background: var(--good); color: #072214; }
 }
 
 .placeholder-card { text-align: center; }
+
+
+.unfinished-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  text-align: left;
+}
+
+.game-list-button {
+  width: 100%;
+  display: block;
+  text-align: left;
+  color: var(--text);
+  background: rgba(255,255,255,.10);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.game-list-button strong {
+  display: block;
+  color: var(--orange-2);
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.game-list-button small {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+
+.stats-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  background: rgba(255,255,255,.05);
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 10px 9px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.stats-table th {
+  color: var(--orange-2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 10px;
+}
+
+.stats-table td {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.stats-table tr:last-child td {
+  border-bottom: 0;
+}
+
+
+.search-heatmap-field {
+  position: relative;
+  height: 280px;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 50% 100%, rgba(255,122,24,.14), transparent 42%),
+    linear-gradient(180deg, #132d4d 0%, #07111f 70%, #05070c 100%);
+  margin-bottom: 16px;
+}
+
+
+.game-meta-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.game-meta-pill {
+  padding: 6px 7px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.07);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+}
