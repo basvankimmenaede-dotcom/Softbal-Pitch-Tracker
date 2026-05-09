@@ -1,3 +1,5 @@
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqKuIfSHLqByP-pGXgANZKaAWHnh1WrUrUx_XxoSAaD51EBk0p_C07F-Q/exec";
+
 
 const STRIKE_ZONE = {
   left: 28,
@@ -95,9 +97,6 @@ async
 
 
 // OG Pitching Tracker
-
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzuppIUnIOFCqKuIfSHLqByP-pGXgANZKaAWHnh1WrUrUx_XxoSAaD51EBk0p_C07F-Q/exec";
-
 let sitePassword = "";
 let isAuthenticated = false;
 
@@ -1699,4 +1698,10 @@ window.addEventListener("DOMContentLoaded", init);
 
 function handlePasswordEnter(event) {
   if (event.key === "Enter") verifySitePassword();
+}
+
+
+function debugAppsScriptUrl() {
+  console.log("APPS_SCRIPT_URL =", APPS_SCRIPT_URL);
+  return APPS_SCRIPT_URL;
 }
