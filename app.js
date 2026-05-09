@@ -577,39 +577,6 @@ function renderBatterSearch() {
 }
 
 
-function getReadableZone(p) {
-  const x = Number(p.x || 50);
-  const y = Number(p.y || 50);
-
-  // Buiten strikezone
-  if (x < 28 || x > 72 || y < 18 || y > 82) {
-    return "Wijd";
-  }
-
-  let horizontal = "";
-  let vertical = "";
-
-  // Horizontal finer tuning
-  if (x < 40) horizontal = "Inside";
-  else if (x > 60) horizontal = "Outside";
-  else horizontal = "Middle";
-
-  // Vertical finer tuning
-  if (y < 38) vertical = "Hoog";
-  else if (y > 62) vertical = "Laag";
-  else vertical = "Midden";
-
-  if (horizontal === "Middle" && vertical === "Midden") {
-    return "Middle-middle";
-  }
-
-  if (horizontal === "Middle") return vertical;
-  if (vertical === "Midden") return horizontal;
-
-  return `${vertical} ${horizontal}`;
-}
-
-
 // Backwards compatible oude naam
 
 
@@ -630,15 +597,23 @@ function renderLineupRows() {
 }
 
 function fillDemoLineup() {
+  if (!document.getElementById("name1")) {
+    renderLineupRows();
+  }
+
   const names = ["Emma", "Noor", "Lisa", "Sanne", "Mila", "Roos", "Tess", "Lotte", "Fleur", "Jade", "Isa", "Liv", "Zoë", "Nova", "Evi", "Sara"];
   const numbers = [12, 7, 21, 4, 18, 10, 3, 25, 9, 14, 6, 31, 22, 11, 15, 28];
 
   names.forEach((name, index) => {
-    document.getElementById(`name${index + 1}`).value = name;
-    document.getElementById(`num${index + 1}`).value = numbers[index];
+    const nameInput = document.getElementById(`name${index + 1}`);
+    const numInput = document.getElementById(`num${index + 1}`);
+
+    if (nameInput) nameInput.value = name;
+    if (numInput) numInput.value = numbers[index];
   });
 
-  document.getElementById("opponent").value = "Demo Team";
+  const opponentInput = document.getElementById("opponent");
+  if (opponentInput) opponentInput.value = "Demo Team";
 }
 
 function renderChoices(elementId, options, key) {
@@ -667,11 +642,6 @@ function requireEditPassword(message = "Voer wachtwoord in om deze game te opene
 
 // Oude naam blijft bestaan, maar gaat nu verplicht via wachtwoord.
 
-
-function requireEditPassword(message = "Voer wachtwoord in om deze game te openen/wijzigen:") {
-  const password = prompt(message);
-  return password === "Edit";
-}
 
 function showUnfinishedGames() {
   setActiveScreen("unfinishedGamesScreen");
@@ -1367,9 +1337,10 @@ function setSyncStatus(message, type = "") {
 
 
 function getStoredGames() {
-  const activeGame = game && game.gameId && !game.closed ? [game] : [];
+  const activeGame = (typeof game !== "undefined" && game && game.gameId && !game.closed) ? [game] : [];
   const ids = new Set(activeGame.map(g => g.gameId));
-  return [...activeGame, ...sheetGames.filter(g => !ids.has(g.gameId))];
+  const sheetList = Array.isArray(sheetGames) ? sheetGames : [];
+  return [...activeGame, ...sheetList.filter(g => !ids.has(g.gameId))];
 }
 
 function saveStoredGames(games) {
@@ -1424,9 +1395,10 @@ function loadSheetDataJsonp() {
 }
 
 function mergeGames(localGames, sheetGamesFromServer) {
-  const activeGame = game && game.gameId && !game.closed ? [game] : [];
+  const activeGame = (typeof game !== "undefined" && game && game.gameId && !game.closed) ? [game] : [];
   const activeIds = new Set(activeGame.map(g => g.gameId));
-  return [...activeGame, ...sheetGamesFromServer.filter(g => !activeIds.has(g.gameId))];
+  const sheetList = Array.isArray(sheetGamesFromServer) ? sheetGamesFromServer : [];
+  return [...activeGame, ...sheetList.filter(g => !activeIds.has(g.gameId))];
 }
 
 function convertSheetRowsToGames(payload) {
