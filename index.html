@@ -9,7 +9,7 @@
 </head>
 <body>
   <main class="app">
-    <section class="hero">
+    <section class="hero" onclick="showHome()" role="button" tabindex="0" aria-label="Terug naar hoofdmenu">
       <div class="eyebrow">Onze Gezellen U21</div>
       <h1>Pitching Tracker</h1>
       <p class="sub">Line-up, slagzone, pitch type en resultaat.</p>
@@ -20,11 +20,14 @@
         <img class="home-logo" src="logo.png" alt="Onze Gezellen logo" />
         <h2 class="home-title">Onze Gezellen U21</h2>
         <p class="home-subtitle">Pitching Tracker</p>
+        <div class="actions">
+          <button class="secondary" onclick="syncFromGoogleSheet()">Sync Google Sheets</button>
+        </div>
         <div class="home-menu">
-          <button onclick="showPitcherStats()">Pitcher stats <span>→</span></button>
           <button onclick="showSetup()">Nieuwe game <span>→</span></button>
           <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
           <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
+          <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
           <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
         </div>
       </div>
@@ -205,9 +208,9 @@
           <option>Overig</option>
         </select>
 
-        <div id="syncStatus" class="sync-status">Google Sheets nog niet getest.</div>
+        <div id="syncStatus" class="sync-status">Google Sheets wordt geladen...</div>
 
-        <label>Line-up tegenstander</label>
+        <label>Line-up tegenstander</label><p class="small-note">Vul 1 t/m 9 als actieve slaglijst in. 10 t/m 16 zijn bench/wissels.</p>
         <div id="lineupRows"></div>
 
         <div class="actions">
@@ -305,6 +308,7 @@
         <div class="actions">
           <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
           <button class="secondary" onclick="resetCount()">Reset count</button>
+          <button class="secondary" onclick="openSubModal()">Wissel speelster</button>
           <button class="secondary" onclick="addOut()">+ Out</button>
           <button class="danger" onclick="resetGame()">Stop/reset</button>
           <button class="secondary" onclick="backToMenu()">Terug naar hoofdmenu</button>
@@ -316,6 +320,25 @@
         <div id="history" class="history"></div>
       </div>
     </section>
+  
+    <div id="subModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Wissel speelster</h2>
+        <p class="small-note">Kies een actieve slagvrouw uit 1 t/m 9 en wissel met iemand van de bench.</p>
+
+        <label for="activeSubSelect">Actieve slagvrouw</label>
+        <select id="activeSubSelect"></select>
+
+        <label for="benchSubSelect">Bench speelster</label>
+        <select id="benchSubSelect"></select>
+
+        <div class="actions">
+          <button class="secondary" onclick="closeSubModal()">Annuleren</button>
+          <button onclick="confirmSubstitution()">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="app.js"></script>

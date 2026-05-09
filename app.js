@@ -5,12 +5,16 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_SD7MDqIzOD8F
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
 const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Out"];
 
+let sheetSyncLoaded = false;
+
 let game = {
   opponent: "",
   pitcherName: "",
   date: "",
   startTime: "",
   lineup: [],
+  activeLineupSize: 9,
+  substitutionHistory: [],
   batterIndex: 0,
   balls: 0,
   strikes: 0,
@@ -39,6 +43,7 @@ function init() {
   renderLineupRows();
   renderChoices("pitchTypes", pitchTypeOptions, "pitchType");
   renderChoices("results", resultOptions, "result");
+  syncFromGoogleSheet();
 }
 
 function setActiveScreen(screenId) {
@@ -61,7 +66,7 @@ function prepareNewGameForm() {
   document.getElementById("gameDate").valueAsDate = new Date();
   document.getElementById("gameTime").value = new Date().toTimeString().slice(0, 5);
 
-  for (let i = 1; i <= 9; i++) {
+  for (let i = 1; i <= 16; i++) {
     const name = document.getElementById(`name${i}`);
     const num = document.getElementById(`num${i}`);
     if (name) name.value = "";
@@ -419,11 +424,11 @@ function renderLineupRows() {
   if (!holder) return;
 
   holder.innerHTML = "";
-  for (let i = 1; i <= 9; i++) {
+  for (let i = 1; i <= 16; i++) {
     holder.innerHTML += `
       <div class="lineup-row">
         <div class="spot">${i}</div>
-        <input id="name${i}" placeholder="Naam slagvrouw" />
+        <input id="name${i}" placeholder="${i <= 9 ? 'Naam slagvrouw' : 'Bench speler'}" />
         <input id="num${i}" placeholder="#" />
       </div>
     `;
@@ -431,11 +436,14 @@ function renderLineupRows() {
 }
 
 function fillDemoLineup() {
-  const names = ["Emma", "Noor", "Lisa", "Sanne", "Mila", "Roos", "Tess", "Lotte", "Fleur"];
+  const names = ["Emma", "Noor", "Lisa", "Sanne", "Mila", "Roos", "Tess", "Lotte", "Fleur", "Jade", "Isa", "Liv", "Zoë", "Nova", "Evi", "Sara"];
+  const numbers = [12, 7, 21, 4, 18, 10, 3, 25, 9, 14, 6, 31, 22, 11, 15, 28];
+
   names.forEach((name, index) => {
     document.getElementById(`name${index + 1}`).value = name;
-    document.getElementById(`num${index + 1}`).value = [12, 7, 21, 4, 18, 10, 3, 25, 9][index];
+    document.getElementById(`num${index + 1}`).value = numbers[index];
   });
+
   document.getElementById("opponent").value = "Demo Team";
 }
 
@@ -464,14 +472,15 @@ function startGame() {
   }
 
   const lineup = [];
-  for (let i = 1; i <= 9; i++) {
+  for (let i = 1; i <= 16; i++) {
     const name = document.getElementById(`name${i}`).value.trim();
     const number = document.getElementById(`num${i}`).value.trim();
     if (name || number) lineup.push({ order: i, name: name || `Slagvrouw ${i}`, number: number || "?" });
   }
 
-  if (lineup.length === 0) {
-    alert("Vul minimaal één slagvrouw in.");
+  const activeLineup = lineup.filter(player => player.order <= 9);
+  if (activeLineup.length < 9) {
+    alert("Vul minimaal de actieve slaglijst 1 t/m 9 in.");
     return;
   }
 
@@ -483,6 +492,8 @@ function startGame() {
   game.closed = false;
   game.startedAt = new Date().toISOString();
   game.lineup = lineup;
+  game.activeLineupSize = 9;
+  game.substitutionHistory = [];
   game.batterIndex = 0;
   game.balls = 0;
   game.strikes = 0;
@@ -605,7 +616,7 @@ function applyResult(result) {
 }
 
 function nextBatter(shouldSave = true) {
-  game.batterIndex = (game.batterIndex + 1) % game.lineup.length;
+  game.batterIndex = (game.batterIndex + 1) % Number(game.activeLineupSize || 9);
   resetCount(false);
   if (shouldSave) saveLocalGame();
   updateUI();
@@ -632,6 +643,79 @@ function undoPitch() {
   saveLocalGame();
   updateUI();
 }
+
+
+function openSubModal() {
+  const activeSelect = document.getElementById("activeSubSelect");
+  const benchSelect = document.getElementById("benchSubSelect");
+
+  const activePlayers = game.lineup.filter(player => player.order <= Number(game.activeLineupSize || 9));
+  const benchPlayers = game.lineup.filter(player => player.order > Number(game.activeLineupSize || 9));
+
+  activeSelect.innerHTML = activePlayers.map((player, index) =>
+    `<option value="${index}">${player.order}. ${player.name} #${player.number}</option>`
+  ).join("");
+
+  benchSelect.innerHTML = benchPlayers.map(player =>
+    `<option value="${player.order}">${player.order}. ${player.name} #${player.number}</option>`
+  ).join("");
+
+  if (!benchPlayers.length) {
+    benchSelect.innerHTML = `<option value="">Geen bench spelers ingevuld</option>`;
+  }
+
+  document.getElementById("subModal").classList.remove("hidden");
+}
+
+function closeSubModal() {
+  document.getElementById("subModal").classList.add("hidden");
+}
+
+function confirmSubstitution() {
+  const activeIndex = Number(document.getElementById("activeSubSelect").value);
+  const benchOrder = Number(document.getElementById("benchSubSelect").value);
+
+  if (Number.isNaN(activeIndex) || Number.isNaN(benchOrder)) {
+    alert("Kies een actieve speelster en een bench speelster.");
+    return;
+  }
+
+  const benchIndex = game.lineup.findIndex(player => player.order === benchOrder);
+  if (benchIndex < 0) {
+    alert("Bench speelster niet gevonden.");
+    return;
+  }
+
+  const activePlayer = { ...game.lineup[activeIndex] };
+  const benchPlayer = { ...game.lineup[benchIndex] };
+
+  // Slagpositie blijft gelijk; speelster wordt gewisseld.
+  game.lineup[activeIndex] = {
+    ...benchPlayer,
+    order: activePlayer.order
+  };
+
+  // Gewisselde speelster gaat naar de benchplek.
+  game.lineup[benchIndex] = {
+    ...activePlayer,
+    order: benchPlayer.order
+  };
+
+  game.substitutionHistory = game.substitutionHistory || [];
+  game.substitutionHistory.push({
+    timestamp: new Date().toISOString(),
+    activeSlot: activePlayer.order,
+    outPlayerName: activePlayer.name,
+    outPlayerNumber: activePlayer.number,
+    inPlayerName: benchPlayer.name,
+    inPlayerNumber: benchPlayer.number
+  });
+
+  saveLocalGame();
+  closeSubModal();
+  updateUI();
+}
+
 
 function backToMenu() {
   showHome();
@@ -718,6 +802,32 @@ function formatInningsPitched(totalOuts) {
   return (Number(totalOuts || 0) / 3).toFixed(3);
 }
 
+function getPitchZone(x, y) {
+  const zoneLeft = 54;
+  const zoneRight = 92;
+  const zoneTop = 18;
+  const zoneBottom = 72;
+
+  const insideZone = x >= zoneLeft && x <= zoneRight && y >= zoneTop && y <= zoneBottom;
+
+  if (!insideZone) {
+    return { horizontal: "Wijd", vertical: "Wijd", label: "Wijd" };
+  }
+
+  const zoneWidth = zoneRight - zoneLeft;
+  const zoneHeight = zoneBottom - zoneTop;
+
+  let horizontal = "Midden";
+  if (x < zoneLeft + zoneWidth / 3) horizontal = "Inside";
+  else if (x > zoneLeft + (zoneWidth / 3) * 2) horizontal = "Outside";
+
+  let vertical = "Midden";
+  if (y < zoneTop + zoneHeight / 3) vertical = "Hoog";
+  else if (y > zoneTop + (zoneHeight / 3) * 2) vertical = "Laag";
+
+  return { horizontal, vertical, label: `${horizontal} ${vertical}` };
+}
+
 async function sendPitchToGoogleSheet(pitch) {
   if (!game.appsScriptUrl) {
     setSyncStatus("Google Sheets niet gekoppeld.", "error");
@@ -737,7 +847,11 @@ async function sendPitchToGoogleSheet(pitch) {
         totalStrikes: game.totalStrikes,
         totalOuts: game.totalOuts,
         inningsPitched: formatInningsPitched(game.totalOuts),
-        firstPitchStrike: pitch.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(pitch.result)
+        firstPitchStrike: pitch.firstPitch && ["Strike", "Swing", "Foul", "HIT", "Out"].includes(pitch.result),
+        zoneHorizontal: pitch.zoneHorizontal,
+        zoneVertical: pitch.zoneVertical,
+        zoneLabel: pitch.zoneLabel,
+        walk: pitch.walk
       })
     });
 
@@ -754,6 +868,201 @@ function setSyncStatus(message, type = "") {
   status.textContent = message;
   status.className = `sync-status ${type}`;
 }
+
+
+function syncFromGoogleSheet() {
+  setSyncStatus("Google Sheets wordt geladen...", "loading");
+
+  return loadSheetDataJsonp()
+    .then(payload => {
+      const games = convertSheetRowsToGames(payload);
+      const localGames = getStoredGames();
+
+      const merged = mergeGames(localGames, games);
+      saveStoredGames(merged);
+
+      sheetSyncLoaded = true;
+      setSyncStatus(`Google Sheets geladen: ${games.length} games.`, "ok");
+
+      if (document.getElementById("pitcherStatsScreen")?.classList.contains("active")) renderPitcherStats();
+      if (document.getElementById("batterSearchScreen")?.classList.contains("active")) {
+        populateBatterOpponentFilter();
+        renderBatterSearch();
+      }
+      if (document.getElementById("previousGamesScreen")?.classList.contains("active")) renderPreviousGames();
+      if (document.getElementById("unfinishedGamesScreen")?.classList.contains("active")) showUnfinishedGames();
+
+      return games;
+    })
+    .catch(error => {
+      console.error("Google Sheets lezen mislukt", error);
+      setSyncStatus("Kon Google Sheets niet teruglezen.", "error");
+      return [];
+    });
+}
+
+function loadSheetDataJsonp() {
+  return new Promise((resolve, reject) => {
+    const callbackName = `ogSheetCallback_${Date.now()}`;
+    const script = document.createElement("script");
+
+    window[callbackName] = data => {
+      resolve(data);
+      script.remove();
+      delete window[callbackName];
+    };
+
+    script.onerror = () => {
+      script.remove();
+      delete window[callbackName];
+      reject(new Error("JSONP laden mislukt"));
+    };
+
+    script.src = `${APPS_SCRIPT_URL}?callback=${callbackName}&t=${Date.now()}`;
+    document.body.appendChild(script);
+  });
+}
+
+function mergeGames(localGames, sheetGames) {
+  const byId = new Map();
+
+  [...sheetGames, ...localGames].forEach(g => {
+    if (!g.gameId) return;
+    const existing = byId.get(g.gameId);
+
+    if (!existing) {
+      byId.set(g.gameId, g);
+      return;
+    }
+
+    const existingPitchCount = existing.pitches?.length || 0;
+    const newPitchCount = g.pitches?.length || 0;
+
+    if (newPitchCount >= existingPitchCount) byId.set(g.gameId, { ...existing, ...g });
+  });
+
+  return Array.from(byId.values());
+}
+
+function convertSheetRowsToGames(payload) {
+  if (!payload || !payload.rows || !payload.rows.length) return [];
+
+  const headers = payload.headers || [];
+  const rows = payload.rows;
+
+  const get = (record, names, fallbackIndex = null) => {
+    for (const name of names) {
+      if (record[name] !== undefined && record[name] !== "") return record[name];
+    }
+    if (fallbackIndex !== null) return record[`_${fallbackIndex}`];
+    return "";
+  };
+
+  const records = rows.map(row => {
+    const record = {};
+    headers.forEach((header, index) => {
+      record[String(header || "").trim()] = row[index];
+      record[`_${index}`] = row[index];
+    });
+    return record;
+  });
+
+  const games = new Map();
+
+  records.forEach(record => {
+    const gameId = String(get(record, ["Game ID", "gameId"], 1) || "").trim();
+    if (!gameId) return;
+
+    const date = get(record, ["Datum", "date"], 2);
+    const startTime = get(record, ["Starttijd", "startTime"], 3);
+    const opponent = get(record, ["Tegenstander", "opponent"], 4);
+    const pitcherName = get(record, ["Pitcher", "pitcherName"], 5);
+
+    const pitch = {
+      timestamp: get(record, ["Timestamp", "timestamp"], 0),
+      gameId,
+      date,
+      startTime,
+      opponent,
+      pitcherName,
+      batterOrder: Number(get(record, ["Batter Order", "batterOrder"], 6) || 0),
+      batterName: get(record, ["Slagvrouw", "batterName"], 7),
+      batterNumber: get(record, ["Rugnummer", "batterNumber"], 8),
+      x: Number(get(record, ["X", "x"], 9)),
+      y: Number(get(record, ["Y", "y"], 10)),
+      zoneHorizontal: get(record, ["Zone Horizontal", "zoneHorizontal"], 11),
+      zoneVertical: get(record, ["Zone Vertical", "zoneVertical"], 12),
+      zoneLabel: get(record, ["Zone Label", "zoneLabel"], 13),
+      pitchType: get(record, ["Pitch Type", "pitchType"], 14),
+      result: get(record, ["Resultaat", "result"], 15),
+      ballsBefore: Number(get(record, ["Balls Before", "ballsBefore"], 16) || 0),
+      strikesBefore: Number(get(record, ["Strikes Before", "strikesBefore"], 17) || 0),
+      outsBefore: Number(get(record, ["Outs Before", "outsBefore"], 18) || 0),
+      firstPitch: parseBool(get(record, ["First Pitch", "firstPitch"], 19)),
+      firstPitchStrike: parseBool(get(record, ["First Pitch Strike", "firstPitchStrike"], 20)),
+      totalBalls: Number(get(record, ["Total Balls", "totalBalls"], 21) || 0),
+      totalStrikes: Number(get(record, ["Total Strikes", "totalStrikes"], 22) || 0),
+      totalOuts: Number(get(record, ["Total Outs", "totalOuts"], 23) || 0),
+      inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
+      walk: parseBool(get(record, ["Walk", "walk"], 25))
+    };
+
+    if (!games.has(gameId)) {
+      games.set(gameId, {
+        gameId,
+        date,
+        startTime,
+        opponent,
+        pitcherName,
+        lineup: [],
+  activeLineupSize: 9,
+  substitutionHistory: [],
+        batterIndex: 0,
+        balls: 0,
+        strikes: 0,
+        totalBalls: 0,
+        totalStrikes: 0,
+        firstPitchStrikes: 0,
+        outs: 0,
+        totalOuts: 0,
+        pitches: [],
+        closed: true,
+        appsScriptUrl: APPS_SCRIPT_URL
+      });
+    }
+
+    const g = games.get(gameId);
+    g.pitches.push(pitch);
+
+    if (pitch.batterName || pitch.batterNumber) {
+      const exists = g.lineup.some(b =>
+        b.name === pitch.batterName && String(b.number) === String(pitch.batterNumber)
+      );
+      if (!exists) {
+        g.lineup.push({
+          order: pitch.batterOrder || g.lineup.length + 1,
+          name: pitch.batterName || `Slagvrouw ${g.lineup.length + 1}`,
+          number: pitch.batterNumber || "?"
+        });
+      }
+    }
+
+    g.totalBalls = Math.max(g.totalBalls, pitch.totalBalls || 0);
+    g.totalStrikes = Math.max(g.totalStrikes, pitch.totalStrikes || 0);
+    g.totalOuts = Math.max(g.totalOuts, pitch.totalOuts || 0);
+    if (pitch.firstPitchStrike) g.firstPitchStrikes += 1;
+  });
+
+  return Array.from(games.values()).map(g => ({
+    ...g,
+    pitches: g.pitches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  }));
+}
+
+function parseBool(value) {
+  return value === true || value === "TRUE" || value === "true" || value === "Ja" || value === "1";
+}
+
 
 function saveLocalGame() {
   if (!game.gameId) {
@@ -785,6 +1094,8 @@ function loadLocalGame() {
         outs: Number(loaded.outs || 0),
         totalOuts: Number(loaded.totalOuts || loaded.outs || 0),
         pitches: loaded.pitches || [],
+        activeLineupSize: Number(loaded.activeLineupSize || 9),
+        substitutionHistory: loaded.substitutionHistory || [],
         appsScriptUrl: APPS_SCRIPT_URL
       };
       saveLocalGame();
