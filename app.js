@@ -19,11 +19,17 @@ function formatDateTimeCompact(dateValue, timeValue) {
   let month = "--";
 
   if (rawDate) {
+    // Belangrijk: YYYY-MM-DD niet met new Date() parsen.
+    // Dat kan als UTC worden gezien en daardoor 1 dag teruglopen.
     const isoMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const nlMatch = rawDate.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
 
     if (isoMatch) {
-      month = isoMatch[2];
       day = isoMatch[3];
+      month = isoMatch[2];
+    } else if (nlMatch) {
+      day = nlMatch[1].padStart(2, "0");
+      month = nlMatch[2].padStart(2, "0");
     } else {
       const parsed = new Date(rawDate);
       if (!Number.isNaN(parsed.getTime())) {
@@ -1123,9 +1129,7 @@ function renderBatterSearch() {
   const games = new Set(matches.map(p => p.gameId || `${p.gameDate}-${p.gameOpponent}`)).size;
 
   const battingAverage =
-    outs === 0
-      ? (hits > 0 ? "1.000" : ".000")
-      : (hits / outs).toFixed(3).replace(/^0/, "");
+    ((hits + outs) > 0 ? (hits / (hits + outs)) : 0);
 
   document.getElementById("batterSearchPitches").textContent = matches.length;
   document.getElementById("batterSearchHits").textContent = hits;
@@ -1494,8 +1498,20 @@ function countStrikeoutsFromPitches(pitches) {
 function getGameSortValue(g) {
   const date = String(g.date || "").trim();
   const time = String(g.startTime || "00:00").trim() || "00:00";
-  const value = Date.parse(`${date}T${time}`);
 
+  const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const timeMatch = time.match(/(\d{1,2}):(\d{2})/);
+
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    const hour = timeMatch ? Number(timeMatch[1]) : 0;
+    const minute = timeMatch ? Number(timeMatch[2]) : 0;
+    return new Date(year, month, day, hour, minute).getTime();
+  }
+
+  const value = Date.parse(`${date}T${time}`);
   if (!Number.isNaN(value)) return value;
 
   const fallback = Date.parse(g.closedAt || g.startedAt || "");
@@ -2078,7 +2094,7 @@ function renderBatterHeatmap() {
 }
 
 function formatInningsPitched(totalOuts) {
-  return (Number(totalOuts || 0) / 3).toFixed(3);
+  return (Number(totalOuts || 0) / 3).toFixed(3).replace(/^0/, '');
 }
 
 function getPitchZone(x, y) {
