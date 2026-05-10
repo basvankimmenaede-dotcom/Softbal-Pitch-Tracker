@@ -75,6 +75,15 @@ function setStatHighlight(elementId, condition) {
   stat.classList.toggle("good-stat", Boolean(condition));
 }
 
+
+function getHeatDotClass(result) {
+  if (["Ball", "HBP"].includes(result)) return "ball";
+  if (["Swing", "Foul"].includes(result)) return "swing-foul";
+  if (result === "HIT") return "hit";
+  if (isOutResult(result)) return "out";
+  return "";
+}
+
 function getReadableZone(p) {
   const x = Number(p.x || 50);
   const y = Number(p.y || 50);
@@ -659,7 +668,7 @@ async function confirmAddBatter() {
 
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
-const resultOptions = ["Ball", "Strike", "Swing", "Foul", "HIT", "Veld uit", "Strike out"];
+const resultOptions = ["Ball", "HBP", "Strike", "Swing", "Foul", "HIT", "Veld uit", "Strike out"];
 
 let sheetSyncLoaded = false;
 let sheetGames = [];
@@ -811,7 +820,7 @@ function getPitcherGames(pitcherName) {
         pitcherName,
         pitches: pitcherPitches,
         totalOuts: getPitcherOutsFromPitches(pitcherPitches),
-        totalBalls: pitcherPitches.filter(p => p.result === "Ball").length,
+        totalBalls: pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).length,
         totalStrikes: pitcherPitches.filter(p => isStrikeResult(p.result)).length,
         firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length
       };
@@ -842,7 +851,7 @@ function calculateGameStats(g) {
     isStrikeResult(p.result)
   ).length;
 
-  const balls = pitches.filter(p => p.result === "Ball").length;
+  const balls = pitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
   const outs = getPitcherOutsFromPitches(pitches);
 
   const fps = pitches.filter(p =>
@@ -1109,7 +1118,7 @@ function renderBatterSearch() {
 
   const hits = matches.filter(p => p.result === "HIT").length;
   const outs = matches.filter(p => isOutResult(p.result)).length;
-  const balls = matches.filter(p => p.result === "Ball").length;
+  const balls = matches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
   const strikes = matches.filter(p => isStrikeResult(p.result)).length;
   const games = new Set(matches.map(p => p.gameId || `${p.gameDate}-${p.gameOpponent}`)).size;
 
@@ -1131,8 +1140,8 @@ function renderBatterSearch() {
 
     const dot = document.createElement("div");
     dot.className = "heat-dot";
-    if (p.result === "HIT") dot.classList.add("hit");
-    if (isOutResult(p.result)) dot.classList.add("out");
+    const heatClass = getHeatDotClass(p.result);
+    if (heatClass) dot.classList.add(heatClass);
     dot.style.left = `${p.x}%`;
     dot.style.top = `${p.y}%`;
     dot.title = `${p.batterName} #${p.batterNumber} · ${p.pitcherName || "Pitcher onbekend"} · ${p.pitchType} · ${p.result} · ${getReadableZone(p)}`;
@@ -1461,10 +1470,11 @@ function countStrikeoutsFromPitches(pitches) {
       return;
     }
 
-    if (p.result === "Ball") balls += 1;
+    if (["Ball", "HBP"].includes(p.result)) balls += 1;
     if (["Strike", "Swing"].includes(p.result)) strikes += 1;
     if (p.result === "Foul" && strikes < 2) strikes += 1;
 
+    // Derde Strike of derde Swing telt als strikeout.
     if (strikes >= 3) {
       strikeouts += 1;
       balls = 0;
@@ -1472,7 +1482,7 @@ function countStrikeoutsFromPitches(pitches) {
       return;
     }
 
-    if (p.walk || balls >= 4 || ["HIT", "Out", "Veld uit"].includes(p.result)) {
+    if (p.walk || balls >= 4 || ["HBP", "HIT", "Out", "Veld uit"].includes(p.result)) {
       balls = 0;
       strikes = 0;
     }
@@ -1733,6 +1743,13 @@ function applyResult(result) {
   if (result === "Ball") {
     game.balls += 1;
     game.totalBalls += 1;
+  }
+
+  if (result === "HBP") {
+    game.balls += 1;
+    game.totalBalls += 1;
+    nextBatter(false);
+    return;
   }
 
   if (["Strike", "Swing"].includes(result)) {
@@ -2046,8 +2063,8 @@ function renderBatterHeatmap() {
   batterPitches.forEach((p, index) => {
     const dot = document.createElement("div");
     dot.className = "heat-dot";
-    if (p.result === "HIT") dot.classList.add("hit");
-    if (isOutResult(p.result)) dot.classList.add("out");
+    const heatClass = getHeatDotClass(p.result);
+    if (heatClass) dot.classList.add(heatClass);
     dot.style.left = `${p.x}%`;
     dot.style.top = `${p.y}%`;
     dot.title = `${p.pitchType} · ${p.result}`;

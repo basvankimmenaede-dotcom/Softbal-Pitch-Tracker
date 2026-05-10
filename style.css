@@ -1350,3 +1350,16 @@ button.danger {
   color: #9ca3af;
 }
 
+
+
+.legend-dot.ball,
+.heat-dot.ball {
+  background: rgba(59,130,246,.82) !important;
+  box-shadow: 0 0 22px rgba(59,130,246,.65) !important;
+}
+
+.legend-dot.swing-foul,
+.heat-dot.swing-foul {
+  background: rgba(168,85,247,.82) !important;
+  box-shadow: 0 0 22px rgba(168,85,247,.65) !important;
+}
