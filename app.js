@@ -1108,7 +1108,7 @@ function renderBatterSearch() {
   });
 
   const hits = matches.filter(p => p.result === "HIT").length;
-  const outs = matches.filter(p => p.result === "Out").length;
+  const outs = matches.filter(p => isOutResult(p.result)).length;
   const balls = matches.filter(p => p.result === "Ball").length;
   const strikes = matches.filter(p => isStrikeResult(p.result)).length;
   const games = new Set(matches.map(p => p.gameId || `${p.gameDate}-${p.gameOpponent}`)).size;
@@ -1132,7 +1132,7 @@ function renderBatterSearch() {
     const dot = document.createElement("div");
     dot.className = "heat-dot";
     if (p.result === "HIT") dot.classList.add("hit");
-    if (p.result === "Out") dot.classList.add("out");
+    if (isOutResult(p.result)) dot.classList.add("out");
     dot.style.left = `${p.x}%`;
     dot.style.top = `${p.y}%`;
     dot.title = `${p.batterName} #${p.batterNumber} · ${p.pitcherName || "Pitcher onbekend"} · ${p.pitchType} · ${p.result} · ${getReadableZone(p)}`;
@@ -2047,7 +2047,7 @@ function renderBatterHeatmap() {
     const dot = document.createElement("div");
     dot.className = "heat-dot";
     if (p.result === "HIT") dot.classList.add("hit");
-    if (p.result === "Out") dot.classList.add("out");
+    if (isOutResult(p.result)) dot.classList.add("out");
     dot.style.left = `${p.x}%`;
     dot.style.top = `${p.y}%`;
     dot.title = `${p.pitchType} · ${p.result}`;
