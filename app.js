@@ -19,14 +19,22 @@ function formatDateTimeCompact(dateValue, timeValue) {
   let month = "--";
 
   if (rawDate) {
-    // Belangrijk: YYYY-MM-DD niet met new Date() parsen.
-    // Dat kan als UTC worden gezien en daardoor 1 dag teruglopen.
-    const isoMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const isIsoDateTime = /T\d{2}:\d{2}:\d{2}/.test(rawDate);
+    const isoDateOnlyMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     const nlMatch = rawDate.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
 
-    if (isoMatch) {
-      day = isoMatch[3];
-      month = isoMatch[2];
+    if (isIsoDateTime) {
+      // Google Sheets kan een datum als UTC ISO sturen, bv. 2026-05-08T22:00:00.000Z.
+      // Die moet lokaal worden gelezen zodat dit 09-05 wordt.
+      const parsed = new Date(rawDate);
+      if (!Number.isNaN(parsed.getTime())) {
+        day = String(parsed.getDate()).padStart(2, "0");
+        month = String(parsed.getMonth() + 1).padStart(2, "0");
+      }
+    } else if (isoDateOnlyMatch) {
+      // Echte date-only waarde niet via new Date parsen, om timezone-shifts te voorkomen.
+      day = isoDateOnlyMatch[3];
+      month = isoDateOnlyMatch[2];
     } else if (nlMatch) {
       day = nlMatch[1].padStart(2, "0");
       month = nlMatch[2].padStart(2, "0");
@@ -1499,7 +1507,13 @@ function getGameSortValue(g) {
   const date = String(g.date || "").trim();
   const time = String(g.startTime || "00:00").trim() || "00:00";
 
-  const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const isIsoDateTime = /T\d{2}:\d{2}:\d{2}/.test(date);
+  if (isIsoDateTime) {
+    const parsed = new Date(date);
+    if (!Number.isNaN(parsed.getTime())) return parsed.getTime();
+  }
+
+  const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const timeMatch = time.match(/(\d{1,2}):(\d{2})/);
 
   if (isoMatch) {
