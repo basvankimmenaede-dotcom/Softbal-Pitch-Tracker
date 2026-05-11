@@ -1783,3 +1783,32 @@ button.danger {
   font-weight: 850;
   line-height: 1.35;
 }
+
+
+
+.game-recap-pitcher {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148,163,184,.28);
+}
+
+.game-recap-pitcher:first-of-type {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.game-recap-pitcher h4 {
+  margin: 0 0 8px;
+  color: var(--orange);
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.recap-pitcher-stats {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.4;
+}

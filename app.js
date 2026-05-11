@@ -2156,94 +2156,135 @@ function buildPitcherRecapLines(game) {
 
 function buildGameRecap(game) {
   const pitches = [...(game.pitches || [])].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-  const stats = calculateGameStats({ ...game, pitches });
-  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
-  const strikePct = pitches.length ? Math.round((stats.strikes / pitches.length) * 100) : 0;
-  const ballPct = pitches.length ? Math.round((stats.balls / pitches.length) * 100) : 0;
-
-  const { early, late } = splitPitchesIntoPhases(pitches);
-  const earlyStats = getPhaseStats(early);
-  const lateStats = getPhaseStats(late);
-
-  const strikeZones = pitches
-    .filter(p => isStrikeResult(p.result))
-    .map(getZoneBucketForRecap);
-  const ballZones = pitches
-    .filter(p => ["Ball", "HBP"].includes(p.result))
-    .map(getZoneBucketForRecap);
-  const [bestZone] = getMostCommon(strikeZones);
-  const [wideZone] = getMostCommon(ballZones);
-
-  const pitcherLines = buildPitcherRecapLines(game);
-
-  const positiveLines = [];
-  if (strikePct >= 60) positiveLines.push(`goed strikepercentage (${strikePct}%)`);
-  if (fpsPct >= 50) positiveLines.push(`sterk FPS% (${fpsPct}%)`);
-  if (stats.strikeouts > 0) positiveLines.push(`${stats.strikeouts} strikeout(s)`);
-  if (bestZone && bestZone !== "-") positiveLines.push(`meeste effectieve strikes rond ${bestZone}`);
-
-  if (!positiveLines.length) positiveLines.push("voldoende data verzameld voor vervolg-analyse");
-
-  let weakenedLine = "";
-  if (lateStats.ballPct > earlyStats.ballPct + 8) {
-    weakenedLine = `Later in de wedstrijd nam het aantal wijd gegooide pitches toe (${earlyStats.ballPct}% → ${lateStats.ballPct}% balls).`;
-  } else if (lateStats.walks > earlyStats.walks) {
-    weakenedLine = `Later in de wedstrijd kwamen er meer walks en langere at-bats.`;
-  } else if (lateStats.strikePct < earlyStats.strikePct - 8) {
-    weakenedLine = `Later in de wedstrijd zakte het strikepercentage (${earlyStats.strikePct}% → ${lateStats.strikePct}%).`;
-  } else {
-    weakenedLine = `De controle bleef redelijk stabiel over de wedstrijd.`;
-  }
-
-  const wideLine = wideZone && wideZone !== "-"
-    ? `De meeste wijd gegooide pitches zaten rond ${wideZone}.`
-    : `Er was geen duidelijk gebied waar de meeste wijd gegooide pitches zaten.`;
+  const pitchers = getPitcherNamesForGame(game);
 
   const title = `${formatDateTimeCompact(game.date, game.startTime)} · ${game.opponent || "Onbekende tegenstander"}`;
+
+  const pitcherSections = pitchers.map(pitcherName => {
+    const pitcherPitches = pitches.filter(p => String(p.pitcherName || game.pitcherName || "") === pitcherName);
+
+    const stats = calculateGameStats({
+      ...game,
+      pitcherName,
+      pitches: pitcherPitches
+    });
+
+    const strikePct = pitcherPitches.length
+      ? Math.round((stats.strikes / pitcherPitches.length) * 100)
+      : 0;
+
+    const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+
+    const strikeZones = pitcherPitches
+      .filter(p => isStrikeResult(p.result))
+      .map(getZoneBucketForRecap);
+
+    const ballZones = pitcherPitches
+      .filter(p => ["Ball", "HBP"].includes(p.result))
+      .map(getZoneBucketForRecap);
+
+    const [bestZone] = getMostCommon(strikeZones);
+    const [wideZone] = getMostCommon(ballZones);
+
+    const { early, late } = splitPitchesIntoPhases(pitcherPitches);
+    const earlyStats = getPhaseStats(early);
+    const lateStats = getPhaseStats(late);
+
+    let summary = "";
+    let strengths = [];
+    let focus = [];
+
+    if (strikePct >= 62) {
+      summary = "Sterke controle gedurende de outing met een stabiel strikepercentage.";
+      strengths.push("stabiel strikepercentage");
+    } else if (strikePct >= 52) {
+      summary = "Overwegend goede controle met meerdere aanvallende counts.";
+      strengths.push("aanvallend in vroege counts");
+    } else {
+      summary = "Controle wisselde gedurende de outing, vooral later in de inning.";
+    }
+
+    if (fpsPct >= 55) strengths.push(`sterk FPS% (${fpsPct}%)`);
+    if (stats.strikeouts >= 2) strengths.push(`${stats.strikeouts} strikeouts`);
+    if (bestZone && bestZone !== "-") strengths.push(`effectief rond ${bestZone}`);
+
+    if (lateStats.ballPct > earlyStats.ballPct + 10) {
+      focus.push(`meer wijd gegooide pitches later in de outing (${earlyStats.ballPct}% → ${lateStats.ballPct}% balls)`);
+    }
+
+    if (wideZone && wideZone.includes("outside")) {
+      focus.push("meerdere misses outside buiten de zone");
+    } else if (wideZone && wideZone.includes("inside")) {
+      focus.push("meerdere misses inside buiten de zone");
+    } else if (wideZone && wideZone.includes("hoog")) {
+      focus.push("controleverlies hoog in de zone");
+    } else if (wideZone && wideZone.includes("laag")) {
+      focus.push("meer lage misses buiten de zone");
+    }
+
+    if (stats.walks >= 2) {
+      focus.push("meer vrije honken door balls in hitter counts");
+    }
+
+    strengths = [...new Set(strengths)].slice(0, 3);
+    focus = [...new Set(focus)].slice(0, 3);
+
+    const textBlock = [
+      `${pitcherName}`,
+      `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB`,
+      ``,
+      summary,
+      ``,
+      `Sterk:`,
+      ...(strengths.length ? strengths.map(s => `- ${s}`) : [`- goede inzet gedurende de outing`]),
+      ``,
+      ...(focus.length ? [
+        `Aandachtspunt:`,
+        ...focus.map(f => `- ${f}`),
+        ``
+      ] : [])
+    ].join("\n");
+
+    const htmlBlock = `
+      <div class="game-recap-pitcher">
+        <h4>${pitcherName}</h4>
+
+        <div class="recap-pitcher-stats">
+          ${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB
+        </div>
+
+        <p>${summary}</p>
+
+        <label>Sterk</label>
+        <ul>
+          ${(strengths.length ? strengths : ["goede inzet gedurende de outing"]).map(s => `<li>${s}</li>`).join("")}
+        </ul>
+
+        ${focus.length ? `
+          <label>Aandachtspunt</label>
+          <ul>
+            ${focus.map(f => `<li>${f}</li>`).join("")}
+          </ul>
+        ` : ""}
+      </div>
+    `;
+
+    return {
+      textBlock,
+      htmlBlock
+    };
+  });
 
   const text = [
     `Game Recap — ${title}`,
     ``,
-    `Korte samenvatting: ${stats.totalPitches} pitches, ${strikePct}% strikes, ${ballPct}% balls, ${fpsPct}% FPS, ${stats.strikeouts || 0} K en ${stats.walks || 0} BB.`,
-    ``,
-    `Pitchers:`,
-    ...pitcherLines.map(line => `- ${line}`),
-    ``,
-    `Positief:`,
-    ...positiveLines.slice(0, 3).map(line => `- ${line}`),
-    ``,
-    `Wanneer we verzwakten:`,
-    `- ${weakenedLine}`,
-    `- ${wideLine}`,
-    ``,
-    `Aandachtspunt:`,
-    `- Controle vasthouden wanneer het aantal wijd gegooide pitches stijgt.`
+    ...pitcherSections.map(p => p.textBlock)
   ].join("\n");
 
   const html = `
     <div class="game-recap-card">
       <h3>${title}</h3>
-
-      <p><strong>Korte samenvatting:</strong> ${stats.totalPitches} pitches, ${strikePct}% strikes, ${ballPct}% balls, ${fpsPct}% FPS, ${stats.strikeouts || 0} K en ${stats.walks || 0} BB.</p>
-
-      <label>Pitchers in deze wedstrijd</label>
-      <div class="recap-list">
-        ${pitcherLines.map(line => `<div class="recap-row">${line}</div>`).join("")}
-      </div>
-
-      <label>Positieve punten</label>
-      <ul>
-        ${positiveLines.slice(0, 3).map(line => `<li>${line}</li>`).join("")}
-      </ul>
-
-      <label>Wanneer we verzwakten</label>
-      <ul>
-        <li>${weakenedLine}</li>
-        <li>${wideLine}</li>
-      </ul>
-
-      <label>Aandachtspunt</label>
-      <p>Controle vasthouden wanneer het aantal wijd gegooide pitches stijgt.</p>
+      ${pitcherSections.map(p => p.htmlBlock).join("")}
     </div>
   `;
 
