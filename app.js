@@ -2109,10 +2109,29 @@ function updateUI() {
   renderBatterHeatmap();
 }
 
+function syncHistoryHeatmapToPitchField() {
+  const field = document.getElementById("field");
+  const heatmap = document.getElementById("heatmapField");
+
+  if (!field || !heatmap) return;
+
+  const fieldRect = field.getBoundingClientRect();
+  const heatmapRect = heatmap.getBoundingClientRect();
+
+  if (!fieldRect.width || !fieldRect.height || !heatmapRect.width) return;
+
+  // Pitch-coordinaten worden opgeslagen als percentages van het live registratieveld.
+  // De historie-heatmap moet daarom exact dezelfde breedte/hoogte-verhouding gebruiken,
+  // anders klopt de y-positie visueel niet meer op iPad/desktop verschillen.
+  const fieldRatio = fieldRect.height / fieldRect.width;
+  heatmap.style.height = `${Math.round(heatmapRect.width * fieldRatio)}px`;
+}
+
 function renderBatterHeatmap() {
   const heatmap = document.getElementById("heatmapField");
   if (!heatmap) return;
 
+  syncHistoryHeatmapToPitchField();
   heatmap.querySelectorAll(".heat-dot").forEach(dot => dot.remove());
 
   const batter = game.lineup[game.batterIndex];
@@ -2475,5 +2494,7 @@ function loadLocalGame() {
 }
 
 window.addEventListener("DOMContentLoaded", init);
+window.addEventListener("resize", syncHistoryHeatmapToPitchField);
+window.addEventListener("orientationchange", syncHistoryHeatmapToPitchField);
 
 

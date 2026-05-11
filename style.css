@@ -351,6 +351,7 @@ button.good { background: var(--good); color: #072214; }
   background: rgba(255,122,24,.8);
 }
 
+.legend-dot.strike { background: rgba(255,122,24,.9); }
 .legend-dot.hit { background: rgba(55,214,122,.9); }
 .legend-dot.out { background: rgba(255,77,77,.9); }
 
@@ -1416,4 +1417,12 @@ button.danger {
 
 .pitcher-stats-grid .stat small {
   min-height: 24px;
+}
+
+/* === Historie heatmap alignment fix ===
+   De hoogte van #heatmapField wordt in app.js gesynchroniseerd met het live registratieveld.
+   Daarom geen vaste hoogte afdwingen op de historie-heatmap. */
+#heatmapField.heatmap-field {
+  height: auto;
+  min-height: 180px;
 }
