@@ -926,6 +926,20 @@ function countWalks(g) {
   return walks;
 }
 
+function resetPitcherStatsOverview() {
+  document.getElementById("statsTotalIP").textContent = "0.000";
+  document.getElementById("statsTotalPitches").textContent = "0";
+  document.getElementById("statsTotalBatters").textContent = "0";
+  document.getElementById("statsTotalStrikes").textContent = "0";
+  document.getElementById("statsTotalBalls").textContent = "0";
+  document.getElementById("statsSBRatio").textContent = "0.00";
+  document.getElementById("statsFPSBatters").textContent = "0%";
+  document.getElementById("statsTotalStrikeouts").textContent = "0";
+  document.getElementById("statsWalks").textContent = "0";
+  setStatHighlight("statsFPSBatters", false);
+  setStatHighlight("statsSBRatio", false);
+}
+
 function renderPitcherStats() {
   const select = document.getElementById("statsPitcherName");
   if (!select) return;
@@ -934,17 +948,7 @@ function renderPitcherStats() {
   const body = document.getElementById("statsPerGameBody");
 
   if (!pitcherName) {
-    document.getElementById("statsTotalPitches").textContent = "0";
-    document.getElementById("statsTotalStrikes").textContent = "0";
-    document.getElementById("statsTotalBalls").textContent = "0";
-    document.getElementById("statsTotalOuts").textContent = "0";
-    document.getElementById("statsTotalIP").textContent = "0.000";
-    document.getElementById("statsTotalFPS").textContent = "0";
-    document.getElementById("statsSBRatio").textContent = "0.00";
-    document.getElementById("statsWalks").textContent = "0";
-    document.getElementById("statsFPSBatters").textContent = "0%";
-    setStatHighlight("statsFPSBatters", false);
-    setStatHighlight("statsSBRatio", false);
+    resetPitcherStatsOverview();
     body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
     return;
   }
@@ -952,17 +956,7 @@ function renderPitcherStats() {
   const games = getPitcherGames(pitcherName).sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
 
   if (!games.length) {
-    document.getElementById("statsTotalPitches").textContent = "0";
-    document.getElementById("statsTotalStrikes").textContent = "0";
-    document.getElementById("statsTotalBalls").textContent = "0";
-    document.getElementById("statsTotalOuts").textContent = "0";
-    document.getElementById("statsTotalIP").textContent = "0.000";
-    document.getElementById("statsTotalFPS").textContent = "0";
-    document.getElementById("statsSBRatio").textContent = "0.00";
-    document.getElementById("statsWalks").textContent = "0";
-    document.getElementById("statsFPSBatters").textContent = "0%";
-    setStatHighlight("statsFPSBatters", false);
-    setStatHighlight("statsSBRatio", false);
+    resetPitcherStatsOverview();
     body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
@@ -975,17 +969,18 @@ function renderPitcherStats() {
     acc.outs += s.outs;
     acc.fps += s.fps;
     acc.walks += s.walks;
+    acc.strikeouts += s.strikeouts;
     acc.totalBatters += s.totalBatters;
     return acc;
-  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, totalBatters: 0 });
+  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, strikeouts: 0, totalBatters: 0 });
 
+  document.getElementById("statsTotalIP").textContent = formatInningsPitched(totals.outs);
   document.getElementById("statsTotalPitches").textContent = totals.totalPitches;
+  document.getElementById("statsTotalBatters").textContent = totals.totalBatters;
   document.getElementById("statsTotalStrikes").textContent = totals.strikes;
   document.getElementById("statsTotalBalls").textContent = totals.balls;
-  document.getElementById("statsTotalOuts").textContent = totals.outs;
-  document.getElementById("statsTotalIP").textContent = formatInningsPitched(totals.outs);
-  document.getElementById("statsTotalFPS").textContent = totals.fps;
   document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
+  document.getElementById("statsTotalStrikeouts").textContent = totals.strikeouts;
   document.getElementById("statsWalks").textContent = totals.walks;
   const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
   document.getElementById("statsFPSBatters").textContent = `${totalsFpsPercent}%`;
@@ -1765,6 +1760,7 @@ function savePitch() {
 
   const batter = game.lineup[game.batterIndex];
   const isFirstPitch = game.balls === 0 && game.strikes === 0;
+  const zone = getPitchZone(game.pitchLocation.x, game.pitchLocation.y);
 
   const pitch = {
     timestamp: new Date().toISOString(),
@@ -1779,6 +1775,9 @@ function savePitch() {
     y: game.pitchLocation.y,
     pitchType: game.pitchType,
     result: game.result,
+    zoneHorizontal: zone.horizontal,
+    zoneVertical: zone.vertical,
+    zoneLabel: zone.label,
     ballsBefore: game.balls,
     strikesBefore: game.strikes,
     outsBefore: game.totalOuts,
@@ -2146,10 +2145,10 @@ function formatInningsPitched(totalOuts) {
 }
 
 function getPitchZone(x, y) {
-  const zoneLeft = 54;
-  const zoneRight = 92;
-  const zoneTop = 18;
-  const zoneBottom = 72;
+  const zoneLeft = STRIKE_ZONE.left;
+  const zoneRight = STRIKE_ZONE.right;
+  const zoneTop = STRIKE_ZONE.top;
+  const zoneBottom = STRIKE_ZONE.bottom;
 
   const insideZone = x >= zoneLeft && x <= zoneRight && y >= zoneTop && y <= zoneBottom;
 

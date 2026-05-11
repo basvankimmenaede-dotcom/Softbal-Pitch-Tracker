@@ -1363,3 +1363,57 @@ button.danger {
   background: rgba(168,85,247,.82) !important;
   box-shadow: 0 0 22px rgba(168,85,247,.65) !important;
 }
+
+/* === Responsive heatmap accuracy fix ===
+   Alle pitch-coordinaten worden als percentages van het veld opgeslagen.
+   Daarom moeten de strike zones ook met dezelfde percentages worden getekend,
+   niet met vaste pixels. Zo blijft de weergave gelijk op iPad, telefoon en desktop. */
+.field .zone,
+.heatmap-field .heatmap-zone,
+.search-heatmap-field .heatmap-zone {
+  left: 54% !important;
+  right: auto !important;
+  top: 18% !important;
+  width: 38% !important;
+  height: 54% !important;
+  z-index: 3 !important;
+}
+
+.field .zone {
+  border-width: 4px !important;
+}
+
+.heatmap-field .heatmap-zone,
+.search-heatmap-field .heatmap-zone {
+  border-width: 3px !important;
+}
+
+.field .tap-hint {
+  left: 54% !important;
+  right: auto !important;
+  top: 74% !important;
+  width: 38% !important;
+}
+
+@media (max-width: 420px) {
+  .heat-dot {
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    font-size: 10px;
+  }
+}
+
+
+.pitcher-stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pitcher-stats-grid .stat {
+  min-width: 0;
+}
+
+.pitcher-stats-grid .stat small {
+  min-height: 24px;
+}
