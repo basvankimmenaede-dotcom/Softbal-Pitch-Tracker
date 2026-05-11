@@ -361,6 +361,7 @@ function setTextIfExists(elementId, value) {
 
 function getHeatDotClass(result) {
   if (["Ball", "HBP"].includes(result)) return "ball";
+  if (result === "Strike") return "strike";
   if (["Swing", "Foul"].includes(result)) return "swing-foul";
   if (result === "HIT") return "hit";
   if (isOutResult(result)) return "out";
@@ -951,7 +952,7 @@ async function confirmAddBatter() {
 
 
 const pitchTypeOptions = ["Fastball", "Slowball", "Overig"];
-const resultOptions = ["Ball", "HBP", "Strike", "Swing", "Foul", "HIT", "Veld uit", "Strike out"];
+const resultOptions = ["Ball", "HBP", "Strike", "Swing", "Foul", "HIT", "Veld uit"];
 
 let sheetSyncLoaded = false;
 let sheetGames = [];

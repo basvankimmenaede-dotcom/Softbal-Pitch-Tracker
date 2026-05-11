@@ -1689,3 +1689,24 @@ button.danger {
 .pitcher-stats-grid .stat strong {
   line-height: 1;
 }
+
+
+
+/* Heatmap legenda en dot-kleuren */
+.legend-dot.strike,
+.heat-dot.strike {
+  background: rgba(255,122,24,.88) !important;
+  box-shadow: 0 0 20px rgba(255,122,24,.75) !important;
+}
+
+.legend-dot.ball,
+.heat-dot.ball {
+  background: rgba(30,64,175,.88) !important;
+  box-shadow: 0 0 22px rgba(30,64,175,.65) !important;
+}
+
+.legend-dot.swing-foul,
+.heat-dot.swing-foul {
+  background: rgba(168,85,247,.86) !important;
+  box-shadow: 0 0 22px rgba(168,85,247,.65) !important;
+}
