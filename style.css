@@ -2030,3 +2030,17 @@ button.danger {
   width: 100%;
   justify-content: center;
 }
+
+
+
+/* Force recap popup sluitknop full width */
+.game-recap-modal-card .actions {
+  display: block;
+}
+
+.game-recap-modal-card .game-recap-close-full {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
