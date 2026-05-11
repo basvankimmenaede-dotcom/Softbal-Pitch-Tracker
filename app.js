@@ -1240,7 +1240,7 @@ function renderPitcherStats() {
 
   if (!pitcherName) {
     resetPitcherStatsOverview();
-    body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
+    if (body) body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
     return;
   }
 
@@ -1248,7 +1248,7 @@ function renderPitcherStats() {
 
   if (!games.length) {
     resetPitcherStatsOverview();
-    body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
+    if (body) body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
 
@@ -1265,47 +1265,34 @@ function renderPitcherStats() {
     return acc;
   }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, strikeouts: 0, totalBatters: 0 });
 
-  
-  const sortedGamesForTrend = [...games].sort((a, b) => {
-    return new Date(a.date || 0) - new Date(b.date || 0);
-  });
+  const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
+  const currentSBRatio = totals.balls === 0 ? Number(totals.strikes) : Number(totals.strikes / totals.balls);
 
+  const sortedGamesForTrend = [...games].sort((a, b) => getGameSortValue(a) - getGameSortValue(b));
   const previousGames = sortedGamesForTrend.slice(0, -1);
 
-  const previousTotals = previousGames.reduce((acc, game) => {
-    acc.strikeouts += Number(game.strikeouts || 0);
-    acc.walks += Number(game.walks || 0);
-    acc.strikes += Number(game.strikes || 0);
-    acc.balls += Number(game.balls || 0);
-    acc.fps += Number(game.firstPitchStrikes || 0);
-    acc.batters += Number(game.totalBatters || 0);
+  const previousTotals = previousGames.reduce((acc, g) => {
+    const s = calculateGameStats(g);
+    acc.strikeouts += s.strikeouts;
+    acc.walks += s.walks;
+    acc.strikes += s.strikes;
+    acc.balls += s.balls;
+    acc.fps += s.fps;
+    acc.totalBatters += s.totalBatters;
     return acc;
-  }, {
-    strikeouts: 0,
-    walks: 0,
-    strikes: 0,
-    balls: 0,
-    fps: 0,
-    batters: 0
-  });
+  }, { strikeouts: 0, walks: 0, strikes: 0, balls: 0, fps: 0, totalBatters: 0 });
 
   const previousSBRatio = previousTotals.balls === 0
-    ? previousTotals.strikes
-    : previousTotals.strikes / previousTotals.balls;
+    ? Number(previousTotals.strikes)
+    : Number(previousTotals.strikes / previousTotals.balls);
 
-  const currentSBRatio = totals.balls === 0
-    ? totals.strikes
-    : totals.strikes / totals.balls;
+  const previousFpsPercent = getFpsPercentValue(previousTotals.fps, previousTotals.totalBatters);
 
-  const previousFPSPct = previousTotals.batters === 0
-    ? 0
-    : Math.round((previousTotals.fps / previousTotals.batters) * 100);
-
-  const strikeoutTrendArrow = getTrendArrow(totals.strikeouts, previousTotals.strikeouts, true);
-  const walkTrendArrow = getTrendArrow(totals.walks, previousTotals.walks, true);
-  const sbTrendArrow = getTrendArrow(currentSBRatio, previousSBRatio, true);
-  const fpsTrendArrow = getTrendArrow(totalsFpsPercent, previousFPSPct, true);
-
+  const hasPreviousGame = previousGames.length > 0;
+  const strikeoutTrendArrow = hasPreviousGame ? getTrendArrow(totals.strikeouts, previousTotals.strikeouts, true) : "";
+  const walkTrendArrow = hasPreviousGame ? getTrendArrow(totals.walks, previousTotals.walks, true) : "";
+  const sbTrendArrow = hasPreviousGame ? getTrendArrow(currentSBRatio, previousSBRatio, true) : "";
+  const fpsTrendArrow = hasPreviousGame ? getTrendArrow(totalsFpsPercent, previousFpsPercent, true) : "";
 
   setTextIfExists("statsTotalIP", formatInningsPitched(totals.outs));
   setTextIfExists("statsTotalPitches", totals.totalPitches);
@@ -1313,12 +1300,14 @@ function renderPitcherStats() {
   setTextIfExists("statsTotalStrikes", totals.strikes);
   setTextIfExists("statsTotalBalls", totals.balls);
   setTextIfExists("statsSBRatio", formatStatWithTrend((totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2)), sbTrendArrow));
+  setTextIfExists("statsFPSBatters", formatStatWithTrend(`${totalsFpsPercent}%`, fpsTrendArrow));
   setTextIfExists("statsTotalStrikeouts", formatStatWithTrend(totals.strikeouts, strikeoutTrendArrow));
   setTextIfExists("statsWalks", formatStatWithTrend(totals.walks, walkTrendArrow));
-  const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
-  setTextIfExists("statsFPSBatters", formatStatWithTrend(`${totalsFpsPercent}%`, fpsTrendArrow));
+
   setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
-  setStatHighlight("statsSBRatio", Number(totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2)) > 1);
+  setStatHighlight("statsSBRatio", Number(currentSBRatio || 0) > 1);
+
+  if (!body) return;
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -1340,8 +1329,6 @@ function renderPitcherStats() {
     `;
   }).join("");
 }
-
-
 
 function showPitcherHeatmaps() {
   setActiveScreen("pitcherHeatmapScreen");
