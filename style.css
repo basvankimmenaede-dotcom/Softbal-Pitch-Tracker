@@ -2044,3 +2044,22 @@ button.danger {
   justify-content: center;
   align-items: center;
 }
+
+
+
+/* Definitieve full-width sluitknop recap popup */
+.game-recap-modal-card > .actions {
+  display: block !important;
+  grid-template-columns: none !important;
+  width: 100% !important;
+  margin-top: 22px !important;
+}
+
+.game-recap-modal-card > .actions .game-recap-close-full {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 100% !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+}
