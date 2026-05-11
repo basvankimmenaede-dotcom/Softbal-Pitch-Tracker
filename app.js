@@ -1197,6 +1197,26 @@ function countWalks(g) {
   return walks;
 }
 
+
+function getTrendArrow(currentValue, previousValue, positiveWhenHigher = true) {
+  if (previousValue == null || Number.isNaN(previousValue)) return "";
+
+  const current = Number(currentValue || 0);
+  const previous = Number(previousValue || 0);
+
+  if (Math.abs(current - previous) < 0.0001) return "";
+
+  const improved = positiveWhenHigher
+    ? current > previous
+    : current < previous;
+
+  return improved ? "↑" : "↓";
+}
+
+function formatStatWithTrend(value, arrow) {
+  return arrow ? `${value} ${arrow}` : String(value);
+}
+
 function resetPitcherStatsOverview() {
   setTextIfExists("statsTotalIP", "0.000");
   setTextIfExists("statsTotalPitches", "0");
@@ -1245,16 +1265,58 @@ function renderPitcherStats() {
     return acc;
   }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, strikeouts: 0, totalBatters: 0 });
 
+  
+  const sortedGamesForTrend = [...games].sort((a, b) => {
+    return new Date(a.date || 0) - new Date(b.date || 0);
+  });
+
+  const previousGames = sortedGamesForTrend.slice(0, -1);
+
+  const previousTotals = previousGames.reduce((acc, game) => {
+    acc.strikeouts += Number(game.strikeouts || 0);
+    acc.walks += Number(game.walks || 0);
+    acc.strikes += Number(game.strikes || 0);
+    acc.balls += Number(game.balls || 0);
+    acc.fps += Number(game.firstPitchStrikes || 0);
+    acc.batters += Number(game.totalBatters || 0);
+    return acc;
+  }, {
+    strikeouts: 0,
+    walks: 0,
+    strikes: 0,
+    balls: 0,
+    fps: 0,
+    batters: 0
+  });
+
+  const previousSBRatio = previousTotals.balls === 0
+    ? previousTotals.strikes
+    : previousTotals.strikes / previousTotals.balls;
+
+  const currentSBRatio = totals.balls === 0
+    ? totals.strikes
+    : totals.strikes / totals.balls;
+
+  const previousFPSPct = previousTotals.batters === 0
+    ? 0
+    : Math.round((previousTotals.fps / previousTotals.batters) * 100);
+
+  const strikeoutTrendArrow = getTrendArrow(totals.strikeouts, previousTotals.strikeouts, true);
+  const walkTrendArrow = getTrendArrow(totals.walks, previousTotals.walks, true);
+  const sbTrendArrow = getTrendArrow(currentSBRatio, previousSBRatio, true);
+  const fpsTrendArrow = getTrendArrow(totalsFpsPercent, previousFPSPct, true);
+
+
   setTextIfExists("statsTotalIP", formatInningsPitched(totals.outs));
   setTextIfExists("statsTotalPitches", totals.totalPitches);
   setTextIfExists("statsTotalBatters", totals.totalBatters);
   setTextIfExists("statsTotalStrikes", totals.strikes);
   setTextIfExists("statsTotalBalls", totals.balls);
-  setTextIfExists("statsSBRatio", totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2));
-  setTextIfExists("statsTotalStrikeouts", totals.strikeouts);
-  setTextIfExists("statsWalks", totals.walks);
+  setTextIfExists("statsSBRatio", formatStatWithTrend((totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2)), sbTrendArrow));
+  setTextIfExists("statsTotalStrikeouts", formatStatWithTrend(totals.strikeouts, strikeoutTrendArrow));
+  setTextIfExists("statsWalks", formatStatWithTrend(totals.walks, walkTrendArrow));
   const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
-  setTextIfExists("statsFPSBatters", `${totalsFpsPercent}%`);
+  setTextIfExists("statsFPSBatters", formatStatWithTrend(`${totalsFpsPercent}%`, fpsTrendArrow));
   setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
   setStatHighlight("statsSBRatio", Number(totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2)) > 1);
 
