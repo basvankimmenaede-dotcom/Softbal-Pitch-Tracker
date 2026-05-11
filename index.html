@@ -39,12 +39,12 @@
         <img class="home-logo" src="logo.png" alt="Onze Gezellen logo" />
         <h2 class="home-title">Onze Gezellen U21</h2>
         <p class="home-subtitle">Pitching Tracker</p>
+        <div class="offline-sync-status sync-status hidden"></div>
         <div class="home-menu">
           <button onclick="showSetup()">Nieuwe game <span>→</span></button>
           <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
           <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
           <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
-          <button onclick="showPitcherHeatmaps()">Pitcher Heatmaps <span>→</span></button>
           <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
           <button onclick="showTeams()">Teams <span>→</span></button>
         </div>
@@ -112,78 +112,6 @@
             </tbody>
           </table>
         </div>
-
-        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
-      </div>
-    </section>
-
-
-
-    <section id="pitcherHeatmapScreen" class="screen">
-      <div class="card pitcher-heatmap-page">
-        <h2 class="overview-title">Pitcher Heatmap</h2>
-        <p class="home-subtitle">Density heatmap van alle pitches per pitcher.</p>
-
-        <div class="heatmap-toolbar">
-          <div>
-            <label for="pitcherHeatmapSelect">Pitcher</label>
-            <select id="pitcherHeatmapSelect" onchange="renderPitcherHeatmap()">
-              <option value="">Kies pitcher</option>
-            </select>
-          </div>
-          <div>
-            <label for="pitcherHeatmapResultFilter">Filter</label>
-            <select id="pitcherHeatmapResultFilter" onchange="renderPitcherHeatmap()">
-              <option value="all">Alle pitches</option>
-              <option value="strike">Strikes</option>
-              <option value="ball">Balls / HBP</option>
-              <option value="swingfoul">Swing / Foul</option>
-              <option value="hit">Hits</option>
-              <option value="out">Outs</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="pitcher-heatmap-summary">
-          <div class="compact-stat"><small>Total pitches</small><strong id="pitcherHeatmapTotal">0</strong></div>
-          <div class="compact-stat"><small>Strike %</small><strong id="pitcherHeatmapStrikePct">0%</strong></div>
-          <div class="compact-stat"><small>Ball %</small><strong id="pitcherHeatmapBallPct">0%</strong></div>
-          <div class="compact-stat"><small>S/B Ratio</small><strong id="pitcherHeatmapSbRatio">0.00</strong></div>
-        </div>
-
-        <label>Pitch density</label>
-        <div class="density-scale">
-          <span>Laag</span>
-          <div class="density-scale-bar"></div>
-          <span>Hoog</span>
-        </div>
-
-        <div id="pitcherDensityField" class="pitcher-density-field">
-          <canvas id="pitcherDensityCanvas"></canvas>
-          <div class="pitcher-density-batter">
-            <img src="slagvrouw_transparant.png" alt="Slagvrouw" />
-          </div>
-          <div id="pitcherDensityZone" class="pitcher-density-zone">
-            <div></div><div></div><div></div>
-            <div></div><div></div><div></div>
-            <div></div><div></div><div></div>
-          </div>
-          <div id="pitcherDensityEmpty" class="density-empty hidden">Geen pitches gevonden voor deze selectie.</div>
-        </div>
-
-        <div class="heatmap-filter-buttons">
-          <button class="secondary" onclick="setPitcherHeatmapFilter('all')">Alle pitches</button>
-          <button class="secondary" onclick="setPitcherHeatmapFilter('strike')">Strikes</button>
-          <button class="secondary" onclick="setPitcherHeatmapFilter('ball')">Balls</button>
-          <button class="secondary" onclick="setPitcherHeatmapFilter('swingfoul')">Swing/Foul</button>
-          <button class="secondary" onclick="setPitcherHeatmapFilter('hit')">Hits</button>
-          <button class="secondary" onclick="setPitcherHeatmapFilter('out')">Outs</button>
-        </div>
-
-        <label>Pitches per zone</label>
-        <div id="pitcherZoneGrid" class="pitcher-zone-grid"></div>
-
-        <div id="pitcherHeatmapUpdated" class="sync-status">Kies een pitcher om de heatmap te tonen.</div>
 
         <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
       </div>
@@ -381,6 +309,7 @@
         </select>
 
         <div id="syncStatus" class="sync-status">Google Sheets wordt geladen...</div>
+        <div class="offline-sync-status sync-status hidden"></div>
 
         <label>Line-up tegenstander</label><p class="small-note">Vul 1 t/m 9 als actieve slaglijst in. 10 t/m 16 zijn bench/wissels.</p>
         <div id="lineupRows"></div>
@@ -406,6 +335,7 @@
         <div class="stat"><small>IP</small><strong id="inningsPitched">0.000</strong></div>
       </div>
       <div class="sync-status ok">Actieve pitcher: <strong id="activePitcherLabel">-</strong></div>
+      <div class="offline-sync-status sync-status hidden"></div>
 
       <div class="card batter-heatmap-card">
         <div class="batter-info-panel">
@@ -588,7 +518,7 @@
 
         <div class="actions">
           <button class="secondary" onclick="closeLineupPicker()">Annuleren</button>
-          <button onclick="confirmLineupPicker()">Kiezen / wisselen</button>
+          <button onclick="confirmLineupPicker()">Toevoegen</button>
         </div>
       </div>
     </div>
