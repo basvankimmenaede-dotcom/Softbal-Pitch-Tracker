@@ -1364,6 +1364,252 @@ button.danger {
   box-shadow: 0 0 22px rgba(168,85,247,.65) !important;
 }
 
+/* === Responsive heatmap accuracy fix ===
+   Alle pitch-coordinaten worden als percentages van het veld opgeslagen.
+   Daarom moeten de strike zones ook met dezelfde percentages worden getekend,
+   niet met vaste pixels. Zo blijft de weergave gelijk op iPad, telefoon en desktop. */
+.field .zone,
+.heatmap-field .heatmap-zone,
+.search-heatmap-field .heatmap-zone {
+  left: 54% !important;
+  right: auto !important;
+  top: 18% !important;
+  width: 38% !important;
+  height: 54% !important;
+  z-index: 3 !important;
+}
+
+.field .zone {
+  border-width: 4px !important;
+}
+
+.heatmap-field .heatmap-zone,
+.search-heatmap-field .heatmap-zone {
+  border-width: 3px !important;
+}
+
+.field .tap-hint {
+  left: 54% !important;
+  right: auto !important;
+  top: 74% !important;
+  width: 38% !important;
+}
+
+@media (max-width: 420px) {
+  .heat-dot {
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    font-size: 10px;
+  }
+}
+
+
+.pitcher-stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pitcher-stats-grid .stat {
+  min-width: 0;
+}
+
+.pitcher-stats-grid .stat small {
+  min-height: 24px;
+}
+
+
+
+/* === Pitcher density heatmap pagina === */
+.pitcher-heatmap-page {
+  overflow: hidden;
+}
+
+.heatmap-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+@media (max-width: 420px) {
+  .heatmap-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pitcher-heatmap-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 14px 0 10px;
+}
+
+@media (max-width: 420px) {
+  .pitcher-heatmap-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.density-scale {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 9px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 9px;
+}
+
+.density-scale-bar {
+  height: 13px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb, #38bdf8, #facc15, #f97316, #ef4444);
+  border: 1px solid var(--line);
+}
+
+.pitcher-density-field {
+  position: relative;
+  height: 430px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #132d4d 0%, #07111f 70%, #05070c 100%);
+}
+
+#pitcherDensityCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+}
+
+.pitcher-density-batter {
+  position: absolute;
+  left: 2%;
+  bottom: 3%;
+  width: 40%;
+  height: 82%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: .26;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.45));
+}
+
+.pitcher-density-batter img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
+}
+
+.pitcher-density-zone {
+  position: absolute;
+  border: 3px solid rgba(255,255,255,.86);
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  background: rgba(255,255,255,.04);
+  box-shadow: 0 0 20px rgba(255,255,255,.16);
+  z-index: 4;
+}
+
+.pitcher-density-zone div {
+  border: 1px dashed rgba(255,255,255,.55);
+}
+
+.density-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+  color: white;
+  font-weight: 950;
+  background: rgba(7,17,31,.58);
+}
+
+.heatmap-filter-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.heatmap-filter-buttons button {
+  padding: 10px 8px;
+  font-size: 12px;
+  border-radius: 14px;
+}
+
+@media (max-width: 420px) {
+  .heatmap-filter-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pitcher-zone-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.pitcher-zone-cell {
+  min-height: 86px;
+  padding: 10px 7px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(219,234,254,.72);
+  text-align: center;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+}
+
+.pitcher-zone-cell.warm {
+  background: rgba(255,184,77,.72);
+}
+
+.pitcher-zone-cell.hot {
+  background: rgba(239,68,68,.78);
+}
+
+.pitcher-zone-cell small {
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.pitcher-zone-cell strong {
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.pitcher-zone-cell span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.pitcher-zone-cell.hot small,
+.pitcher-zone-cell.hot strong,
+.pitcher-zone-cell.hot span {
+  color: white;
+}
+
 
 
 /* Offline sync status */
