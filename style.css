@@ -1616,3 +1616,76 @@ button.danger {
 .offline-sync-status {
   margin-top: 10px;
 }
+
+
+
+/* Pitcher heatmap stat-card uitlijning */
+.pitcher-heatmap-summary .compact-stat {
+  min-height: 88px;
+  padding: 12px 10px 11px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.pitcher-heatmap-summary .compact-stat small {
+  min-height: 28px;
+  display: flex;
+  align-items: flex-end;
+  line-height: 1.08;
+  margin-bottom: 5px;
+  letter-spacing: .08em;
+}
+
+.pitcher-heatmap-summary .compact-stat strong {
+  line-height: .95;
+  font-size: 29px;
+  letter-spacing: -0.03em;
+}
+
+@media (max-width: 420px) {
+  .pitcher-heatmap-summary .compact-stat {
+    min-height: 82px;
+  }
+
+  .pitcher-heatmap-summary .compact-stat strong {
+    font-size: 27px;
+  }
+}
+
+/* Meer natuurlijke ruimte rondom de pitcher density heatmap */
+.pitcher-density-field {
+  background:
+    radial-gradient(circle at 72% 45%, rgba(37,99,235,.10), transparent 38%),
+    linear-gradient(180deg, #132d4d 0%, #07111f 70%, #05070c 100%);
+}
+
+
+
+/* Pitching stats 9-blokken: oude grootte, nette uitlijning */
+.pitcher-stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pitcher-stats-grid .stat {
+  min-width: 0;
+  min-height: 0;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pitcher-stats-grid .stat small {
+  min-height: 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  line-height: 1.08;
+  margin-bottom: 4px;
+}
+
+.pitcher-stats-grid .stat strong {
+  line-height: 1;
+}

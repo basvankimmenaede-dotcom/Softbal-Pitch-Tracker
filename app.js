@@ -353,6 +353,12 @@ function setStatHighlight(elementId, condition) {
 }
 
 
+function setTextIfExists(elementId, value) {
+  const el = document.getElementById(elementId);
+  if (el) el.textContent = value;
+}
+
+
 function getHeatDotClass(result) {
   if (["Ball", "HBP"].includes(result)) return "ball";
   if (["Swing", "Foul"].includes(result)) return "swing-foul";
@@ -1191,15 +1197,15 @@ function countWalks(g) {
 }
 
 function resetPitcherStatsOverview() {
-  document.getElementById("statsTotalIP").textContent = "0.000";
-  document.getElementById("statsTotalPitches").textContent = "0";
-  document.getElementById("statsTotalBatters").textContent = "0";
-  document.getElementById("statsTotalStrikes").textContent = "0";
-  document.getElementById("statsTotalBalls").textContent = "0";
-  document.getElementById("statsSBRatio").textContent = "0.00";
-  document.getElementById("statsFPSBatters").textContent = "0%";
-  document.getElementById("statsTotalStrikeouts").textContent = "0";
-  document.getElementById("statsWalks").textContent = "0";
+  setTextIfExists("statsTotalIP", "0.000");
+  setTextIfExists("statsTotalPitches", "0");
+  setTextIfExists("statsTotalBatters", "0");
+  setTextIfExists("statsTotalStrikes", "0");
+  setTextIfExists("statsTotalBalls", "0");
+  setTextIfExists("statsSBRatio", "0.00");
+  setTextIfExists("statsFPSBatters", "0%");
+  setTextIfExists("statsTotalStrikeouts", "0");
+  setTextIfExists("statsWalks", "0");
   setStatHighlight("statsFPSBatters", false);
   setStatHighlight("statsSBRatio", false);
 }
@@ -1238,18 +1244,18 @@ function renderPitcherStats() {
     return acc;
   }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, strikeouts: 0, totalBatters: 0 });
 
-  document.getElementById("statsTotalIP").textContent = formatInningsPitched(totals.outs);
-  document.getElementById("statsTotalPitches").textContent = totals.totalPitches;
-  document.getElementById("statsTotalBatters").textContent = totals.totalBatters;
-  document.getElementById("statsTotalStrikes").textContent = totals.strikes;
-  document.getElementById("statsTotalBalls").textContent = totals.balls;
-  document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
-  document.getElementById("statsTotalStrikeouts").textContent = totals.strikeouts;
-  document.getElementById("statsWalks").textContent = totals.walks;
+  setTextIfExists("statsTotalIP", formatInningsPitched(totals.outs));
+  setTextIfExists("statsTotalPitches", totals.totalPitches);
+  setTextIfExists("statsTotalBatters", totals.totalBatters);
+  setTextIfExists("statsTotalStrikes", totals.strikes);
+  setTextIfExists("statsTotalBalls", totals.balls);
+  setTextIfExists("statsSBRatio", totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2));
+  setTextIfExists("statsTotalStrikeouts", totals.strikeouts);
+  setTextIfExists("statsWalks", totals.walks);
   const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
-  document.getElementById("statsFPSBatters").textContent = `${totalsFpsPercent}%`;
+  setTextIfExists("statsFPSBatters", `${totalsFpsPercent}%`);
   setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
-  setStatHighlight("statsSBRatio", Number(document.getElementById("statsSBRatio").textContent || 0) > 1);
+  setStatHighlight("statsSBRatio", Number(totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2)) > 1);
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -1426,11 +1432,24 @@ function drawPitcherDensityHeatmap(pitches) {
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
 
+  // De live pitchlocaties worden opgeslagen als 0-100 percentages.
+  // Voor deze totaal-heatmap gebruiken we bewust een breder virtueel veld.
+  // Daardoor worden outside-pitches buiten de zone niet tegen de rand afgesneden.
+  const displayMinX = -8;
+  const displayMaxX = 108;
+  const displayMinY = -4;
+  const displayMaxY = 106;
+  const displayRangeX = displayMaxX - displayMinX;
+  const displayRangeY = displayMaxY - displayMinY;
+
+  const toDisplayX = value => ((Number(value) - displayMinX) / displayRangeX) * 100;
+  const toDisplayY = value => ((Number(value) - displayMinY) / displayRangeY) * 100;
+
   if (zone) {
-    zone.style.left = `${STRIKE_ZONE.left}%`;
-    zone.style.top = `${STRIKE_ZONE.top}%`;
-    zone.style.width = `${STRIKE_ZONE.right - STRIKE_ZONE.left}%`;
-    zone.style.height = `${STRIKE_ZONE.bottom - STRIKE_ZONE.top}%`;
+    zone.style.left = `${toDisplayX(STRIKE_ZONE.left)}%`;
+    zone.style.top = `${toDisplayY(STRIKE_ZONE.top)}%`;
+    zone.style.width = `${((STRIKE_ZONE.right - STRIKE_ZONE.left) / displayRangeX) * 100}%`;
+    zone.style.height = `${((STRIKE_ZONE.bottom - STRIKE_ZONE.top) / displayRangeY) * 100}%`;
   }
 
   const ctx = canvas.getContext("2d");
@@ -1446,21 +1465,24 @@ function drawPitcherDensityHeatmap(pitches) {
   if (empty) empty.classList.toggle("hidden", Boolean(pitches.length));
   if (!pitches.length) return;
 
-  const gridW = 80;
-  const gridH = 80;
+  const gridW = 96;
+  const gridH = 90;
   const grid = Array.from({ length: gridH }, () => Array(gridW).fill(0));
-  const radius = 5;
+  const radius = 6;
 
   pitches.forEach(p => {
-    const gx = Math.round((Number(p.x || 0) / 100) * (gridW - 1));
-    const gy = Math.round((Number(p.y || 0) / 100) * (gridH - 1));
+    const displayX = (Number(p.x || 0) - displayMinX) / displayRangeX;
+    const displayY = (Number(p.y || 0) - displayMinY) / displayRangeY;
+
+    const gx = Math.round(Math.min(1, Math.max(0, displayX)) * (gridW - 1));
+    const gy = Math.round(Math.min(1, Math.max(0, displayY)) * (gridH - 1));
 
     for (let y = Math.max(0, gy - radius); y <= Math.min(gridH - 1, gy + radius); y++) {
       for (let x = Math.max(0, gx - radius); x <= Math.min(gridW - 1, gx + radius); x++) {
         const dx = x - gx;
         const dy = y - gy;
         const distSq = dx * dx + dy * dy;
-        const weight = Math.exp(-distSq / 12);
+        const weight = Math.exp(-distSq / 15);
         grid[y][x] += weight;
       }
     }
@@ -1471,7 +1493,7 @@ function drawPitcherDensityHeatmap(pitches) {
   for (let y = 0; y < gridH; y++) {
     for (let x = 0; x < gridW; x++) {
       const v = grid[y][x] / max;
-      if (v < 0.04) continue;
+      if (v < 0.035) continue;
 
       const px = (x / gridW) * width;
       const py = (y / gridH) * height;
@@ -1479,7 +1501,7 @@ function drawPitcherDensityHeatmap(pitches) {
       const cellH = Math.ceil(height / gridH) + 2;
 
       ctx.fillStyle = getDensityColor(v);
-      ctx.globalAlpha = Math.min(0.92, 0.18 + v * 0.82);
+      ctx.globalAlpha = Math.min(0.92, 0.16 + v * 0.84);
       ctx.fillRect(px, py, cellW, cellH);
     }
   }
