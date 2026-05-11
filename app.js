@@ -2218,6 +2218,10 @@ function buildGameRecap(game) {
       ? Math.round((stats.strikes / pitcherPitches.length) * 100)
       : 0;
 
+    const ballPct = pitcherPitches.length
+      ? Math.round((stats.balls / pitcherPitches.length) * 100)
+      : 0;
+
     const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
 
     const strikeZones = pitcherPitches
@@ -2228,41 +2232,62 @@ function buildGameRecap(game) {
       .filter(p => ["Ball", "HBP"].includes(p.result))
       .map(getZoneBucketForRecap);
 
-    const [bestZone] = getMostCommon(strikeZones);
-    const [wideZone] = getMostCommon(ballZones);
+    const [bestZone, bestZoneCount] = getMostCommon(strikeZones);
+    const [wideZone, wideZoneCount] = getMostCommon(ballZones);
 
     const { early, late } = splitPitchesIntoPhases(pitcherPitches);
     const earlyStats = getPhaseStats(early);
     const lateStats = getPhaseStats(late);
 
-    const inningTexts = [];
+    const summaryLines = [];
 
-    if (earlyStats.strikePct >= lateStats.strikePct + 10) {
-      inningTexts.push(`${pitcherName} begon sterk met meer strikes in het eerste deel van de wedstrijd.`);
-    } else if (lateStats.strikePct >= earlyStats.strikePct + 10) {
-      inningTexts.push(`${pitcherName} gooide later in de wedstrijd meer strikes dan aan het begin.`);
-    } else {
-      inningTexts.push(`${pitcherName} hield het strikepercentage redelijk stabiel gedurende de wedstrijd.`);
+    summaryLines.push(
+      `${pitcherName} gooide ${stats.totalPitches} pitches: ${stats.strikes} strikes en ${stats.balls} balls. Het strikepercentage was ${strikePct}% en het FPS% was ${fpsPct}%.`
+    );
+
+    if (early.length && late.length) {
+      if (lateStats.ballPct > earlyStats.ballPct + 10) {
+        summaryLines.push(
+          `In het tweede deel van haar pitches nam het aantal balls toe: van ${earlyStats.ballPct}% naar ${lateStats.ballPct}%.`
+        );
+      } else if (lateStats.strikePct > earlyStats.strikePct + 10) {
+        summaryLines.push(
+          `In het tweede deel van haar pitches werd ze sterker met meer strikes: van ${earlyStats.strikePct}% naar ${lateStats.strikePct}%.`
+        );
+      } else {
+        summaryLines.push(
+          `Het verschil tussen het eerste en tweede deel van haar pitches bleef klein.`
+        );
+      }
     }
 
-    if (lateStats.ballPct > earlyStats.ballPct + 10) {
-      inningTexts.push(`Later in de wedstrijd steeg het aantal balls (${earlyStats.ballPct}% → ${lateStats.ballPct}%).`);
+    if (bestZone && bestZone !== "-") {
+      summaryLines.push(
+        `De meeste strikes kwamen rond ${bestZone}.`
+      );
     }
 
     if (wideZone && wideZone !== "-") {
-      inningTexts.push(`De meeste balls zaten rond ${wideZone}.`);
+      summaryLines.push(
+        `De meeste balls zaten rond ${wideZone}.`
+      );
     }
 
     const strengths = [];
-    if (fpsPct >= 55) strengths.push(`sterk FPS% (${fpsPct}%)`);
+    if (strikePct >= 60) strengths.push(`goed strikepercentage (${strikePct}%)`);
+    if (fpsPct >= 55) strengths.push(`veel first-pitch strikes (${fpsPct}% FPS)`);
     if (stats.walks === 0) strengths.push(`geen walks toegestaan`);
     if (stats.strikeouts >= 2) strengths.push(`${stats.strikeouts} strikeouts`);
-    if (bestZone && bestZone !== "-") strengths.push(`veel strikes rond ${bestZone}`);
+    if (bestZone && bestZone !== "-" && bestZoneCount >= 2) strengths.push(`veel strikes rond ${bestZone}`);
 
     const focus = [];
 
+    if (ballPct >= 40) {
+      focus.push(`hoog aantal balls (${ballPct}%)`);
+    }
+
     if (lateStats.ballPct > earlyStats.ballPct + 10) {
-      focus.push(`meer balls later in de wedstrijd`);
+      focus.push(`meer balls in het tweede deel van haar pitches`);
     }
 
     if (wideZone && wideZone.includes("outside")) {
@@ -2270,31 +2295,31 @@ function buildGameRecap(game) {
     } else if (wideZone && wideZone.includes("inside")) {
       focus.push(`meerdere misses inside buiten de zone`);
     } else if (wideZone && wideZone.includes("hoog")) {
-      focus.push(`meer pitches hoog buiten de zone`);
+      focus.push(`meerdere pitches hoog buiten de zone`);
     } else if (wideZone && wideZone.includes("laag")) {
-      focus.push(`meer pitches laag buiten de zone`);
+      focus.push(`meerdere pitches laag buiten de zone`);
     }
 
-    if (stats.walks >= 2) {
-      focus.push(`meer vrije honken door balls`);
+    if (stats.walks >= 1) {
+      focus.push(`${stats.walks} walk${stats.walks === 1 ? "" : "s"} toegestaan`);
     }
 
-    const uniqueStrengths = [...new Set(strengths)].slice(0, 3);
-    const uniqueFocus = [...new Set(focus)].slice(0, 3);
+    const uniqueStrengths = [...new Set(strengths)].slice(0, 4);
+    const uniqueFocus = [...new Set(focus)].slice(0, 4);
 
     const textBlock = [
       `${pitcherName}`,
-      `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB`,
+      `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB`,
       ``,
-      ...inningTexts,
+      ...summaryLines,
       ``,
       `Sterk:`,
-      ...(uniqueStrengths.length ? uniqueStrengths.map(s => `- ${s}`) : [`- stabiele inning`]),
+      ...(uniqueStrengths.length ? uniqueStrengths.map(s => `- ${s}`) : [`- stabiel genoeg om door te bouwen`]),
       ``,
       `Punt van aandacht:`,
-      ...(uniqueFocus.length ? uniqueFocus.map(f => `- ${f}`) : [`- weinig opvallende aandachtspunten`]),
+      ...(uniqueFocus.length ? uniqueFocus.map(f => `- ${f}`) : [`- geen duidelijk groot aandachtspunt uit deze data`]),
       ``
-    ].join("\n");
+    ].join("\\n");
 
     const htmlBlock = `
       <div class="game-recap-pitcher">
@@ -2303,25 +2328,25 @@ function buildGameRecap(game) {
           <div>
             <h4>${pitcherName}</h4>
             <div class="recap-pitcher-stats">
-              ${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB
+              ${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB
             </div>
           </div>
         </div>
 
-        <p>${inningTexts.join(" ")}</p>
+        ${summaryLines.map(line => `<p>${line}</p>`).join("")}
 
         <div class="recap-two-columns">
           <div class="recap-insight good">
             <strong>Sterk</strong>
             <ul>
-              ${(uniqueStrengths.length ? uniqueStrengths : ["stabiele inning"]).map(s => `<li>${s}</li>`).join("")}
+              ${(uniqueStrengths.length ? uniqueStrengths : ["stabiel genoeg om door te bouwen"]).map(s => `<li>${s}</li>`).join("")}
             </ul>
           </div>
 
           <div class="recap-insight attention">
             <strong>Punt van aandacht</strong>
             <ul>
-              ${(uniqueFocus.length ? uniqueFocus : ["weinig opvallende aandachtspunten"]).map(f => `<li>${f}</li>`).join("")}
+              ${(uniqueFocus.length ? uniqueFocus : ["geen duidelijk groot aandachtspunt uit deze data"]).map(f => `<li>${f}</li>`).join("")}
             </ul>
           </div>
         </div>
@@ -2338,7 +2363,7 @@ function buildGameRecap(game) {
     `Game Recap — ${title}`,
     ``,
     ...pitcherSections.map(p => p.textBlock)
-  ].join("\n");
+  ].join("\\n");
 
   const html = `
     <div class="game-recap-card">
