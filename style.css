@@ -1413,3 +1413,51 @@ button.danger {
 .pitcher-stats-grid .stat strong {
   font-size: 22px;
 }
+
+/* Pitching stats overview: vaste uitlijning voor de 9 total-kaarten */
+#pitcherStatsScreen .stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+#pitcherStatsScreen .stats-grid .stat {
+  min-height: 144px;
+  padding: 22px 10px 20px;
+  display: grid;
+  grid-template-rows: 42px 1fr;
+  align-items: start;
+  justify-items: center;
+}
+
+#pitcherStatsScreen .stats-grid .stat small {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.12;
+  margin: 0;
+}
+
+#pitcherStatsScreen .stats-grid .stat strong {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 380px) {
+  #pitcherStatsScreen .stats-grid .stat {
+    min-height: 132px;
+    padding: 18px 8px 16px;
+  }
+
+  #pitcherStatsScreen .stats-grid .stat strong {
+    font-size: 23px;
+  }
+}
