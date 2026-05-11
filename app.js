@@ -1991,19 +1991,21 @@ function requireEditPassword(message = "Voer wachtwoord in om deze game te opene
 
 
 
+
+let selectedGameRecapText = "";
+
 function showGameRecaps() {
   setActiveScreen("gameRecapsScreen");
 
-  const output = document.getElementById("gameRecapOutput");
-  if (output) {
-    output.innerHTML = `<p class="small-note">Wedstrijden worden geladen...</p>`;
+  const list = document.getElementById("gameRecapsList");
+  if (list) {
+    list.innerHTML = `<p class="small-note">Wedstrijden worden geladen...</p>`;
   }
 
   syncFromGoogleSheet()
     .catch(() => [])
     .finally(() => {
-      populateGameRecapSelect();
-      renderSelectedGameRecap();
+      renderGameRecapCards();
     });
 }
 
@@ -2011,27 +2013,6 @@ function getGamesForRecaps() {
   return getStoredGames()
     .filter(g => Array.isArray(g.pitches) && g.pitches.length)
     .sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
-}
-
-function populateGameRecapSelect() {
-  const select = document.getElementById("gameRecapSelect");
-  if (!select) return;
-
-  const current = select.value;
-  const games = getGamesForRecaps();
-
-  select.innerHTML = `<option value="">Kies wedstrijd</option>` + games.map(g => {
-    const id = g.gameId || "";
-    const pitchers = getPitcherNamesForGame(g).join(", ") || "Pitcher onbekend";
-    const label = `${formatDateTimeCompact(g.date, g.startTime)} · ${g.opponent || "Onbekende tegenstander"} · ${pitchers}`;
-    return `<option value="${id}">${label}</option>`;
-  }).join("");
-
-  if (current && games.some(g => g.gameId === current)) {
-    select.value = current;
-  } else if (games.length) {
-    select.value = games[0].gameId || "";
-  }
 }
 
 function getPitcherNamesForGame(g) {
@@ -2046,22 +2027,97 @@ function getPitcherNamesForGame(g) {
   return [...names].filter(Boolean);
 }
 
-function renderSelectedGameRecap() {
-  const select = document.getElementById("gameRecapSelect");
-  const output = document.getElementById("gameRecapOutput");
-  if (!select || !output) return;
+function getPitcherInitials(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 
-  const gameId = select.value;
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
+}
+
+function renderGameRecapCards() {
+  const list = document.getElementById("gameRecapsList");
+  if (!list) return;
+
+  const games = getGamesForRecaps();
+
+  if (!games.length) {
+    list.innerHTML = `<p class="small-note">Geen wedstrijden gevonden voor Game Recaps.</p>`;
+    return;
+  }
+
+  list.innerHTML = games.map(g => {
+    const title = `${formatDateTimeCompact(g.date, g.startTime)} · ${g.opponent || "Onbekende tegenstander"}`;
+    const pitchers = getPitcherNamesForGame(g);
+
+    const pitcherBlocks = pitchers.map(pitcherName => {
+      const pitcherPitches = (g.pitches || []).filter(p =>
+        String(p.pitcherName || g.pitcherName || "") === pitcherName
+      );
+
+      const stats = calculateGameStats({
+        ...g,
+        pitcherName,
+        pitches: pitcherPitches
+      });
+
+      const strikePct = pitcherPitches.length
+        ? Math.round((stats.strikes / pitcherPitches.length) * 100)
+        : 0;
+
+      return `
+        <div class="game-recap-card-pitcher">
+          <div class="pitcher-initials">${getPitcherInitials(pitcherName)}</div>
+          <div>
+            <strong>${pitcherName}</strong>
+            <span>${stats.totalPitches}P · ${strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <button type="button" class="game-recap-list-card" onclick="openGameRecapModal('${g.gameId}')">
+        <div class="game-recap-card-title">
+          <strong>${title}</strong>
+          <span>→</span>
+        </div>
+        <div class="game-recap-card-pitchers">
+          ${pitcherBlocks}
+        </div>
+      </button>
+    `;
+  }).join("");
+}
+
+function openGameRecapModal(gameId) {
+  const modal = document.getElementById("gameRecapModal");
+  const titleEl = document.getElementById("gameRecapModalTitle");
+  const body = document.getElementById("gameRecapModalBody");
+  if (!modal || !titleEl || !body) return;
+
   const game = getGamesForRecaps().find(g => g.gameId === gameId);
-
   if (!game) {
-    output.innerHTML = `<p class="small-note">Geen wedstrijd geselecteerd.</p>`;
+    alert("Deze wedstrijd kon niet worden gevonden.");
     return;
   }
 
   const recap = buildGameRecap(game);
-  output.innerHTML = recap.html;
-  output.dataset.copyText = recap.text;
+  titleEl.textContent = recap.title || "Game Recap";
+  body.innerHTML = recap.html;
+  body.dataset.copyText = recap.text;
+  selectedGameRecapText = recap.text;
+
+  modal.classList.remove("hidden");
+}
+
+function closeGameRecapModal() {
+  const modal = document.getElementById("gameRecapModal");
+  if (modal) modal.classList.add("hidden");
 }
 
 function getPitchResultBucket(result) {
@@ -2141,17 +2197,6 @@ function getPhaseStats(pitches) {
     strikePct: total ? Math.round((strikes / total) * 100) : 0,
     fpsPct: batters ? Math.round((fps / batters) * 100) : 0
   };
-}
-
-function buildPitcherRecapLines(game) {
-  const pitchers = getPitcherNamesForGame(game);
-
-  return pitchers.map(pitcherName => {
-    const pitcherPitches = (game.pitches || []).filter(p => String(p.pitcherName || game.pitcherName || "") === pitcherName);
-    const stats = calculateGameStats({ ...game, pitcherName, pitches: pitcherPitches });
-    const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
-    return `${pitcherName}: ${stats.totalPitches} pitches, ${stats.strikes} strikes, ${stats.balls} balls, ${fpsPct}% FPS, ${stats.strikeouts || 0} K, ${stats.walks || 0} BB`;
-  });
 }
 
 function buildGameRecap(game) {
@@ -2247,25 +2292,35 @@ function buildGameRecap(game) {
 
     const htmlBlock = `
       <div class="game-recap-pitcher">
-        <h4>${pitcherName}</h4>
-
-        <div class="recap-pitcher-stats">
-          ${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB
+        <div class="game-recap-pitcher-heading">
+          <div class="pitcher-initials">${getPitcherInitials(pitcherName)}</div>
+          <div>
+            <h4>${pitcherName}</h4>
+            <div class="recap-pitcher-stats">
+              ${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB
+            </div>
+          </div>
         </div>
 
         <p>${summary}</p>
 
-        <label>Sterk</label>
-        <ul>
-          ${(strengths.length ? strengths : ["goede inzet gedurende de outing"]).map(s => `<li>${s}</li>`).join("")}
-        </ul>
+        <div class="recap-two-columns">
+          <div class="recap-insight good">
+            <strong>Sterk</strong>
+            <ul>
+              ${(strengths.length ? strengths : ["goede inzet gedurende de outing"]).map(s => `<li>${s}</li>`).join("")}
+            </ul>
+          </div>
 
-        ${focus.length ? `
-          <label>Aandachtspunt</label>
-          <ul>
-            ${focus.map(f => `<li>${f}</li>`).join("")}
-          </ul>
-        ` : ""}
+          ${focus.length ? `
+            <div class="recap-insight attention">
+              <strong>Aandachtspunt</strong>
+              <ul>
+                ${focus.map(f => `<li>${f}</li>`).join("")}
+              </ul>
+            </div>
+          ` : ""}
+        </div>
       </div>
     `;
 
@@ -2283,17 +2338,15 @@ function buildGameRecap(game) {
 
   const html = `
     <div class="game-recap-card">
-      <h3>${title}</h3>
       ${pitcherSections.map(p => p.htmlBlock).join("")}
     </div>
   `;
 
-  return { html, text };
+  return { title, html, text };
 }
 
 async function copyGameRecap() {
-  const output = document.getElementById("gameRecapOutput");
-  const text = output?.dataset?.copyText || "";
+  const text = selectedGameRecapText || document.getElementById("gameRecapModalBody")?.dataset?.copyText || "";
 
   if (!text) {
     alert("Geen recap om te kopiëren.");
@@ -2307,7 +2360,6 @@ async function copyGameRecap() {
     alert(text);
   }
 }
-
 
 
 function showUnfinishedGames() {

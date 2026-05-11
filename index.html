@@ -305,21 +305,13 @@
     <section id="gameRecapsScreen" class="screen">
       <div class="card">
         <h2 class="overview-title">Game Recaps</h2>
-        <p class="home-subtitle">Korte pitching recap per wedstrijd, met alle pitchers samen.</p>
+        <p class="home-subtitle">Tik op een wedstrijd voor de recap per pitcher.</p>
 
-        <label for="gameRecapSelect">Wedstrijd</label>
-        <select id="gameRecapSelect" onchange="renderSelectedGameRecap()">
-          <option value="">Kies wedstrijd</option>
-        </select>
-
-        <div id="gameRecapOutput" class="game-recap-output">
-          <p class="small-note">Kies een wedstrijd om de recap te tonen.</p>
+        <div id="gameRecapsList" class="game-recaps-list">
+          <p class="small-note">Wedstrijden worden geladen...</p>
         </div>
 
-        <div class="actions">
-          <button class="secondary" onclick="copyGameRecap()">Kopieer recap</button>
-          <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
-        </div>
+        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
       </div>
     </section>
 
@@ -618,6 +610,18 @@
         <div class="actions">
           <button class="secondary" onclick="closeLineupPicker()">Annuleren</button>
           <button onclick="confirmLineupPicker()">Kiezen / wisselen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameRecapModal" class="modal hidden">
+      <div class="modal-card game-recap-modal-card">
+        <button type="button" class="modal-close-button" onclick="closeGameRecapModal()">×</button>
+        <h2 id="gameRecapModalTitle">Game Recap</h2>
+        <div id="gameRecapModalBody" class="game-recap-output"></div>
+        <div class="actions">
+          <button class="secondary" onclick="copyGameRecap()">Kopieer recap</button>
+          <button onclick="closeGameRecapModal()">Sluiten</button>
         </div>
       </div>
     </div>
