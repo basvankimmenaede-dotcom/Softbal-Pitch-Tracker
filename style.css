@@ -1404,24 +1404,3 @@ button.danger {
     font-size: 10px;
   }
 }
-
-
-.pitcher-stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.pitcher-stats-grid .stat {
-  min-width: 0;
-}
-
-.pitcher-stats-grid .stat small {
-  min-height: 24px;
-}
-
-/* === Historie heatmap alignment fix ===
-   De hoogte van #heatmapField wordt in app.js gesynchroniseerd met het live registratieveld.
-   Daarom geen vaste hoogte afdwingen op de historie-heatmap. */
-#heatmapField.heatmap-field {
-  height: auto;
-  min-height: 180px;
-}
