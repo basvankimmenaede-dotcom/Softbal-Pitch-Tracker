@@ -2009,10 +2009,54 @@ function showGameRecaps() {
     });
 }
 
+
+function getGameRecapSortValue(g) {
+  const rawDate = String(g.date || "").trim();
+  const rawTime = String(g.startTime || "00:00").trim() || "00:00";
+
+  let year = 0;
+  let month = 0;
+  let day = 0;
+
+  const isoDateTimeMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  const isoDateOnlyMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const nlDateMatch = rawDate.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
+
+  if (isoDateTimeMatch) {
+    year = Number(isoDateTimeMatch[1]);
+    month = Number(isoDateTimeMatch[2]) - 1;
+    day = Number(isoDateTimeMatch[3]);
+  } else if (isoDateOnlyMatch) {
+    year = Number(isoDateOnlyMatch[1]);
+    month = Number(isoDateOnlyMatch[2]) - 1;
+    day = Number(isoDateOnlyMatch[3]);
+  } else if (nlDateMatch) {
+    day = Number(nlDateMatch[1]);
+    month = Number(nlDateMatch[2]) - 1;
+    year = Number(nlDateMatch[3]);
+    if (year < 100) year += 2000;
+  } else {
+    const parsed = new Date(rawDate);
+    if (!Number.isNaN(parsed.getTime())) {
+      year = parsed.getFullYear();
+      month = parsed.getMonth();
+      day = parsed.getDate();
+    }
+  }
+
+  const timeMatch = rawTime.match(/(\d{1,2}):(\d{2})/);
+  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const minute = timeMatch ? Number(timeMatch[2]) : 0;
+
+  if (!year || !day) return 0;
+
+  return new Date(year, month, day, hour, minute).getTime();
+}
+
 function getGamesForRecaps() {
   return getStoredGames()
     .filter(g => Array.isArray(g.pitches) && g.pitches.length)
-    .sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
+    .sort((a, b) => getGameRecapSortValue(b) - getGameRecapSortValue(a));
 }
 
 function getPitcherNamesForGame(g) {
