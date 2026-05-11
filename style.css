@@ -1364,100 +1364,22 @@ button.danger {
   box-shadow: 0 0 22px rgba(168,85,247,.65) !important;
 }
 
-/* === Responsive heatmap accuracy fix ===
-   Alle pitch-coordinaten worden als percentages van het veld opgeslagen.
-   Daarom moeten de strike zones ook met dezelfde percentages worden getekend,
-   niet met vaste pixels. Zo blijft de weergave gelijk op iPad, telefoon en desktop. */
-.field .zone,
-.heatmap-field .heatmap-zone,
-.search-heatmap-field .heatmap-zone {
-  left: 54% !important;
-  right: auto !important;
-  top: 18% !important;
-  width: 38% !important;
-  height: 54% !important;
-  z-index: 3 !important;
+
+/* Heatmap dot kleuren */
+.heat-dot.strike,
+.legend-dot.strike {
+  background: rgba(255,122,24,.88) !important;
+  box-shadow: 0 0 20px rgba(255,122,24,.75);
 }
 
-.field .zone {
-  border-width: 4px !important;
+.heat-dot.ball,
+.legend-dot.ball {
+  background: rgba(209,213,219,.92) !important;
+  box-shadow: 0 0 18px rgba(209,213,219,.55);
 }
 
-.heatmap-field .heatmap-zone,
-.search-heatmap-field .heatmap-zone {
-  border-width: 3px !important;
-}
-
-.field .tap-hint {
-  left: 54% !important;
-  right: auto !important;
-  top: 74% !important;
-  width: 38% !important;
-}
-
-@media (max-width: 420px) {
-  .heat-dot {
-    width: 20px;
-    height: 20px;
-    margin-left: -10px;
-    margin-top: -10px;
-    font-size: 10px;
-  }
-}
-
-
-.pitcher-stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.pitcher-stats-grid .stat strong {
-  font-size: 22px;
-}
-
-/* Pitching stats overview: vaste uitlijning voor de 9 total-kaarten */
-#pitcherStatsScreen .stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  align-items: stretch;
-}
-
-#pitcherStatsScreen .stats-grid .stat {
-  min-height: 144px;
-  padding: 22px 10px 20px;
-  display: grid;
-  grid-template-rows: 42px 1fr;
-  align-items: start;
-  justify-items: center;
-}
-
-#pitcherStatsScreen .stats-grid .stat small {
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  line-height: 1.12;
-  margin: 0;
-}
-
-#pitcherStatsScreen .stats-grid .stat strong {
-  min-height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  line-height: 1;
-  margin: 0;
-  white-space: nowrap;
-}
-
-@media (max-width: 380px) {
-  #pitcherStatsScreen .stats-grid .stat {
-    min-height: 132px;
-    padding: 18px 8px 16px;
-  }
-
-  #pitcherStatsScreen .stats-grid .stat strong {
-    font-size: 23px;
-  }
+.heat-dot.swing-foul,
+.legend-dot.swing-foul {
+  background: rgba(255,155,61,.88) !important;
+  box-shadow: 0 0 20px rgba(255,155,61,.68);
 }

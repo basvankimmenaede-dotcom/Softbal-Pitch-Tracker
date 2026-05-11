@@ -75,16 +75,16 @@
           <option>Overig</option>
         </select>
 
-        <div class="stats-grid pitcher-stats-grid">
-          <div class="stat"><small>Innings pitched</small><strong id="statsTotalIP">0.000</strong></div>
-          <div class="stat"><small>Total Pitches</small><strong id="statsTotalPitches">0</strong></div>
-          <div class="stat"><small>Total batters</small><strong id="statsTotalBatters">0</strong></div>
-          <div class="stat"><small>Total Strikes</small><strong id="statsTotalStrikes">0</strong></div>
-          <div class="stat"><small>Total Balls</small><strong id="statsTotalBalls">0</strong></div>
-          <div class="stat"><small>S / B Ratio</small><strong id="statsSBRatio">0.00</strong></div>
-          <div class="stat"><small>FPS percentage</small><strong id="statsFPSBatters">0%</strong></div>
-          <div class="stat"><small>Total Strikeouts</small><strong id="statsStrikeouts">0</strong></div>
-          <div class="stat"><small>Total walks</small><strong id="statsWalks">0</strong></div>
+        <div class="stats-grid">
+          <div class="stat"><small>Pitches</small><strong id="statsTotalPitches">0</strong></div>
+          <div class="stat"><small>Strikes</small><strong id="statsTotalStrikes">0</strong></div>
+          <div class="stat"><small>Balls</small><strong id="statsTotalBalls">0</strong></div>
+          <div class="stat"><small>Outs</small><strong id="statsTotalOuts">0</strong></div>
+          <div class="stat"><small>IP</small><strong id="statsTotalIP">0.000</strong></div>
+          <div class="stat"><small>FPS</small><strong id="statsTotalFPS">0</strong></div>
+          <div class="stat"><small>S/B Ratio</small><strong id="statsSBRatio">0.00</strong></div>
+          <div class="stat"><small>Walks</small><strong id="statsWalks">0</strong></div>
+          <div class="stat"><small>FPS %</small><strong id="statsFPSBatters">0%</strong></div>
         </div>
 
         <label>Stats per wedstrijd</label>
@@ -142,6 +142,7 @@
         <label>Heatmap alle pitches</label>
         <div class="heatmap-legend">
           <div class="legend-item"><span class="legend-dot ball"></span> Ball/HBP</div>
+                    <div class="legend-item"><span class="legend-dot strike"></span> Strike</div>
           <div class="legend-item"><span class="legend-dot swing-foul"></span> Swing/Foul</div>
           <div class="legend-item"><span class="legend-dot hit"></span> Hit</div>
           <div class="legend-item"><span class="legend-dot out"></span> Out</div>
@@ -351,7 +352,8 @@
           <label>Heatmap</label>
           <div class="heatmap-legend">
             <div class="legend-item"><span class="legend-dot ball"></span> Ball/HBP</div>
-            <div class="legend-item"><span class="legend-dot swing-foul"></span> Swing/Foul</div>
+                      <div class="legend-item"><span class="legend-dot strike"></span> Strike</div>
+          <div class="legend-item"><span class="legend-dot swing-foul"></span> Swing/Foul</div>
             <div class="legend-item"><span class="legend-dot hit"></span> Hit</div>
             <div class="legend-item"><span class="legend-dot out"></span> Out</div>
           </div>
