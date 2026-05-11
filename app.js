@@ -2738,7 +2738,7 @@ function getPitchZone(x, y) {
   return { horizontal, vertical, label: `${horizontal} ${vertical}` };
 }
 
-async async function sendGameStatusToGoogleSheet() {
+async function sendGameStatusToGoogleSheet() {
   if (!game.appsScriptUrl) {
     setSyncStatus("Google Sheets niet gekoppeld.", "error");
     return;
