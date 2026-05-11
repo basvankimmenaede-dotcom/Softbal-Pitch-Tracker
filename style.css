@@ -2022,3 +2022,11 @@ button.danger {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+
+/* Full width sluiten knop recap popup */
+.game-recap-close-full {
+  width: 100%;
+  justify-content: center;
+}
