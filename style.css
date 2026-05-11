@@ -351,7 +351,6 @@ button.good { background: var(--good); color: #072214; }
   background: rgba(255,122,24,.8);
 }
 
-.legend-dot.strike { background: rgba(255,122,24,.9); }
 .legend-dot.hit { background: rgba(55,214,122,.9); }
 .legend-dot.out { background: rgba(255,77,77,.9); }
 
