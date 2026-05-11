@@ -92,11 +92,10 @@ function setStatHighlight(elementId, condition) {
 
 function getHeatDotClass(result) {
   if (["Ball", "HBP"].includes(result)) return "ball";
-  if (result === "Strike") return "strike";
   if (["Swing", "Foul"].includes(result)) return "swing-foul";
   if (result === "HIT") return "hit";
   if (isOutResult(result)) return "out";
-  return "strike";
+  return "";
 }
 
 function getReadableZone(p) {
@@ -927,55 +926,6 @@ function countWalks(g) {
   return walks;
 }
 
-
-function setTextIfExists(elementId, value) {
-  const el = document.getElementById(elementId);
-  if (el) el.textContent = value;
-}
-
-function getTrendArrow(diff) {
-  if (diff > 0) return " ↑";
-  if (diff < 0) return " ↓";
-  return "";
-}
-
-function summarizePitcherGames(games) {
-  return (games || []).reduce((acc, g) => {
-    const s = calculateGameStats(g);
-    acc.totalPitches += Number(s.totalPitches || 0);
-    acc.strikes += Number(s.strikes || 0);
-    acc.balls += Number(s.balls || 0);
-    acc.outs += Number(s.outs || 0);
-    acc.fps += Number(s.fps || 0);
-    acc.walks += Number(s.walks || 0);
-    acc.totalBatters += Number(s.totalBatters || 0);
-    acc.strikeouts += Number(s.strikeouts || 0);
-    return acc;
-  }, {
-    totalPitches: 0,
-    strikes: 0,
-    balls: 0,
-    outs: 0,
-    fps: 0,
-    walks: 0,
-    totalBatters: 0,
-    strikeouts: 0
-  });
-}
-
-function getTotalsDerivedStats(totals) {
-  const fpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
-  const sbRatioValue = Number(totals.balls || 0) === 0
-    ? Number(totals.strikes || 0)
-    : Number(totals.strikes || 0) / Number(totals.balls || 1);
-
-  return {
-    fpsPercent,
-    sbRatioValue,
-    sbRatioText: sbRatioValue.toFixed(2)
-  };
-}
-
 function renderPitcherStats() {
   const select = document.getElementById("statsPitcherName");
   if (!select) return;
@@ -983,61 +933,64 @@ function renderPitcherStats() {
   const pitcherName = select.value;
   const body = document.getElementById("statsPerGameBody");
 
-  function resetPitcherStats(message) {
-    setTextIfExists("statsTotalIP", "0.000");
-    setTextIfExists("statsTotalPitches", "0");
-    setTextIfExists("statsTotalBatters", "0");
-    setTextIfExists("statsTotalStrikes", "0");
-    setTextIfExists("statsTotalBalls", "0");
-    setTextIfExists("statsSBRatio", "0.00");
-    setTextIfExists("statsFPSBatters", "0%");
-    setTextIfExists("statsStrikeouts", "0");
-    setTextIfExists("statsWalks", "0");
-    setTextIfExists("statsTotalOuts", "0");
-    setTextIfExists("statsTotalFPS", "0");
+  if (!pitcherName) {
+    document.getElementById("statsTotalPitches").textContent = "0";
+    document.getElementById("statsTotalStrikes").textContent = "0";
+    document.getElementById("statsTotalBalls").textContent = "0";
+    document.getElementById("statsTotalOuts").textContent = "0";
+    document.getElementById("statsTotalIP").textContent = "0.000";
+    document.getElementById("statsTotalFPS").textContent = "0";
+    document.getElementById("statsSBRatio").textContent = "0.00";
+    document.getElementById("statsWalks").textContent = "0";
+    document.getElementById("statsFPSBatters").textContent = "0%";
     setStatHighlight("statsFPSBatters", false);
     setStatHighlight("statsSBRatio", false);
-    if (body) body.innerHTML = `<tr><td colspan="12">${message}</td></tr>`;
-  }
-
-  if (!pitcherName) {
-    resetPitcherStats("Kies een pitcher.");
+    body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
     return;
   }
 
   const games = getPitcherGames(pitcherName).sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
 
   if (!games.length) {
-    resetPitcherStats(`Geen games gevonden voor ${pitcherName}.`);
+    document.getElementById("statsTotalPitches").textContent = "0";
+    document.getElementById("statsTotalStrikes").textContent = "0";
+    document.getElementById("statsTotalBalls").textContent = "0";
+    document.getElementById("statsTotalOuts").textContent = "0";
+    document.getElementById("statsTotalIP").textContent = "0.000";
+    document.getElementById("statsTotalFPS").textContent = "0";
+    document.getElementById("statsSBRatio").textContent = "0.00";
+    document.getElementById("statsWalks").textContent = "0";
+    document.getElementById("statsFPSBatters").textContent = "0%";
+    setStatHighlight("statsFPSBatters", false);
+    setStatHighlight("statsSBRatio", false);
+    body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
 
-  const totals = summarizePitcherGames(games);
-  const previousTotals = summarizePitcherGames(games.slice(1));
-  const derived = getTotalsDerivedStats(totals);
-  const previousDerived = getTotalsDerivedStats(previousTotals);
+  const totals = games.reduce((acc, g) => {
+    const s = calculateGameStats(g);
+    acc.totalPitches += s.totalPitches;
+    acc.strikes += s.strikes;
+    acc.balls += s.balls;
+    acc.outs += s.outs;
+    acc.fps += s.fps;
+    acc.walks += s.walks;
+    acc.totalBatters += s.totalBatters;
+    return acc;
+  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, totalBatters: 0 });
 
-  const strikeoutArrow = getTrendArrow(totals.strikeouts - previousTotals.strikeouts);
-  const walksArrow = getTrendArrow(totals.walks - previousTotals.walks);
-  const fpsArrow = getTrendArrow(derived.fpsPercent - previousDerived.fpsPercent);
-  const sbArrow = getTrendArrow(Number((derived.sbRatioValue - previousDerived.sbRatioValue).toFixed(2)));
-
-  setTextIfExists("statsTotalIP", formatInningsPitched(totals.outs));
-  setTextIfExists("statsTotalPitches", totals.totalPitches);
-  setTextIfExists("statsTotalBatters", totals.totalBatters);
-  setTextIfExists("statsTotalStrikes", totals.strikes);
-  setTextIfExists("statsTotalBalls", totals.balls);
-  setTextIfExists("statsSBRatio", `${derived.sbRatioText}${sbArrow}`);
-  setTextIfExists("statsFPSBatters", `${derived.fpsPercent}%${fpsArrow}`);
-  setTextIfExists("statsStrikeouts", `${totals.strikeouts}${strikeoutArrow}`);
-  setTextIfExists("statsWalks", `${totals.walks}${walksArrow}`);
-  setTextIfExists("statsTotalOuts", totals.outs);
-  setTextIfExists("statsTotalFPS", totals.fps);
-
-  setStatHighlight("statsFPSBatters", derived.fpsPercent > 50);
-  setStatHighlight("statsSBRatio", derived.sbRatioValue > 1);
-
-  if (!body) return;
+  document.getElementById("statsTotalPitches").textContent = totals.totalPitches;
+  document.getElementById("statsTotalStrikes").textContent = totals.strikes;
+  document.getElementById("statsTotalBalls").textContent = totals.balls;
+  document.getElementById("statsTotalOuts").textContent = totals.outs;
+  document.getElementById("statsTotalIP").textContent = formatInningsPitched(totals.outs);
+  document.getElementById("statsTotalFPS").textContent = totals.fps;
+  document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
+  document.getElementById("statsWalks").textContent = totals.walks;
+  const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
+  document.getElementById("statsFPSBatters").textContent = `${totalsFpsPercent}%`;
+  setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
+  setStatHighlight("statsSBRatio", Number(document.getElementById("statsSBRatio").textContent || 0) > 1);
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -1059,6 +1012,272 @@ function renderPitcherStats() {
     `;
   }).join("");
 }
+
+
+
+function showPitcherHeatmaps() {
+  setActiveScreen("pitcherHeatmapScreen");
+  const status = document.getElementById("pitcherHeatmapUpdated");
+  if (status) {
+    status.textContent = "Pitcher heatmap wordt geladen...";
+    status.className = "sync-status loading";
+  }
+
+  syncFromGoogleSheet()
+    .catch(() => [])
+    .finally(() => {
+      populatePitcherHeatmapSelect();
+      renderPitcherHeatmap();
+    });
+}
+
+function getAllPitcherHeatmapPitches() {
+  return getStoredGames().flatMap(g => {
+    const pitches = Array.isArray(g.pitches) ? g.pitches : [];
+    return pitches.map(p => ({
+      ...p,
+      gameDate: g.date || p.date || "",
+      gameOpponent: g.opponent || p.opponent || "",
+      gameId: g.gameId || p.gameId || ""
+    }));
+  }).filter(p => p && p.x != null && p.y != null && p.pitcherName);
+}
+
+function populatePitcherHeatmapSelect() {
+  const select = document.getElementById("pitcherHeatmapSelect");
+  if (!select) return;
+
+  const current = select.value;
+  const pitchers = [...new Set(getAllPitcherHeatmapPitches()
+    .map(p => String(p.pitcherName || "").trim())
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+
+  select.innerHTML = `<option value="">Kies pitcher</option>` + pitchers.map(name =>
+    `<option value="${name}">${name}</option>`
+  ).join("");
+
+  if (pitchers.includes(current)) {
+    select.value = current;
+  } else if (pitchers.length && !current) {
+    select.value = pitchers[0];
+  }
+}
+
+function setPitcherHeatmapFilter(value) {
+  const select = document.getElementById("pitcherHeatmapResultFilter");
+  if (select) select.value = value;
+  renderPitcherHeatmap();
+}
+
+function pitchMatchesHeatmapFilter(p, filter) {
+  if (!filter || filter === "all") return true;
+  if (filter === "strike") return p.result === "Strike";
+  if (filter === "ball") return ["Ball", "HBP"].includes(p.result);
+  if (filter === "swingfoul") return ["Swing", "Foul"].includes(p.result);
+  if (filter === "hit") return p.result === "HIT";
+  if (filter === "out") return isOutResult(p.result);
+  return true;
+}
+
+function getFilteredPitcherHeatmapPitches() {
+  const pitcher = document.getElementById("pitcherHeatmapSelect")?.value || "";
+  const filter = document.getElementById("pitcherHeatmapResultFilter")?.value || "all";
+
+  return getAllPitcherHeatmapPitches()
+    .filter(p => !pitcher || String(p.pitcherName || "") === pitcher)
+    .filter(p => pitchMatchesHeatmapFilter(p, filter));
+}
+
+function renderPitcherHeatmap() {
+  const selectedPitcher = document.getElementById("pitcherHeatmapSelect")?.value || "";
+  const allPitcherPitches = getAllPitcherHeatmapPitches()
+    .filter(p => !selectedPitcher || String(p.pitcherName || "") === selectedPitcher);
+  const pitches = getFilteredPitcherHeatmapPitches();
+
+  const total = allPitcherPitches.length;
+  const strikes = allPitcherPitches.filter(p => isStrikeResult(p.result)).length;
+  const balls = allPitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
+
+  const totalEl = document.getElementById("pitcherHeatmapTotal");
+  const strikePctEl = document.getElementById("pitcherHeatmapStrikePct");
+  const ballPctEl = document.getElementById("pitcherHeatmapBallPct");
+  const sbEl = document.getElementById("pitcherHeatmapSbRatio");
+
+  if (totalEl) totalEl.textContent = total;
+  if (strikePctEl) strikePctEl.textContent = total ? `${Math.round((strikes / total) * 100)}%` : "0%";
+  if (ballPctEl) ballPctEl.textContent = total ? `${Math.round((balls / total) * 100)}%` : "0%";
+  if (sbEl) sbEl.textContent = balls ? (strikes / balls).toFixed(2) : strikes.toFixed(2);
+
+  drawPitcherDensityHeatmap(pitches);
+  renderPitcherZoneGrid(pitches);
+
+  const status = document.getElementById("pitcherHeatmapUpdated");
+  if (status) {
+    const filterLabel = document.getElementById("pitcherHeatmapResultFilter")?.selectedOptions?.[0]?.textContent || "Alle pitches";
+    status.textContent = selectedPitcher
+      ? `${filterLabel}: ${pitches.length} pitches getoond voor ${selectedPitcher}.`
+      : "Kies een pitcher om de heatmap te tonen.";
+    status.className = "sync-status ok";
+  }
+}
+
+function drawPitcherDensityHeatmap(pitches) {
+  const field = document.getElementById("pitcherDensityField");
+  const canvas = document.getElementById("pitcherDensityCanvas");
+  const zone = document.getElementById("pitcherDensityZone");
+  const empty = document.getElementById("pitcherDensityEmpty");
+  if (!field || !canvas) return;
+
+  const rect = field.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(rect.width));
+  const height = Math.max(1, Math.round(rect.height));
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  if (zone) {
+    zone.style.left = `${STRIKE_ZONE.left}%`;
+    zone.style.top = `${STRIKE_ZONE.top}%`;
+    zone.style.width = `${STRIKE_ZONE.right - STRIKE_ZONE.left}%`;
+    zone.style.height = `${STRIKE_ZONE.bottom - STRIKE_ZONE.top}%`;
+  }
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  // Donkere basislaag zodat de warme vlekken goed zichtbaar blijven.
+  const bg = ctx.createLinearGradient(0, 0, 0, height);
+  bg.addColorStop(0, "rgba(19,45,77,0.98)");
+  bg.addColorStop(1, "rgba(5,7,12,0.98)");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  if (empty) empty.classList.toggle("hidden", Boolean(pitches.length));
+  if (!pitches.length) return;
+
+  const gridW = 80;
+  const gridH = 80;
+  const grid = Array.from({ length: gridH }, () => Array(gridW).fill(0));
+  const radius = 5;
+
+  pitches.forEach(p => {
+    const gx = Math.round((Number(p.x || 0) / 100) * (gridW - 1));
+    const gy = Math.round((Number(p.y || 0) / 100) * (gridH - 1));
+
+    for (let y = Math.max(0, gy - radius); y <= Math.min(gridH - 1, gy + radius); y++) {
+      for (let x = Math.max(0, gx - radius); x <= Math.min(gridW - 1, gx + radius); x++) {
+        const dx = x - gx;
+        const dy = y - gy;
+        const distSq = dx * dx + dy * dy;
+        const weight = Math.exp(-distSq / 12);
+        grid[y][x] += weight;
+      }
+    }
+  });
+
+  const max = Math.max(...grid.flat(), 1);
+
+  for (let y = 0; y < gridH; y++) {
+    for (let x = 0; x < gridW; x++) {
+      const v = grid[y][x] / max;
+      if (v < 0.04) continue;
+
+      const px = (x / gridW) * width;
+      const py = (y / gridH) * height;
+      const cellW = Math.ceil(width / gridW) + 2;
+      const cellH = Math.ceil(height / gridH) + 2;
+
+      ctx.fillStyle = getDensityColor(v);
+      ctx.globalAlpha = Math.min(0.92, 0.18 + v * 0.82);
+      ctx.fillRect(px, py, cellW, cellH);
+    }
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+function getDensityColor(value) {
+  if (value < 0.20) return "rgb(37,99,235)";
+  if (value < 0.40) return "rgb(56,189,248)";
+  if (value < 0.60) return "rgb(250,204,21)";
+  if (value < 0.80) return "rgb(249,115,22)";
+  return "rgb(239,68,68)";
+}
+
+function getPitcherZoneIndex(p) {
+  const x = Number(p.x);
+  const y = Number(p.y);
+
+  const zoneWidth = STRIKE_ZONE.right - STRIKE_ZONE.left;
+  const zoneHeight = STRIKE_ZONE.bottom - STRIKE_ZONE.top;
+
+  const col = Math.min(2, Math.max(0, Math.floor(((x - STRIKE_ZONE.left) / zoneWidth) * 3)));
+  const row = Math.min(2, Math.max(0, Math.floor(((y - STRIKE_ZONE.top) / zoneHeight) * 3)));
+
+  return row * 3 + col;
+}
+
+function renderPitcherZoneGrid(pitches) {
+  const grid = document.getElementById("pitcherZoneGrid");
+  if (!grid) return;
+
+  const labels = [
+    "Hoog Inside", "Hoog Midden", "Hoog Outside",
+    "Midden Inside", "Midden Midden", "Midden Outside",
+    "Laag Inside", "Laag Midden", "Laag Outside"
+  ];
+
+  const zones = labels.map(label => ({
+    label,
+    total: 0,
+    strikes: 0,
+    balls: 0
+  }));
+
+  pitches.forEach(p => {
+    const x = Number(p.x);
+    const y = Number(p.y);
+    if (
+      x < STRIKE_ZONE.left ||
+      x > STRIKE_ZONE.right ||
+      y < STRIKE_ZONE.top ||
+      y > STRIKE_ZONE.bottom
+    ) {
+      return;
+    }
+
+    const index = getPitcherZoneIndex(p);
+    zones[index].total += 1;
+    if (isStrikeResult(p.result)) zones[index].strikes += 1;
+    if (["Ball", "HBP"].includes(p.result)) zones[index].balls += 1;
+  });
+
+  const max = Math.max(...zones.map(z => z.total), 1);
+
+  grid.innerHTML = zones.map(zone => {
+    const intensity = zone.total / max;
+    const strikePct = zone.total ? Math.round((zone.strikes / zone.total) * 100) : 0;
+    const className = intensity > 0.66 ? "hot" : intensity > 0.33 ? "warm" : "";
+    return `
+      <div class="pitcher-zone-cell ${className}">
+        <small>${zone.label}</small>
+        <strong>${zone.total}</strong>
+        <span>${strikePct}% strike</span>
+      </div>
+    `;
+  }).join("");
+}
+
+window.addEventListener("resize", () => {
+  if (document.getElementById("pitcherHeatmapScreen")?.classList.contains("active")) {
+    renderPitcherHeatmap();
+  }
+});
 
 
 
@@ -1260,18 +1479,22 @@ function openLineupPicker(slot) {
     return;
   }
 
+  const usedKeys = new Set();
+  for (let i = 1; i <= 16; i++) {
+    if (i === Number(slot)) continue;
+    const name = String(document.getElementById(`name${i}`)?.value || "").trim();
+    const number = String(document.getElementById(`num${i}`)?.value || "").trim();
+    if (name || number) usedKeys.add(`${name}|${number}`);
+  }
+
   slotInput.value = slot;
   if (meta) meta.textContent = `Positie ${slot} · ${teamName}`;
 
   select.innerHTML = `<option value="">Kies speelster</option>` + players.map((player, index) => {
-    const playerName = String(player.name || "");
-    const playerNumber = String(player.number || "");
-    const usedSlot = findLineupSlotByPlayer(playerName, playerNumber);
-    const suffix = usedSlot && usedSlot !== Number(slot)
-      ? ` (staat op positie ${usedSlot}; wordt gewisseld)`
-      : "";
-
-    return `<option value="${index}">${player.name || "Onbekende slagvrouw"} #${player.number || "?"}${suffix}</option>`;
+    const key = `${player.name || ""}|${player.number || ""}`;
+    const disabled = usedKeys.has(key) ? " disabled" : "";
+    const suffix = usedKeys.has(key) ? " (al gekozen)" : "";
+    return `<option value="${index}"${disabled}>${player.name || "Onbekende slagvrouw"} #${player.number || "?"}${suffix}</option>`;
   }).join("");
 
   const currentName = String(document.getElementById(`name${slot}`)?.value || "").trim();
@@ -1291,24 +1514,6 @@ function closeLineupPicker() {
   if (modal) modal.classList.add("hidden");
 }
 
-function findLineupSlotByPlayer(name, number, ignoredSlot = null) {
-  const targetName = String(name || "").trim();
-  const targetNumber = String(number || "").trim();
-
-  if (!targetName && !targetNumber) return null;
-
-  for (let i = 1; i <= 16; i++) {
-    if (ignoredSlot !== null && i === Number(ignoredSlot)) continue;
-
-    const currentName = String(document.getElementById(`name${i}`)?.value || "").trim();
-    const currentNumber = String(document.getElementById(`num${i}`)?.value || "").trim();
-
-    if (currentName === targetName && currentNumber === targetNumber) return i;
-  }
-
-  return null;
-}
-
 function confirmLineupPicker() {
   const slot = Number(document.getElementById("lineupPickerSlot")?.value);
   const selectedIndex = Number(document.getElementById("lineupPickerSelect")?.value);
@@ -1323,28 +1528,8 @@ function confirmLineupPicker() {
   const nameInput = document.getElementById(`name${slot}`);
   const numInput = document.getElementById(`num${slot}`);
 
-  if (!nameInput || !numInput) return;
-
-  const currentName = String(nameInput.value || "").trim();
-  const currentNumber = String(numInput.value || "").trim();
-  const selectedName = String(player.name || "");
-  const selectedNumber = String(player.number || "");
-  const existingSlot = findLineupSlotByPlayer(selectedName, selectedNumber, slot);
-
-  // Als de gekozen speelster al op een andere plek staat, wissel de twee posities om.
-  // Zo kun je in Nieuwe game de slaglijst blijven herschikken zonder eerst velden leeg te maken.
-  if (existingSlot) {
-    const existingNameInput = document.getElementById(`name${existingSlot}`);
-    const existingNumInput = document.getElementById(`num${existingSlot}`);
-
-    if (existingNameInput && existingNumInput) {
-      existingNameInput.value = currentName;
-      existingNumInput.value = currentNumber;
-    }
-  }
-
-  nameInput.value = selectedName;
-  numInput.value = selectedNumber;
+  if (nameInput) nameInput.value = player.name || "";
+  if (numInput) numInput.value = player.number || "";
 
   closeLineupPicker();
 }
@@ -1813,7 +1998,6 @@ function savePitch() {
 
   const batter = game.lineup[game.batterIndex];
   const isFirstPitch = game.balls === 0 && game.strikes === 0;
-  const zone = getPitchZone(game.pitchLocation.x, game.pitchLocation.y);
 
   const pitch = {
     timestamp: new Date().toISOString(),
@@ -1828,9 +2012,6 @@ function savePitch() {
     y: game.pitchLocation.y,
     pitchType: game.pitchType,
     result: game.result,
-    zoneHorizontal: zone.horizontal,
-    zoneVertical: zone.vertical,
-    zoneLabel: zone.label,
     ballsBefore: game.balls,
     strikesBefore: game.strikes,
     outsBefore: game.totalOuts,
@@ -2198,10 +2379,10 @@ function formatInningsPitched(totalOuts) {
 }
 
 function getPitchZone(x, y) {
-  const zoneLeft = STRIKE_ZONE.left;
-  const zoneRight = STRIKE_ZONE.right;
-  const zoneTop = STRIKE_ZONE.top;
-  const zoneBottom = STRIKE_ZONE.bottom;
+  const zoneLeft = 54;
+  const zoneRight = 92;
+  const zoneTop = 18;
+  const zoneBottom = 72;
 
   const insideZone = x >= zoneLeft && x <= zoneRight && y >= zoneTop && y <= zoneBottom;
 
