@@ -1404,3 +1404,12 @@ button.danger {
     font-size: 10px;
   }
 }
+
+
+.pitcher-stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pitcher-stats-grid .stat strong {
+  font-size: 22px;
+}

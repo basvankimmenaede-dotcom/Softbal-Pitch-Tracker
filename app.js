@@ -926,6 +926,55 @@ function countWalks(g) {
   return walks;
 }
 
+
+function setTextIfExists(elementId, value) {
+  const el = document.getElementById(elementId);
+  if (el) el.textContent = value;
+}
+
+function getTrendArrow(diff) {
+  if (diff > 0) return " ↑";
+  if (diff < 0) return " ↓";
+  return "";
+}
+
+function summarizePitcherGames(games) {
+  return (games || []).reduce((acc, g) => {
+    const s = calculateGameStats(g);
+    acc.totalPitches += Number(s.totalPitches || 0);
+    acc.strikes += Number(s.strikes || 0);
+    acc.balls += Number(s.balls || 0);
+    acc.outs += Number(s.outs || 0);
+    acc.fps += Number(s.fps || 0);
+    acc.walks += Number(s.walks || 0);
+    acc.totalBatters += Number(s.totalBatters || 0);
+    acc.strikeouts += Number(s.strikeouts || 0);
+    return acc;
+  }, {
+    totalPitches: 0,
+    strikes: 0,
+    balls: 0,
+    outs: 0,
+    fps: 0,
+    walks: 0,
+    totalBatters: 0,
+    strikeouts: 0
+  });
+}
+
+function getTotalsDerivedStats(totals) {
+  const fpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
+  const sbRatioValue = Number(totals.balls || 0) === 0
+    ? Number(totals.strikes || 0)
+    : Number(totals.strikes || 0) / Number(totals.balls || 1);
+
+  return {
+    fpsPercent,
+    sbRatioValue,
+    sbRatioText: sbRatioValue.toFixed(2)
+  };
+}
+
 function renderPitcherStats() {
   const select = document.getElementById("statsPitcherName");
   if (!select) return;
@@ -933,64 +982,61 @@ function renderPitcherStats() {
   const pitcherName = select.value;
   const body = document.getElementById("statsPerGameBody");
 
-  if (!pitcherName) {
-    document.getElementById("statsTotalPitches").textContent = "0";
-    document.getElementById("statsTotalStrikes").textContent = "0";
-    document.getElementById("statsTotalBalls").textContent = "0";
-    document.getElementById("statsTotalOuts").textContent = "0";
-    document.getElementById("statsTotalIP").textContent = "0.000";
-    document.getElementById("statsTotalFPS").textContent = "0";
-    document.getElementById("statsSBRatio").textContent = "0.00";
-    document.getElementById("statsWalks").textContent = "0";
-    document.getElementById("statsFPSBatters").textContent = "0%";
+  function resetPitcherStats(message) {
+    setTextIfExists("statsTotalIP", "0.000");
+    setTextIfExists("statsTotalPitches", "0");
+    setTextIfExists("statsTotalBatters", "0");
+    setTextIfExists("statsTotalStrikes", "0");
+    setTextIfExists("statsTotalBalls", "0");
+    setTextIfExists("statsSBRatio", "0.00");
+    setTextIfExists("statsFPSBatters", "0%");
+    setTextIfExists("statsStrikeouts", "0");
+    setTextIfExists("statsWalks", "0");
+    setTextIfExists("statsTotalOuts", "0");
+    setTextIfExists("statsTotalFPS", "0");
     setStatHighlight("statsFPSBatters", false);
     setStatHighlight("statsSBRatio", false);
-    body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
+    if (body) body.innerHTML = `<tr><td colspan="12">${message}</td></tr>`;
+  }
+
+  if (!pitcherName) {
+    resetPitcherStats("Kies een pitcher.");
     return;
   }
 
   const games = getPitcherGames(pitcherName).sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
 
   if (!games.length) {
-    document.getElementById("statsTotalPitches").textContent = "0";
-    document.getElementById("statsTotalStrikes").textContent = "0";
-    document.getElementById("statsTotalBalls").textContent = "0";
-    document.getElementById("statsTotalOuts").textContent = "0";
-    document.getElementById("statsTotalIP").textContent = "0.000";
-    document.getElementById("statsTotalFPS").textContent = "0";
-    document.getElementById("statsSBRatio").textContent = "0.00";
-    document.getElementById("statsWalks").textContent = "0";
-    document.getElementById("statsFPSBatters").textContent = "0%";
-    setStatHighlight("statsFPSBatters", false);
-    setStatHighlight("statsSBRatio", false);
-    body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
+    resetPitcherStats(`Geen games gevonden voor ${pitcherName}.`);
     return;
   }
 
-  const totals = games.reduce((acc, g) => {
-    const s = calculateGameStats(g);
-    acc.totalPitches += s.totalPitches;
-    acc.strikes += s.strikes;
-    acc.balls += s.balls;
-    acc.outs += s.outs;
-    acc.fps += s.fps;
-    acc.walks += s.walks;
-    acc.totalBatters += s.totalBatters;
-    return acc;
-  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, totalBatters: 0 });
+  const totals = summarizePitcherGames(games);
+  const previousTotals = summarizePitcherGames(games.slice(1));
+  const derived = getTotalsDerivedStats(totals);
+  const previousDerived = getTotalsDerivedStats(previousTotals);
 
-  document.getElementById("statsTotalPitches").textContent = totals.totalPitches;
-  document.getElementById("statsTotalStrikes").textContent = totals.strikes;
-  document.getElementById("statsTotalBalls").textContent = totals.balls;
-  document.getElementById("statsTotalOuts").textContent = totals.outs;
-  document.getElementById("statsTotalIP").textContent = formatInningsPitched(totals.outs);
-  document.getElementById("statsTotalFPS").textContent = totals.fps;
-  document.getElementById("statsSBRatio").textContent = totals.balls === 0 ? totals.strikes.toFixed(2) : (totals.strikes / totals.balls).toFixed(2);
-  document.getElementById("statsWalks").textContent = totals.walks;
-  const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
-  document.getElementById("statsFPSBatters").textContent = `${totalsFpsPercent}%`;
-  setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
-  setStatHighlight("statsSBRatio", Number(document.getElementById("statsSBRatio").textContent || 0) > 1);
+  const strikeoutArrow = getTrendArrow(totals.strikeouts - previousTotals.strikeouts);
+  const walksArrow = getTrendArrow(totals.walks - previousTotals.walks);
+  const fpsArrow = getTrendArrow(derived.fpsPercent - previousDerived.fpsPercent);
+  const sbArrow = getTrendArrow(Number((derived.sbRatioValue - previousDerived.sbRatioValue).toFixed(2)));
+
+  setTextIfExists("statsTotalIP", formatInningsPitched(totals.outs));
+  setTextIfExists("statsTotalPitches", totals.totalPitches);
+  setTextIfExists("statsTotalBatters", totals.totalBatters);
+  setTextIfExists("statsTotalStrikes", totals.strikes);
+  setTextIfExists("statsTotalBalls", totals.balls);
+  setTextIfExists("statsSBRatio", `${derived.sbRatioText}${sbArrow}`);
+  setTextIfExists("statsFPSBatters", `${derived.fpsPercent}%${fpsArrow}`);
+  setTextIfExists("statsStrikeouts", `${totals.strikeouts}${strikeoutArrow}`);
+  setTextIfExists("statsWalks", `${totals.walks}${walksArrow}`);
+  setTextIfExists("statsTotalOuts", totals.outs);
+  setTextIfExists("statsTotalFPS", totals.fps);
+
+  setStatHighlight("statsFPSBatters", derived.fpsPercent > 50);
+  setStatHighlight("statsSBRatio", derived.sbRatioValue > 1);
+
+  if (!body) return;
 
   body.innerHTML = games.map(g => {
     const s = calculateGameStats(g);
@@ -1012,6 +1058,7 @@ function renderPitcherStats() {
     `;
   }).join("");
 }
+
 
 
 function showBatterSearch() {
@@ -2482,10 +2529,3 @@ function loadLocalGame() {
 window.addEventListener("DOMContentLoaded", init);
 
 
-
-
-function getTrendArrow(diff) {
-  if (diff > 0) return " ↑";
-  if (diff < 0) return " ↓";
-  return "";
-}
