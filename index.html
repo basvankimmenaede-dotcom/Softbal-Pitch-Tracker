@@ -44,6 +44,7 @@
           <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
           <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
           <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
+          <button onclick="showPitcherHeatmaps()">Pitcher Heatmaps <span>→</span></button>
           <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
           <button onclick="showTeams()">Teams <span>→</span></button>
         </div>
@@ -75,16 +76,16 @@
           <option>Overig</option>
         </select>
 
-        <div class="stats-grid pitcher-stats-grid">
-          <div class="stat"><small>Innings pitched</small><strong id="statsTotalIP">0.000</strong></div>
-          <div class="stat"><small>Total Pitches</small><strong id="statsTotalPitches">0</strong></div>
-          <div class="stat"><small>Total batters</small><strong id="statsTotalBatters">0</strong></div>
-          <div class="stat"><small>Total Strikes</small><strong id="statsTotalStrikes">0</strong></div>
-          <div class="stat"><small>Total Balls</small><strong id="statsTotalBalls">0</strong></div>
-          <div class="stat"><small>S / B Ratio</small><strong id="statsSBRatio">0.00</strong></div>
-          <div class="stat"><small>FPS percentage</small><strong id="statsFPSBatters">0%</strong></div>
-          <div class="stat"><small>Total Strikeouts</small><strong id="statsTotalStrikeouts">0</strong></div>
-          <div class="stat"><small>Total walks</small><strong id="statsWalks">0</strong></div>
+        <div class="stats-grid">
+          <div class="stat"><small>Pitches</small><strong id="statsTotalPitches">0</strong></div>
+          <div class="stat"><small>Strikes</small><strong id="statsTotalStrikes">0</strong></div>
+          <div class="stat"><small>Balls</small><strong id="statsTotalBalls">0</strong></div>
+          <div class="stat"><small>Outs</small><strong id="statsTotalOuts">0</strong></div>
+          <div class="stat"><small>IP</small><strong id="statsTotalIP">0.000</strong></div>
+          <div class="stat"><small>FPS</small><strong id="statsTotalFPS">0</strong></div>
+          <div class="stat"><small>S/B Ratio</small><strong id="statsSBRatio">0.00</strong></div>
+          <div class="stat"><small>Walks</small><strong id="statsWalks">0</strong></div>
+          <div class="stat"><small>FPS %</small><strong id="statsFPSBatters">0%</strong></div>
         </div>
 
         <label>Stats per wedstrijd</label>
@@ -111,6 +112,78 @@
             </tbody>
           </table>
         </div>
+
+        <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+      </div>
+    </section>
+
+
+
+    <section id="pitcherHeatmapScreen" class="screen">
+      <div class="card pitcher-heatmap-page">
+        <h2 class="overview-title">Pitcher Heatmap</h2>
+        <p class="home-subtitle">Density heatmap van alle pitches per pitcher.</p>
+
+        <div class="heatmap-toolbar">
+          <div>
+            <label for="pitcherHeatmapSelect">Pitcher</label>
+            <select id="pitcherHeatmapSelect" onchange="renderPitcherHeatmap()">
+              <option value="">Kies pitcher</option>
+            </select>
+          </div>
+          <div>
+            <label for="pitcherHeatmapResultFilter">Filter</label>
+            <select id="pitcherHeatmapResultFilter" onchange="renderPitcherHeatmap()">
+              <option value="all">Alle pitches</option>
+              <option value="strike">Strikes</option>
+              <option value="ball">Balls / HBP</option>
+              <option value="swingfoul">Swing / Foul</option>
+              <option value="hit">Hits</option>
+              <option value="out">Outs</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pitcher-heatmap-summary">
+          <div class="compact-stat"><small>Total pitches</small><strong id="pitcherHeatmapTotal">0</strong></div>
+          <div class="compact-stat"><small>Strike %</small><strong id="pitcherHeatmapStrikePct">0%</strong></div>
+          <div class="compact-stat"><small>Ball %</small><strong id="pitcherHeatmapBallPct">0%</strong></div>
+          <div class="compact-stat"><small>S/B Ratio</small><strong id="pitcherHeatmapSbRatio">0.00</strong></div>
+        </div>
+
+        <label>Pitch density</label>
+        <div class="density-scale">
+          <span>Laag</span>
+          <div class="density-scale-bar"></div>
+          <span>Hoog</span>
+        </div>
+
+        <div id="pitcherDensityField" class="pitcher-density-field">
+          <canvas id="pitcherDensityCanvas"></canvas>
+          <div class="pitcher-density-batter">
+            <img src="slagvrouw_transparant.png" alt="Slagvrouw" />
+          </div>
+          <div id="pitcherDensityZone" class="pitcher-density-zone">
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+          </div>
+          <div id="pitcherDensityEmpty" class="density-empty hidden">Geen pitches gevonden voor deze selectie.</div>
+        </div>
+
+        <div class="heatmap-filter-buttons">
+          <button class="secondary" onclick="setPitcherHeatmapFilter('all')">Alle pitches</button>
+          <button class="secondary" onclick="setPitcherHeatmapFilter('strike')">Strikes</button>
+          <button class="secondary" onclick="setPitcherHeatmapFilter('ball')">Balls</button>
+          <button class="secondary" onclick="setPitcherHeatmapFilter('swingfoul')">Swing/Foul</button>
+          <button class="secondary" onclick="setPitcherHeatmapFilter('hit')">Hits</button>
+          <button class="secondary" onclick="setPitcherHeatmapFilter('out')">Outs</button>
+        </div>
+
+        <label>Pitches per zone</label>
+        <div id="pitcherZoneGrid" class="pitcher-zone-grid"></div>
+
+        <div id="pitcherHeatmapUpdated" class="sync-status">Kies een pitcher om de heatmap te tonen.</div>
 
         <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
       </div>
