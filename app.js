@@ -2235,59 +2235,65 @@ function buildGameRecap(game) {
     const earlyStats = getPhaseStats(early);
     const lateStats = getPhaseStats(late);
 
-    let summary = "";
-    let strengths = [];
-    let focus = [];
+    const inningTexts = [];
 
-    if (strikePct >= 62) {
-      summary = "Sterke controle gedurende de outing met een stabiel strikepercentage.";
-      strengths.push("stabiel strikepercentage");
-    } else if (strikePct >= 52) {
-      summary = "Overwegend goede controle met meerdere aanvallende counts.";
-      strengths.push("aanvallend in vroege counts");
+    if (earlyStats.strikePct >= lateStats.strikePct + 10) {
+      inningTexts.push(`${pitcherName} begon sterk met meer strikes in het eerste deel van de wedstrijd.`);
+    } else if (lateStats.strikePct >= earlyStats.strikePct + 10) {
+      inningTexts.push(`${pitcherName} gooide later in de wedstrijd meer strikes dan aan het begin.`);
     } else {
-      summary = "Controle wisselde gedurende de outing, vooral later in de inning.";
+      inningTexts.push(`${pitcherName} hield het strikepercentage redelijk stabiel gedurende de wedstrijd.`);
     }
 
+    if (lateStats.ballPct > earlyStats.ballPct + 10) {
+      inningTexts.push(`Later in de wedstrijd steeg het aantal balls (${earlyStats.ballPct}% → ${lateStats.ballPct}%).`);
+    }
+
+    if (wideZone && wideZone !== "-") {
+      inningTexts.push(`De meeste balls zaten rond ${wideZone}.`);
+    }
+
+    const strengths = [];
     if (fpsPct >= 55) strengths.push(`sterk FPS% (${fpsPct}%)`);
+    if (stats.walks === 0) strengths.push(`geen walks toegestaan`);
     if (stats.strikeouts >= 2) strengths.push(`${stats.strikeouts} strikeouts`);
-    if (bestZone && bestZone !== "-") strengths.push(`effectief rond ${bestZone}`);
+    if (bestZone && bestZone !== "-") strengths.push(`veel strikes rond ${bestZone}`);
+
+    const focus = [];
 
     if (lateStats.ballPct > earlyStats.ballPct + 10) {
-      focus.push(`meer wijd gegooide pitches later in de outing (${earlyStats.ballPct}% → ${lateStats.ballPct}% balls)`);
+      focus.push(`meer balls later in de wedstrijd`);
     }
 
     if (wideZone && wideZone.includes("outside")) {
-      focus.push("meerdere misses outside buiten de zone");
+      focus.push(`meerdere misses outside buiten de zone`);
     } else if (wideZone && wideZone.includes("inside")) {
-      focus.push("meerdere misses inside buiten de zone");
+      focus.push(`meerdere misses inside buiten de zone`);
     } else if (wideZone && wideZone.includes("hoog")) {
-      focus.push("controleverlies hoog in de zone");
+      focus.push(`meer pitches hoog buiten de zone`);
     } else if (wideZone && wideZone.includes("laag")) {
-      focus.push("meer lage misses buiten de zone");
+      focus.push(`meer pitches laag buiten de zone`);
     }
 
     if (stats.walks >= 2) {
-      focus.push("meer vrije honken door balls in hitter counts");
+      focus.push(`meer vrije honken door balls`);
     }
 
-    strengths = [...new Set(strengths)].slice(0, 3);
-    focus = [...new Set(focus)].slice(0, 3);
+    const uniqueStrengths = [...new Set(strengths)].slice(0, 3);
+    const uniqueFocus = [...new Set(focus)].slice(0, 3);
 
     const textBlock = [
       `${pitcherName}`,
       `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB`,
       ``,
-      summary,
+      ...inningTexts,
       ``,
       `Sterk:`,
-      ...(strengths.length ? strengths.map(s => `- ${s}`) : [`- goede inzet gedurende de outing`]),
+      ...(uniqueStrengths.length ? uniqueStrengths.map(s => `- ${s}`) : [`- stabiele inning`]),
       ``,
-      ...(focus.length ? [
-        `Aandachtspunt:`,
-        ...focus.map(f => `- ${f}`),
-        ``
-      ] : [])
+      `Punt van aandacht:`,
+      ...(uniqueFocus.length ? uniqueFocus.map(f => `- ${f}`) : [`- weinig opvallende aandachtspunten`]),
+      ``
     ].join("\n");
 
     const htmlBlock = `
@@ -2302,24 +2308,22 @@ function buildGameRecap(game) {
           </div>
         </div>
 
-        <p>${summary}</p>
+        <p>${inningTexts.join(" ")}</p>
 
         <div class="recap-two-columns">
           <div class="recap-insight good">
             <strong>Sterk</strong>
             <ul>
-              ${(strengths.length ? strengths : ["goede inzet gedurende de outing"]).map(s => `<li>${s}</li>`).join("")}
+              ${(uniqueStrengths.length ? uniqueStrengths : ["stabiele inning"]).map(s => `<li>${s}</li>`).join("")}
             </ul>
           </div>
 
-          ${focus.length ? `
-            <div class="recap-insight attention">
-              <strong>Aandachtspunt</strong>
-              <ul>
-                ${focus.map(f => `<li>${f}</li>`).join("")}
-              </ul>
-            </div>
-          ` : ""}
+          <div class="recap-insight attention">
+            <strong>Punt van aandacht</strong>
+            <ul>
+              ${(uniqueFocus.length ? uniqueFocus : ["weinig opvallende aandachtspunten"]).map(f => `<li>${f}</li>`).join("")}
+            </ul>
+          </div>
         </div>
       </div>
     `;
