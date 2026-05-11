@@ -1212,22 +1212,18 @@ function openLineupPicker(slot) {
     return;
   }
 
-  const usedKeys = new Set();
-  for (let i = 1; i <= 16; i++) {
-    if (i === Number(slot)) continue;
-    const name = String(document.getElementById(`name${i}`)?.value || "").trim();
-    const number = String(document.getElementById(`num${i}`)?.value || "").trim();
-    if (name || number) usedKeys.add(`${name}|${number}`);
-  }
-
   slotInput.value = slot;
   if (meta) meta.textContent = `Positie ${slot} · ${teamName}`;
 
   select.innerHTML = `<option value="">Kies speelster</option>` + players.map((player, index) => {
-    const key = `${player.name || ""}|${player.number || ""}`;
-    const disabled = usedKeys.has(key) ? " disabled" : "";
-    const suffix = usedKeys.has(key) ? " (al gekozen)" : "";
-    return `<option value="${index}"${disabled}>${player.name || "Onbekende slagvrouw"} #${player.number || "?"}${suffix}</option>`;
+    const playerName = String(player.name || "");
+    const playerNumber = String(player.number || "");
+    const usedSlot = findLineupSlotByPlayer(playerName, playerNumber);
+    const suffix = usedSlot && usedSlot !== Number(slot)
+      ? ` (staat op positie ${usedSlot}; wordt gewisseld)`
+      : "";
+
+    return `<option value="${index}">${player.name || "Onbekende slagvrouw"} #${player.number || "?"}${suffix}</option>`;
   }).join("");
 
   const currentName = String(document.getElementById(`name${slot}`)?.value || "").trim();
@@ -1247,6 +1243,24 @@ function closeLineupPicker() {
   if (modal) modal.classList.add("hidden");
 }
 
+function findLineupSlotByPlayer(name, number, ignoredSlot = null) {
+  const targetName = String(name || "").trim();
+  const targetNumber = String(number || "").trim();
+
+  if (!targetName && !targetNumber) return null;
+
+  for (let i = 1; i <= 16; i++) {
+    if (ignoredSlot !== null && i === Number(ignoredSlot)) continue;
+
+    const currentName = String(document.getElementById(`name${i}`)?.value || "").trim();
+    const currentNumber = String(document.getElementById(`num${i}`)?.value || "").trim();
+
+    if (currentName === targetName && currentNumber === targetNumber) return i;
+  }
+
+  return null;
+}
+
 function confirmLineupPicker() {
   const slot = Number(document.getElementById("lineupPickerSlot")?.value);
   const selectedIndex = Number(document.getElementById("lineupPickerSelect")?.value);
@@ -1261,8 +1275,28 @@ function confirmLineupPicker() {
   const nameInput = document.getElementById(`name${slot}`);
   const numInput = document.getElementById(`num${slot}`);
 
-  if (nameInput) nameInput.value = player.name || "";
-  if (numInput) numInput.value = player.number || "";
+  if (!nameInput || !numInput) return;
+
+  const currentName = String(nameInput.value || "").trim();
+  const currentNumber = String(numInput.value || "").trim();
+  const selectedName = String(player.name || "");
+  const selectedNumber = String(player.number || "");
+  const existingSlot = findLineupSlotByPlayer(selectedName, selectedNumber, slot);
+
+  // Als de gekozen speelster al op een andere plek staat, wissel de twee posities om.
+  // Zo kun je in Nieuwe game de slaglijst blijven herschikken zonder eerst velden leeg te maken.
+  if (existingSlot) {
+    const existingNameInput = document.getElementById(`name${existingSlot}`);
+    const existingNumInput = document.getElementById(`num${existingSlot}`);
+
+    if (existingNameInput && existingNumInput) {
+      existingNameInput.value = currentName;
+      existingNumInput.value = currentNumber;
+    }
+  }
+
+  nameInput.value = selectedName;
+  numInput.value = selectedNumber;
 
   closeLineupPicker();
 }
