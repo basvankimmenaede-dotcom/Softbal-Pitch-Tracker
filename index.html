@@ -44,6 +44,7 @@
           <button onclick="showSetup()">Nieuwe game <span>→</span></button>
           <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
           <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
+          <button onclick="showGameRecaps()">Game Recaps <span>→</span></button>
           <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
           <button onclick="showPitcherHeatmaps()">Pitcher Heatmaps <span>→</span></button>
           <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
@@ -299,6 +300,29 @@
         </div>
       </div>
     </section>
+
+
+    <section id="gameRecapsScreen" class="screen">
+      <div class="card">
+        <h2 class="overview-title">Game Recaps</h2>
+        <p class="home-subtitle">Korte pitching recap per wedstrijd, met alle pitchers samen.</p>
+
+        <label for="gameRecapSelect">Wedstrijd</label>
+        <select id="gameRecapSelect" onchange="renderSelectedGameRecap()">
+          <option value="">Kies wedstrijd</option>
+        </select>
+
+        <div id="gameRecapOutput" class="game-recap-output">
+          <p class="small-note">Kies een wedstrijd om de recap te tonen.</p>
+        </div>
+
+        <div class="actions">
+          <button class="secondary" onclick="copyGameRecap()">Kopieer recap</button>
+          <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+        </div>
+      </div>
+    </section>
+
 
     <section id="unfinishedGamesScreen" class="screen">
       <div class="card placeholder-card">

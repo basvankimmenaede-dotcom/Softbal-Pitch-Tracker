@@ -1719,3 +1719,67 @@ button.danger {
   justify-content: center;
   gap: 6px;
 }
+
+
+
+/* Game Recaps */
+.game-recap-output {
+  margin-top: 14px;
+}
+
+.game-recap-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(243,244,246,.95);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.game-recap-card h3 {
+  margin: 0 0 10px;
+  color: var(--orange);
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.game-recap-card p {
+  margin: 8px 0 12px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+.game-recap-card label {
+  margin-top: 14px;
+}
+
+.game-recap-card ul {
+  margin: 8px 0 12px;
+  padding-left: 18px;
+}
+
+.game-recap-card li {
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.recap-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.recap-row {
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}

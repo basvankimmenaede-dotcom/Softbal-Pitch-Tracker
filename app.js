@@ -1990,6 +1990,285 @@ function requireEditPassword(message = "Voer wachtwoord in om deze game te opene
 // Oude naam blijft bestaan, maar gaat nu verplicht via wachtwoord.
 
 
+
+function showGameRecaps() {
+  setActiveScreen("gameRecapsScreen");
+
+  const output = document.getElementById("gameRecapOutput");
+  if (output) {
+    output.innerHTML = `<p class="small-note">Wedstrijden worden geladen...</p>`;
+  }
+
+  syncFromGoogleSheet()
+    .catch(() => [])
+    .finally(() => {
+      populateGameRecapSelect();
+      renderSelectedGameRecap();
+    });
+}
+
+function getGamesForRecaps() {
+  return getStoredGames()
+    .filter(g => Array.isArray(g.pitches) && g.pitches.length)
+    .sort((a, b) => getGameSortValue(b) - getGameSortValue(a));
+}
+
+function populateGameRecapSelect() {
+  const select = document.getElementById("gameRecapSelect");
+  if (!select) return;
+
+  const current = select.value;
+  const games = getGamesForRecaps();
+
+  select.innerHTML = `<option value="">Kies wedstrijd</option>` + games.map(g => {
+    const id = g.gameId || "";
+    const pitchers = getPitcherNamesForGame(g).join(", ") || "Pitcher onbekend";
+    const label = `${formatDateTimeCompact(g.date, g.startTime)} · ${g.opponent || "Onbekende tegenstander"} · ${pitchers}`;
+    return `<option value="${id}">${label}</option>`;
+  }).join("");
+
+  if (current && games.some(g => g.gameId === current)) {
+    select.value = current;
+  } else if (games.length) {
+    select.value = games[0].gameId || "";
+  }
+}
+
+function getPitcherNamesForGame(g) {
+  const names = new Set();
+
+  if (g.pitcherName) names.add(String(g.pitcherName));
+
+  (g.pitches || []).forEach(p => {
+    if (p.pitcherName) names.add(String(p.pitcherName));
+  });
+
+  return [...names].filter(Boolean);
+}
+
+function renderSelectedGameRecap() {
+  const select = document.getElementById("gameRecapSelect");
+  const output = document.getElementById("gameRecapOutput");
+  if (!select || !output) return;
+
+  const gameId = select.value;
+  const game = getGamesForRecaps().find(g => g.gameId === gameId);
+
+  if (!game) {
+    output.innerHTML = `<p class="small-note">Geen wedstrijd geselecteerd.</p>`;
+    return;
+  }
+
+  const recap = buildGameRecap(game);
+  output.innerHTML = recap.html;
+  output.dataset.copyText = recap.text;
+}
+
+function getPitchResultBucket(result) {
+  if (["Ball", "HBP"].includes(result)) return "ball";
+  if (isStrikeResult(result)) return "strike";
+  return "other";
+}
+
+function getZoneBucketForRecap(p) {
+  const x = Number(p.x || 50);
+  const y = Number(p.y || 50);
+
+  if (
+    x < STRIKE_ZONE.left ||
+    x > STRIKE_ZONE.right ||
+    y < STRIKE_ZONE.top ||
+    y > STRIKE_ZONE.bottom
+  ) {
+    if (y < STRIKE_ZONE.top) return "hoog buiten de zone";
+    if (y > STRIKE_ZONE.bottom) return "laag buiten de zone";
+    if (x < STRIKE_ZONE.left) return "inside buiten de zone";
+    if (x > STRIKE_ZONE.right) return "outside buiten de zone";
+    return "buiten de zone";
+  }
+
+  const zoneWidth = STRIKE_ZONE.right - STRIKE_ZONE.left;
+  const zoneHeight = STRIKE_ZONE.bottom - STRIKE_ZONE.top;
+  const relativeX = (x - STRIKE_ZONE.left) / zoneWidth;
+  const relativeY = (y - STRIKE_ZONE.top) / zoneHeight;
+
+  let horizontal = "midden";
+  if (relativeX <= 0.33) horizontal = "inside";
+  else if (relativeX >= 0.66) horizontal = "outside";
+
+  let vertical = "midden";
+  if (relativeY <= 0.33) vertical = "hoog";
+  else if (relativeY >= 0.66) vertical = "laag";
+
+  return `${vertical} ${horizontal}`;
+}
+
+function getMostCommon(items) {
+  const counts = new Map();
+  items.filter(Boolean).forEach(item => counts.set(item, (counts.get(item) || 0) + 1));
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0] || ["-", 0];
+}
+
+function splitPitchesIntoPhases(pitches) {
+  const ordered = [...pitches].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+  if (ordered.length < 6) {
+    return { early: ordered, late: ordered };
+  }
+
+  const midpoint = Math.ceil(ordered.length / 2);
+  return {
+    early: ordered.slice(0, midpoint),
+    late: ordered.slice(midpoint)
+  };
+}
+
+function getPhaseStats(pitches) {
+  const total = pitches.length;
+  const balls = pitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
+  const strikes = pitches.filter(p => isStrikeResult(p.result)).length;
+  const walks = countWalks({ pitches });
+  const strikeouts = countStrikeoutsFromPitches(pitches);
+  const fps = pitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length;
+  const batters = pitches.filter(p => p.firstPitch).length;
+
+  return {
+    total,
+    balls,
+    strikes,
+    walks,
+    strikeouts,
+    ballPct: total ? Math.round((balls / total) * 100) : 0,
+    strikePct: total ? Math.round((strikes / total) * 100) : 0,
+    fpsPct: batters ? Math.round((fps / batters) * 100) : 0
+  };
+}
+
+function buildPitcherRecapLines(game) {
+  const pitchers = getPitcherNamesForGame(game);
+
+  return pitchers.map(pitcherName => {
+    const pitcherPitches = (game.pitches || []).filter(p => String(p.pitcherName || game.pitcherName || "") === pitcherName);
+    const stats = calculateGameStats({ ...game, pitcherName, pitches: pitcherPitches });
+    const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+    return `${pitcherName}: ${stats.totalPitches} pitches, ${stats.strikes} strikes, ${stats.balls} balls, ${fpsPct}% FPS, ${stats.strikeouts || 0} K, ${stats.walks || 0} BB`;
+  });
+}
+
+function buildGameRecap(game) {
+  const pitches = [...(game.pitches || [])].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+  const stats = calculateGameStats({ ...game, pitches });
+  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+  const strikePct = pitches.length ? Math.round((stats.strikes / pitches.length) * 100) : 0;
+  const ballPct = pitches.length ? Math.round((stats.balls / pitches.length) * 100) : 0;
+
+  const { early, late } = splitPitchesIntoPhases(pitches);
+  const earlyStats = getPhaseStats(early);
+  const lateStats = getPhaseStats(late);
+
+  const strikeZones = pitches
+    .filter(p => isStrikeResult(p.result))
+    .map(getZoneBucketForRecap);
+  const ballZones = pitches
+    .filter(p => ["Ball", "HBP"].includes(p.result))
+    .map(getZoneBucketForRecap);
+  const [bestZone] = getMostCommon(strikeZones);
+  const [wideZone] = getMostCommon(ballZones);
+
+  const pitcherLines = buildPitcherRecapLines(game);
+
+  const positiveLines = [];
+  if (strikePct >= 60) positiveLines.push(`goed strikepercentage (${strikePct}%)`);
+  if (fpsPct >= 50) positiveLines.push(`sterk FPS% (${fpsPct}%)`);
+  if (stats.strikeouts > 0) positiveLines.push(`${stats.strikeouts} strikeout(s)`);
+  if (bestZone && bestZone !== "-") positiveLines.push(`meeste effectieve strikes rond ${bestZone}`);
+
+  if (!positiveLines.length) positiveLines.push("voldoende data verzameld voor vervolg-analyse");
+
+  let weakenedLine = "";
+  if (lateStats.ballPct > earlyStats.ballPct + 8) {
+    weakenedLine = `Later in de wedstrijd nam het aantal wijd gegooide pitches toe (${earlyStats.ballPct}% → ${lateStats.ballPct}% balls).`;
+  } else if (lateStats.walks > earlyStats.walks) {
+    weakenedLine = `Later in de wedstrijd kwamen er meer walks en langere at-bats.`;
+  } else if (lateStats.strikePct < earlyStats.strikePct - 8) {
+    weakenedLine = `Later in de wedstrijd zakte het strikepercentage (${earlyStats.strikePct}% → ${lateStats.strikePct}%).`;
+  } else {
+    weakenedLine = `De controle bleef redelijk stabiel over de wedstrijd.`;
+  }
+
+  const wideLine = wideZone && wideZone !== "-"
+    ? `De meeste wijd gegooide pitches zaten rond ${wideZone}.`
+    : `Er was geen duidelijk gebied waar de meeste wijd gegooide pitches zaten.`;
+
+  const title = `${formatDateTimeCompact(game.date, game.startTime)} · ${game.opponent || "Onbekende tegenstander"}`;
+
+  const text = [
+    `Game Recap — ${title}`,
+    ``,
+    `Korte samenvatting: ${stats.totalPitches} pitches, ${strikePct}% strikes, ${ballPct}% balls, ${fpsPct}% FPS, ${stats.strikeouts || 0} K en ${stats.walks || 0} BB.`,
+    ``,
+    `Pitchers:`,
+    ...pitcherLines.map(line => `- ${line}`),
+    ``,
+    `Positief:`,
+    ...positiveLines.slice(0, 3).map(line => `- ${line}`),
+    ``,
+    `Wanneer we verzwakten:`,
+    `- ${weakenedLine}`,
+    `- ${wideLine}`,
+    ``,
+    `Aandachtspunt:`,
+    `- Controle vasthouden wanneer het aantal wijd gegooide pitches stijgt.`
+  ].join("\n");
+
+  const html = `
+    <div class="game-recap-card">
+      <h3>${title}</h3>
+
+      <p><strong>Korte samenvatting:</strong> ${stats.totalPitches} pitches, ${strikePct}% strikes, ${ballPct}% balls, ${fpsPct}% FPS, ${stats.strikeouts || 0} K en ${stats.walks || 0} BB.</p>
+
+      <label>Pitchers in deze wedstrijd</label>
+      <div class="recap-list">
+        ${pitcherLines.map(line => `<div class="recap-row">${line}</div>`).join("")}
+      </div>
+
+      <label>Positieve punten</label>
+      <ul>
+        ${positiveLines.slice(0, 3).map(line => `<li>${line}</li>`).join("")}
+      </ul>
+
+      <label>Wanneer we verzwakten</label>
+      <ul>
+        <li>${weakenedLine}</li>
+        <li>${wideLine}</li>
+      </ul>
+
+      <label>Aandachtspunt</label>
+      <p>Controle vasthouden wanneer het aantal wijd gegooide pitches stijgt.</p>
+    </div>
+  `;
+
+  return { html, text };
+}
+
+async function copyGameRecap() {
+  const output = document.getElementById("gameRecapOutput");
+  const text = output?.dataset?.copyText || "";
+
+  if (!text) {
+    alert("Geen recap om te kopiëren.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    setSyncStatus("Game recap gekopieerd.", "ok");
+  } catch (error) {
+    alert(text);
+  }
+}
+
+
+
 function showUnfinishedGames() {
   setActiveScreen("unfinishedGamesScreen");
   const list = document.getElementById("unfinishedGamesList");
