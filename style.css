@@ -3882,3 +3882,101 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     grid-row: auto !important;
   }
 }
+
+
+
+/* Pitch opslaan rij netjes uitgelijnd */
+#gameScreen .card .actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+#gameScreen .card .actions button {
+  width: 100% !important;
+  min-height: 54px !important;
+  height: 54px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border-radius: 18px !important;
+  font-size: 15px !important;
+  line-height: 1.05 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Definitieve Wedstrijd bediening volgorde */
+#gameScreen .game-controls-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+}
+
+#gameScreen .game-controls-actions button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  height: 48px !important;
+  margin: 0 !important;
+  padding: 10px 10px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  line-height: 1.05 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+}
+
+#gameScreen .game-controls-actions button:nth-child(1) { grid-column: 1; grid-row: 1; }
+#gameScreen .game-controls-actions button:nth-child(2) { grid-column: 2; grid-row: 1; }
+#gameScreen .game-controls-actions button:nth-child(3) { grid-column: 1; grid-row: 2; }
+#gameScreen .game-controls-actions button:nth-child(4) { grid-column: 2; grid-row: 2; }
+#gameScreen .game-controls-actions button:nth-child(5) { grid-column: 1; grid-row: 3; }
+#gameScreen .game-controls-actions button:nth-child(6) { grid-column: 2; grid-row: 3; }
+#gameScreen .game-controls-actions button:nth-child(7) {
+  grid-column: 1 / -1 !important;
+  grid-row: 4;
+}
+
+@media (max-width: 420px) {
+  #gameScreen .card .actions,
+  #gameScreen .game-controls-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  #gameScreen .game-controls-actions button,
+  #gameScreen .card .actions button {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+}
+
+
+
+/* Unified strikezone layout: JS bepaalt de exacte positie/verhouding */
+.field .zone,
+.heatmap-field .heatmap-zone,
+.search-heatmap-field .heatmap-zone,
+.pitcher-density-zone {
+  right: auto !important;
+  bottom: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Zorg dat alle velden dezelfde interne pitch-coördinaten gebruiken */
+.field,
+.heatmap-field,
+.search-heatmap-field,
+.pitcher-density-field {
+  position: relative !important;
+}
+
+/* Alleen de density pagina gebruikt bewust extra buitenruimte via JS, maar dezelfde strikezone verhouding */

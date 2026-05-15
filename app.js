@@ -273,6 +273,49 @@ const STRIKE_ZONE = {
   bottom: 72
 };
 
+function getDisplayPitchBounds(mode = "standard") {
+  // Alle pitches blijven opgeslagen als 0-100.
+  // Standard gebruikt exact die ruimte.
+  // Wide geeft extra buitenruimte voor density heatmaps, zonder de strikezone verhouding te veranderen.
+  if (mode === "wide") {
+    return { minX: -8, maxX: 108, minY: -4, maxY: 106 };
+  }
+
+  return { minX: 0, maxX: 100, minY: 0, maxY: 100 };
+}
+
+function toDisplayPercent(value, min, max) {
+  return ((Number(value) - min) / (max - min)) * 100;
+}
+
+function applyStrikeZoneToElement(element, mode = "standard") {
+  if (!element) return;
+
+  const bounds = getDisplayPitchBounds(mode);
+  element.style.left = `${toDisplayPercent(STRIKE_ZONE.left, bounds.minX, bounds.maxX)}%`;
+  element.style.top = `${toDisplayPercent(STRIKE_ZONE.top, bounds.minY, bounds.maxY)}%`;
+  element.style.width = `${((STRIKE_ZONE.right - STRIKE_ZONE.left) / (bounds.maxX - bounds.minX)) * 100}%`;
+  element.style.height = `${((STRIKE_ZONE.bottom - STRIKE_ZONE.top) / (bounds.maxY - bounds.minY)) * 100}%`;
+}
+
+function applyAllStrikeZoneLayouts() {
+  document.querySelectorAll(".zone").forEach(zone => applyStrikeZoneToElement(zone, "standard"));
+  document.querySelectorAll(".heatmap-zone").forEach(zone => applyStrikeZoneToElement(zone, "standard"));
+
+  const densityZone = document.getElementById("pitcherDensityZone");
+  if (densityZone) applyStrikeZoneToElement(densityZone, "wide");
+}
+
+function getDisplayPoint(point, mode = "standard") {
+  const bounds = getDisplayPitchBounds(mode);
+
+  return {
+    x: toDisplayPercent(Number(point.x || 0), bounds.minX, bounds.maxX),
+    y: toDisplayPercent(Number(point.y || 0), bounds.minY, bounds.maxY)
+  };
+}
+
+
 
 function formatDateTimeCompact(dateValue, timeValue) {
   const rawDate = String(dateValue || "").trim();
@@ -997,12 +1040,14 @@ function init() {
   renderChoices("pitchTypes", pitchTypeOptions, "pitchType");
   renderChoices("results", resultOptions, "result");
   startOfflineAutoRetry();
+  applyAllStrikeZoneLayouts();
 }
 
 function setActiveScreen(screenId) {
   document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
   const target = document.getElementById(screenId);
   if (target) target.classList.add("active");
+  applyAllStrikeZoneLayouts();
 }
 
 
@@ -2091,25 +2136,14 @@ function drawPitcherDensityHeatmap(pitches) {
   canvas.height = Math.round(height * dpr);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
-
-  // De live pitchlocaties worden opgeslagen als 0-100 percentages.
-  // Voor deze totaal-heatmap gebruiken we bewust een breder virtueel veld.
-  // Daardoor worden outside-pitches buiten de zone niet tegen de rand afgesneden.
-  const displayMinX = -8;
-  const displayMaxX = 108;
-  const displayMinY = -4;
-  const displayMaxY = 106;
-  const displayRangeX = displayMaxX - displayMinX;
-  const displayRangeY = displayMaxY - displayMinY;
-
-  const toDisplayX = value => ((Number(value) - displayMinX) / displayRangeX) * 100;
-  const toDisplayY = value => ((Number(value) - displayMinY) / displayRangeY) * 100;
+  const bounds = getDisplayPitchBounds("wide");
+  const displayRangeX = bounds.maxX - bounds.minX;
+  const displayRangeY = bounds.maxY - bounds.minY;
+  const toDisplayX = value => toDisplayPercent(value, bounds.minX, bounds.maxX);
+  const toDisplayY = value => toDisplayPercent(value, bounds.minY, bounds.maxY);
 
   if (zone) {
-    zone.style.left = `${toDisplayX(STRIKE_ZONE.left)}%`;
-    zone.style.top = `${toDisplayY(STRIKE_ZONE.top)}%`;
-    zone.style.width = `${((STRIKE_ZONE.right - STRIKE_ZONE.left) / displayRangeX) * 100}%`;
-    zone.style.height = `${((STRIKE_ZONE.bottom - STRIKE_ZONE.top) / displayRangeY) * 100}%`;
+    applyStrikeZoneToElement(zone, "wide");
   }
 
   const ctx = canvas.getContext("2d");
@@ -2131,8 +2165,8 @@ function drawPitcherDensityHeatmap(pitches) {
   const radius = 6;
 
   pitches.forEach(p => {
-    const displayX = (Number(p.x || 0) - displayMinX) / displayRangeX;
-    const displayY = (Number(p.y || 0) - displayMinY) / displayRangeY;
+    const displayX = (Number(p.x || 0) - bounds.minX) / displayRangeX;
+    const displayY = (Number(p.y || 0) - bounds.minY) / displayRangeY;
 
     const gx = Math.round(Math.min(1, Math.max(0, displayX)) * (gridW - 1));
     const gy = Math.round(Math.min(1, Math.max(0, displayY)) * (gridH - 1));
@@ -2388,8 +2422,9 @@ function renderBatterSearch() {
     dot.className = "heat-dot";
     const heatClass = getHeatDotClass(p.result);
     if (heatClass) dot.classList.add(heatClass);
-    dot.style.left = `${p.x}%`;
-    dot.style.top = `${p.y}%`;
+    const displayPoint = getDisplayPoint(p, "standard");
+    dot.style.left = `${displayPoint.x}%`;
+    dot.style.top = `${displayPoint.y}%`;
     dot.title = `${p.batterName} #${p.batterNumber} · ${p.pitcherName || "Pitcher onbekend"} · ${p.pitchType} · ${p.result} · ${getReadableZone(p)}`;
     dot.textContent = index + 1;
     heatmap.appendChild(dot);
@@ -3562,8 +3597,6 @@ function getBatterPlateAppearancePitches(batter) {
       continue;
     }
 
-    // Zodra we de meest recente slagbeurt gevonden hebben en daarna een andere
-    // slagvrouw tegenkomen, stoppen we. Zo pakken we niet per ongeluk een oudere beurt.
     if (pitches.length) break;
   }
 
@@ -3643,9 +3676,26 @@ function saveCurrentBatterCount() {
 
 function loadBatterCount(index = game.batterIndex) {
   ensureBatterCounts();
-  const count = game.batterCounts[getBatterCountKey(index)] || { balls: 0, strikes: 0 };
-  game.balls = Number(count.balls || 0);
-  game.strikes = Number(count.strikes || 0);
+  const saved = game.batterCounts[getBatterCountKey(index)];
+  const savedBalls = Number(saved?.balls || 0);
+  const savedStrikes = Number(saved?.strikes || 0);
+
+  if (saved && (savedBalls > 0 || savedStrikes > 0)) {
+    game.balls = savedBalls;
+    game.strikes = savedStrikes;
+    return;
+  }
+
+  const batter = game.lineup[index];
+  const reconstructed = getCountAfterPitchesForBatter(batter);
+
+  game.balls = Number(reconstructed.balls || 0);
+  game.strikes = Number(reconstructed.strikes || 0);
+
+  game.batterCounts[getBatterCountKey(index)] = {
+    balls: game.balls,
+    strikes: game.strikes
+  };
 }
 
 function clearBatterCount(index = game.batterIndex) {
@@ -4023,8 +4073,9 @@ function renderBatterHeatmap() {
     dot.className = "heat-dot";
     const heatClass = getHeatDotClass(p.result);
     if (heatClass) dot.classList.add(heatClass);
-    dot.style.left = `${p.x}%`;
-    dot.style.top = `${p.y}%`;
+    const displayPoint = getDisplayPoint(p, "standard");
+    dot.style.left = `${displayPoint.x}%`;
+    dot.style.top = `${displayPoint.y}%`;
     dot.title = `${p.pitchType} · ${p.result}`;
     dot.textContent = index + 1;
     heatmap.appendChild(dot);
