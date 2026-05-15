@@ -3980,3 +3980,90 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
 }
 
 /* Alleen de density pagina gebruikt bewust extra buitenruimte via JS, maar dezelfde strikezone verhouding */
+
+
+
+/* Zoek op slagvrouw + Pitcher Heatmap: exact dezelfde visuele strikezone */
+#batterSearchHeatmap.search-heatmap-field,
+#pitcherDensityField.pitcher-density-field {
+  position: relative !important;
+  height: 430px !important;
+  min-height: 430px !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--line) !important;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(255,122,24,.18), transparent 40%),
+    linear-gradient(180deg, #132d4d 0%, #07111f 62%, #05070c 100%) !important;
+}
+
+/* zelfde zone-look op beide pagina's */
+#batterSearchHeatmap .heatmap-zone,
+#pitcherDensityZone.pitcher-density-zone {
+  position: absolute !important;
+  right: auto !important;
+  bottom: auto !important;
+  box-sizing: border-box !important;
+  border: 4px solid rgba(255,122,24,.95) !important;
+  border-radius: 12px !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-rows: repeat(3, 1fr) !important;
+  background: rgba(255,122,24,.06) !important;
+  box-shadow: 0 0 30px rgba(255,122,24,.20) !important;
+  z-index: 4 !important;
+}
+
+#batterSearchHeatmap .heatmap-zone div,
+#pitcherDensityZone.pitcher-density-zone div {
+  border: 1px solid rgba(255,255,255,.22) !important;
+}
+
+/* zelfde slagvrouwpositie op beide pagina's */
+#batterSearchHeatmap .search-batter-figure,
+#pitcherDensityField .pitcher-density-batter {
+  position: absolute !important;
+  left: 4px !important;
+  bottom: 16px !important;
+  width: 215px !important;
+  height: 350px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  opacity: .32 !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.45)) !important;
+}
+
+#batterSearchHeatmap .search-batter-image,
+#pitcherDensityField .pitcher-density-batter img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: bottom center !important;
+  display: block !important;
+}
+
+/* canvas onder zone, dots/zone boven canvas */
+#pitcherDensityCanvas {
+  z-index: 1 !important;
+}
+
+#batterSearchHeatmap .heat-dot {
+  z-index: 5 !important;
+}
+
+@media (max-width: 520px) {
+  #batterSearchHeatmap.search-heatmap-field,
+  #pitcherDensityField.pitcher-density-field {
+    height: 360px !important;
+    min-height: 360px !important;
+  }
+
+  #batterSearchHeatmap .search-batter-figure,
+  #pitcherDensityField .pitcher-density-batter {
+    width: 180px !important;
+    height: 300px !important;
+  }
+}

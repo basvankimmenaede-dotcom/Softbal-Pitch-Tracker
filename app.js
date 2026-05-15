@@ -303,7 +303,7 @@ function applyAllStrikeZoneLayouts() {
   document.querySelectorAll(".heatmap-zone").forEach(zone => applyStrikeZoneToElement(zone, "standard"));
 
   const densityZone = document.getElementById("pitcherDensityZone");
-  if (densityZone) applyStrikeZoneToElement(densityZone, "wide");
+  if (densityZone) applyStrikeZoneToElement(densityZone, "standard");
 }
 
 function getDisplayPoint(point, mode = "standard") {
@@ -2136,14 +2136,14 @@ function drawPitcherDensityHeatmap(pitches) {
   canvas.height = Math.round(height * dpr);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
-  const bounds = getDisplayPitchBounds("wide");
+  const bounds = getDisplayPitchBounds("standard");
   const displayRangeX = bounds.maxX - bounds.minX;
   const displayRangeY = bounds.maxY - bounds.minY;
   const toDisplayX = value => toDisplayPercent(value, bounds.minX, bounds.maxX);
   const toDisplayY = value => toDisplayPercent(value, bounds.minY, bounds.maxY);
 
   if (zone) {
-    applyStrikeZoneToElement(zone, "wide");
+    applyStrikeZoneToElement(zone, "standard");
   }
 
   const ctx = canvas.getContext("2d");
