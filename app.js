@@ -3477,6 +3477,20 @@ function savePitch() {
     return;
   }
 
+  if (["HIT", "Veld uit"].includes(game.result)) {
+    openBattedBallModal(game.result);
+    return;
+  }
+
+  savePitchFinal();
+}
+
+function savePitchFinal(extra = {}) {
+  if (!game.pitchLocation) {
+    alert("Tik eerst op de plek waar de bal kwam.");
+    return;
+  }
+
   const batter = game.lineup[game.batterIndex];
   const isFirstPitch = game.balls === 0 && game.strikes === 0;
   const zone = getPitchZone(game.pitchLocation.x, game.pitchLocation.y);
@@ -3501,7 +3515,12 @@ function savePitch() {
     strikesBefore: game.strikes,
     outsBefore: game.totalOuts,
     firstPitch: isFirstPitch,
-    walk: game.balls === 3 && game.result === "Ball"
+    walk: game.balls === 3 && game.result === "Ball",
+    battedBallX: extra.battedBallX || "",
+    battedBallY: extra.battedBallY || "",
+    battedBallZone: extra.battedBallZone || "",
+    battedBallHardness: extra.battedBallHardness || "",
+    battedBallHeight: extra.battedBallHeight || ""
   };
 
   game.pitches.unshift(pitch);
@@ -3523,6 +3542,120 @@ function savePitch() {
     setSyncStatus("Pitch lokaal opgeslagen, maar sync kon nog niet starten.", "error");
   });
   updateUI();
+}
+
+let pendingBattedBall = null;
+
+function openBattedBallModal(result) {
+  pendingBattedBall = {
+    result,
+    x: "",
+    y: "",
+    zone: "",
+    hardness: "Hard",
+    height: "Normaal"
+  };
+
+  const modal = document.getElementById("battedBallModal");
+  const title = document.getElementById("battedBallTitle");
+  const help = document.getElementById("battedBallHelp");
+  const marker = document.getElementById("battedBallMarker");
+  const chosen = document.getElementById("battedBallChosen");
+
+  if (title) {
+    title.textContent = result === "HIT"
+      ? "Waar is de bal geslagen?"
+      : "Veld uit — waar is de bal gevangen?";
+  }
+
+  if (help) {
+    help.textContent = result === "HIT"
+      ? "Tik op de plek op het veld waar de bal is geslagen."
+      : "Tik op de plek op het veld waar de bal is gevangen.";
+  }
+
+  if (marker) marker.classList.add("hidden");
+  if (chosen) chosen.textContent = "Nog geen plek gekozen.";
+
+  setBattedBallSelectedButtons();
+  if (modal) modal.classList.remove("hidden");
+}
+
+function cancelBattedBallModal() {
+  const modal = document.getElementById("battedBallModal");
+  if (modal) modal.classList.add("hidden");
+  pendingBattedBall = null;
+}
+
+function selectBattedBallOption(key, value) {
+  if (!pendingBattedBall) return;
+  pendingBattedBall[key] = value;
+  setBattedBallSelectedButtons();
+}
+
+function setBattedBallSelectedButtons() {
+  document.querySelectorAll("#battedBallHardness button").forEach(button => {
+    button.classList.toggle("selected", button.textContent.trim() === pendingBattedBall?.hardness);
+  });
+
+  document.querySelectorAll("#battedBallHeight button").forEach(button => {
+    button.classList.toggle("selected", button.textContent.trim() === pendingBattedBall?.height);
+  });
+}
+
+function getBattedBallZone(x, y) {
+  if (y > 78) return "Catcher";
+  if (y > 58 && x < 28) return "Derde honk";
+  if (y > 58 && x > 72) return "Eerste honk";
+  if (y > 43 && x < 43) return "Shortstop";
+  if (y > 43 && x > 57) return "Tweede honk";
+  if (y > 34 && x < 32) return "Linksveld";
+  if (y > 28 && x > 68) return "Rechtsveld";
+  if (y <= 38) return "Centerfield";
+  return "Pitcher/middenveld";
+}
+
+function setBattedBallLocation(event) {
+  if (!pendingBattedBall) return;
+
+  const field = document.getElementById("battedBallField");
+  const marker = document.getElementById("battedBallMarker");
+  const chosen = document.getElementById("battedBallChosen");
+  if (!field || !marker) return;
+
+  const rect = field.getBoundingClientRect();
+  const x = Math.round(((event.clientX - rect.left) / rect.width) * 100);
+  const y = Math.round(((event.clientY - rect.top) / rect.height) * 100);
+
+  pendingBattedBall.x = Math.max(0, Math.min(100, x));
+  pendingBattedBall.y = Math.max(0, Math.min(100, y));
+  pendingBattedBall.zone = getBattedBallZone(pendingBattedBall.x, pendingBattedBall.y);
+
+  marker.style.left = `${pendingBattedBall.x}%`;
+  marker.style.top = `${pendingBattedBall.y}%`;
+  marker.classList.remove("hidden");
+
+  if (chosen) chosen.textContent = `Gekozen: ${pendingBattedBall.zone}`;
+}
+
+function confirmBattedBallModal() {
+  if (!pendingBattedBall) return;
+
+  if (pendingBattedBall.x === "" || pendingBattedBall.y === "") {
+    alert("Tik eerst op het veld waar de bal kwam.");
+    return;
+  }
+
+  const extra = {
+    battedBallX: pendingBattedBall.x,
+    battedBallY: pendingBattedBall.y,
+    battedBallZone: pendingBattedBall.zone,
+    battedBallHardness: pendingBattedBall.hardness,
+    battedBallHeight: pendingBattedBall.height
+  };
+
+  cancelBattedBallModal();
+  savePitchFinal(extra);
 }
 
 function applyResult(result) {

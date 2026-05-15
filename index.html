@@ -686,6 +686,61 @@
       </div>
     </div>
 
+
+    <div id="battedBallModal" class="modal hidden">
+      <div class="modal-card batted-ball-modal-card">
+        <button type="button" class="modal-close-button" onclick="cancelBattedBallModal()">×</button>
+        <h2 id="battedBallTitle">Waar is de bal geslagen?</h2>
+        <p id="battedBallHelp" class="batted-ball-help">Tik op het veld waar de bal terecht kwam.</p>
+
+        <div class="batted-ball-layout">
+          <div>
+            <div id="battedBallField" class="batted-ball-field" onclick="setBattedBallLocation(event)">
+              <div class="bb-foul-line left"></div>
+              <div class="bb-foul-line right"></div>
+              <div class="bb-outfield"></div>
+              <div class="bb-infield"></div>
+              <div class="bb-diamond"></div>
+
+              <span class="bb-pos pitcher">P</span>
+              <span class="bb-pos catcher">C</span>
+              <span class="bb-pos first">1B</span>
+              <span class="bb-pos second">2B</span>
+              <span class="bb-pos short">SS</span>
+              <span class="bb-pos third">3B</span>
+              <span class="bb-pos left">LF</span>
+              <span class="bb-pos center">CF</span>
+              <span class="bb-pos right">RF</span>
+
+              <div id="battedBallMarker" class="batted-ball-marker hidden"></div>
+            </div>
+            <p id="battedBallChosen" class="batted-ball-chosen">Nog geen plek gekozen.</p>
+          </div>
+
+          <div class="batted-ball-options">
+            <label>Hardheid</label>
+            <div class="batted-option-stack" id="battedBallHardness">
+              <button type="button" class="secondary selected" onclick="selectBattedBallOption('hardness','Hard')">Hard</button>
+              <button type="button" class="secondary" onclick="selectBattedBallOption('hardness','Normaal')">Normaal</button>
+              <button type="button" class="secondary" onclick="selectBattedBallOption('hardness','Zacht')">Zacht</button>
+            </div>
+
+            <label>Hoogte</label>
+            <div class="batted-option-stack" id="battedBallHeight">
+              <button type="button" class="secondary" onclick="selectBattedBallOption('height','Hoog')">Hoog</button>
+              <button type="button" class="secondary selected" onclick="selectBattedBallOption('height','Normaal')">Normaal</button>
+              <button type="button" class="secondary" onclick="selectBattedBallOption('height','Laag')">Laag</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions batted-ball-actions">
+          <button class="secondary" onclick="cancelBattedBallModal()">Annuleren</button>
+          <button onclick="confirmBattedBallModal()">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="app.js"></script>
