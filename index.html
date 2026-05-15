@@ -696,11 +696,15 @@
         <div class="batted-ball-layout">
           <div>
             <div id="battedBallField" class="batted-ball-field" onclick="setBattedBallLocation(event)">
-              <div class="bb-foul-line left"></div>
-              <div class="bb-foul-line right"></div>
-              <div class="bb-outfield"></div>
-              <div class="bb-infield"></div>
-              <div class="bb-diamond"></div>
+              <div class="bb-outfield-arc"></div>
+              <div class="bb-outfield-grass"></div>
+              <div class="bb-infield-dirt"></div>
+              <div class="bb-base-line left"></div>
+              <div class="bb-base-line right"></div>
+              <div class="bb-home-plate"></div>
+              <div class="bb-base first-base"></div>
+              <div class="bb-base second-base"></div>
+              <div class="bb-base third-base"></div>
 
               <span class="bb-pos pitcher">P</span>
               <span class="bb-pos catcher">C</span>
@@ -720,16 +724,16 @@
           <div class="batted-ball-options">
             <label>Hardheid</label>
             <div class="batted-option-stack" id="battedBallHardness">
-              <button type="button" class="secondary selected" onclick="selectBattedBallOption('hardness','Hard')">Hard</button>
-              <button type="button" class="secondary" onclick="selectBattedBallOption('hardness','Normaal')">Normaal</button>
-              <button type="button" class="secondary" onclick="selectBattedBallOption('hardness','Zacht')">Zacht</button>
+              <button type="button" class="secondary selected" data-bb-key="hardness" data-bb-value="Hard" onclick="selectBattedBallOption('hardness','Hard', event)">Hard</button>
+              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Normaal" onclick="selectBattedBallOption('hardness','Normaal', event)">Normaal</button>
+              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Zacht" onclick="selectBattedBallOption('hardness','Zacht', event)">Zacht</button>
             </div>
 
             <label>Hoogte</label>
             <div class="batted-option-stack" id="battedBallHeight">
-              <button type="button" class="secondary" onclick="selectBattedBallOption('height','Hoog')">Hoog</button>
-              <button type="button" class="secondary selected" onclick="selectBattedBallOption('height','Normaal')">Normaal</button>
-              <button type="button" class="secondary" onclick="selectBattedBallOption('height','Laag')">Laag</button>
+              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Hoog" onclick="selectBattedBallOption('height','Hoog', event)">Hoog</button>
+              <button type="button" class="secondary selected" data-bb-key="height" data-bb-value="Normaal" onclick="selectBattedBallOption('height','Normaal', event)">Normaal</button>
+              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Laag" onclick="selectBattedBallOption('height','Laag', event)">Laag</button>
             </div>
           </div>
         </div>

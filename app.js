@@ -3587,32 +3587,38 @@ function cancelBattedBallModal() {
   pendingBattedBall = null;
 }
 
-function selectBattedBallOption(key, value) {
+function selectBattedBallOption(key, value, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   if (!pendingBattedBall) return;
+
   pendingBattedBall[key] = value;
   setBattedBallSelectedButtons();
 }
 
 function setBattedBallSelectedButtons() {
   document.querySelectorAll("#battedBallHardness button").forEach(button => {
-    button.classList.toggle("selected", button.textContent.trim() === pendingBattedBall?.hardness);
+    button.classList.toggle("selected", button.dataset.bbValue === pendingBattedBall?.hardness);
   });
 
   document.querySelectorAll("#battedBallHeight button").forEach(button => {
-    button.classList.toggle("selected", button.textContent.trim() === pendingBattedBall?.height);
+    button.classList.toggle("selected", button.dataset.bbValue === pendingBattedBall?.height);
   });
 }
 
 function getBattedBallZone(x, y) {
-  if (y > 78) return "Catcher";
-  if (y > 58 && x < 28) return "Derde honk";
-  if (y > 58 && x > 72) return "Eerste honk";
-  if (y > 43 && x < 43) return "Shortstop";
-  if (y > 43 && x > 57) return "Tweede honk";
-  if (y > 34 && x < 32) return "Linksveld";
-  if (y > 28 && x > 68) return "Rechtsveld";
-  if (y <= 38) return "Centerfield";
-  return "Pitcher/middenveld";
+  if (y > 84) return "Catcher";
+  if (y > 66 && x < 31) return "Derde honk";
+  if (y > 66 && x > 69) return "Eerste honk";
+  if (y > 50 && x < 45) return "Shortstop";
+  if (y > 50 && x > 55) return "Tweede honk";
+  if (y <= 52 && x < 33) return "Linksveld";
+  if (y <= 52 && x > 67) return "Rechtsveld";
+  if (y <= 50) return "Centerfield";
+  return "Pitcher / middenveld";
 }
 
 function setBattedBallLocation(event) {
@@ -4163,6 +4169,18 @@ function getActivePitcherPitchCount() {
   return (game.pitches || []).filter(p => p.pitcherName === game.pitcherName).length;
 }
 
+
+function getBattedBallHistoryText(pitch) {
+  if (!pitch || !pitch.battedBallZone) return "";
+  const parts = [
+    pitch.battedBallZone,
+    pitch.battedBallHardness,
+    pitch.battedBallHeight
+  ].filter(Boolean);
+
+  return parts.length ? ` · ${parts.join(" · ")}` : "";
+}
+
 function updateUI() {
   game.totalBalls = Number(game.totalBalls || 0);
   game.totalStrikes = Number(game.totalStrikes || 0);
@@ -4190,7 +4208,7 @@ function updateUI() {
   const history = document.getElementById("history");
   history.innerHTML = game.pitches.slice(0, 8).map(p => `
     <div class="history-item">
-      <span><b>${p.batterName} #${p.batterNumber}</b><br>${p.pitchType} · ${p.result} · ${getReadableZone(p)}</span>
+      <span><b>${p.batterName} #${p.batterNumber}</b><br>${p.pitchType} · ${p.result} · ${getReadableZone(p)}${getBattedBallHistoryText(p)}</span>
       <span>${new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
     </div>
   `).join("") || `<p class="small-note">Nog geen pitches opgeslagen.</p>`;

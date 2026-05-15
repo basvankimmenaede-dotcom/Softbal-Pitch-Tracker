@@ -4380,3 +4380,138 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     height: 320px;
   }
 }
+
+
+
+/* Batted ball popup fixes */
+.batted-ball-modal-card,
+.batted-ball-modal-card * {
+  box-sizing: border-box;
+}
+
+.batted-ball-layout,
+.batted-ball-options,
+.batted-option-stack,
+.batted-ball-actions {
+  position: relative;
+  z-index: 5;
+}
+
+.batted-option-stack button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 10 !important;
+  background: rgba(255,250,240,.82) !important;
+  color: #1f2937 !important;
+}
+
+.batted-option-stack button.selected {
+  background: linear-gradient(180deg, rgba(255,135,56,.18), rgba(255,116,23,.10)) !important;
+  color: #f05a00 !important;
+  border: 2px solid rgba(255,116,23,.75) !important;
+}
+
+.batted-ball-field {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 96%, rgba(255,116,23,.14), transparent 22%),
+    linear-gradient(180deg, #4a8b39 0%, #36742f 58%, #255f29 100%) !important;
+}
+
+.bb-outfield,
+.bb-infield,
+.bb-diamond,
+.bb-foul-line {
+  display: none !important;
+}
+
+.bb-outfield-arc {
+  position: absolute;
+  left: -14%;
+  right: -14%;
+  top: 5%;
+  height: 70%;
+  border-radius: 50% 50% 0 0;
+  background:
+    repeating-conic-gradient(from 210deg at 50% 100%, rgba(255,255,255,.06) 0deg 11deg, rgba(0,0,0,.03) 11deg 22deg),
+    linear-gradient(180deg, rgba(82,145,61,.95), rgba(47,114,43,.95));
+  z-index: 1;
+}
+
+.bb-outfield-grass {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 63%, transparent 0 19%, rgba(0,0,0,.10) 19.4% 19.8%, transparent 20.2%),
+    linear-gradient(180deg, transparent 0%, rgba(0,0,0,.08) 100%);
+  z-index: 2;
+}
+
+.bb-infield-dirt {
+  position: absolute;
+  left: 27%;
+  top: 45%;
+  width: 46%;
+  height: 34%;
+  background: #c49458;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  z-index: 3;
+}
+
+.bb-base-line {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  width: 3px;
+  height: 44%;
+  background: rgba(255,255,255,.92);
+  transform-origin: top center;
+  z-index: 4;
+}
+
+.bb-base-line.left { transform: rotate(135deg); }
+.bb-base-line.right { transform: rotate(-135deg); }
+
+.bb-home-plate {
+  position: absolute;
+  left: 48%;
+  top: 68%;
+  width: 4%;
+  height: 5%;
+  background: white;
+  clip-path: polygon(50% 100%, 100% 55%, 82% 0, 18% 0, 0 55%);
+  z-index: 6;
+}
+
+.bb-base {
+  position: absolute;
+  width: 4%;
+  height: 4%;
+  background: white;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  z-index: 6;
+}
+
+.first-base { left: 71%; top: 60%; }
+.second-base { left: 48%; top: 43%; }
+.third-base { left: 25%; top: 60%; }
+
+.batted-ball-marker {
+  z-index: 20 !important;
+}
+
+.bb-pos {
+  z-index: 10 !important;
+}
+
+.bb-pos.pitcher { left: 47%; top: 61%; }
+.bb-pos.catcher { left: 47%; top: 87%; }
+.bb-pos.first { left: 74%; top: 62%; }
+.bb-pos.second { left: 60%; top: 47%; }
+.bb-pos.short { left: 34%; top: 47%; }
+.bb-pos.third { left: 19%; top: 62%; }
+.bb-pos.left { left: 15%; top: 26%; }
+.bb-pos.center { left: 47%; top: 16%; }
+.bb-pos.right { left: 79%; top: 26%; }
