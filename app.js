@@ -1149,6 +1149,12 @@ function renderSpeedPitchTypeButtons() {
   if (customRow) customRow.classList.toggle("hidden", selectedSpeedPitchType !== "__custom__");
 }
 
+
+function clearLocalSpeedTrainingCache() {
+  localStorage.removeItem("ogSpeedTrainings");
+  renderPitcherSpeedOverview();
+}
+
 function getStoredSpeedTrainings() {
   try {
     return JSON.parse(localStorage.getItem("ogSpeedTrainings") || "[]");
@@ -1258,25 +1264,39 @@ async function syncSpeedTrainingFromGoogleSheet(payloadFromSheet = null) {
   try {
     const payload = payloadFromSheet || await loadSheetDataJsonp();
     const sheetItems = convertSheetRowsToSpeedTrainings(payload);
-    const merged = mergeSpeedTrainings(getStoredSpeedTrainings(), sheetItems);
 
-    saveStoredSpeedTrainings(merged);
-    renderPitcherSpeedOverview();
-
+    // SpeedTraining in Google Sheets is leidend.
+    // Hiermee voorkom je dat oude localStorage-data zichtbaar blijft.
     if (sheetItems.length) {
-      setSyncStatus(`Speed training geladen: ${sheetItems.length} metingen.`, "ok");
+      saveStoredSpeedTrainings(sheetItems);
+      renderPitcherSpeedOverview();
+      setSyncStatus(`Speed training geladen uit datasheet: ${sheetItems.length} metingen.`, "ok");
+      return sheetItems;
     }
 
-    return sheetItems;
+    // Als de sheet leeg is, tonen we geen oude lokale cache meer.
+    saveStoredSpeedTrainings([]);
+    renderPitcherSpeedOverview();
+    setSyncStatus("Geen speed-training gevonden in de datasheet.", "loading");
+    return [];
   } catch (error) {
     console.error("Speed training teruglezen mislukt", error);
+    setSyncStatus("SpeedTraining kon niet uit de datasheet worden geladen.", "error");
     return [];
   }
 }
 
 function normalizeSpeedPitchType(type) {
   const clean = String(type || "Fastball").trim() || "Fastball";
-  if (clean.toLowerCase() === "curveball" || clean.toLowerCase() === "curve") return "Effectball";
+  const lower = clean.toLowerCase().replace(/\s+/g, "");
+
+  if (["fast", "fb", "fastball"].includes(lower)) return "Fastball";
+  if (["slow", "sb", "slowball"].includes(lower)) return "Slowball";
+  if (["rise", "rb", "riseball"].includes(lower)) return "Riseball";
+  if (["drop", "db", "dropball"].includes(lower)) return "Dropball";
+  if (["change", "changeup", "change-up", "ch"].includes(lower)) return "Change-up";
+  if (["curve", "curveball", "effect", "effectball"].includes(lower)) return "Effectball";
+
   return clean;
 }
 
@@ -1320,21 +1340,33 @@ function parseBulkSpeedLines(raw, fallbackPitchType) {
   if (!text) return [];
 
   const lines = text.split(/\n+/).map(line => line.trim()).filter(Boolean);
-  const hasNamedLines = lines.some(line => line.includes(":"));
 
-  if (!hasNamedLines) {
-    return [{
-      pitchType: fallbackPitchType,
-      speeds: parseSpeedValues(text)
-    }].filter(group => group.pitchType && group.speeds.length);
-  }
+  const groups = lines.map(line => {
+    let pitchType = "";
+    let speedText = "";
 
-  return lines.map(line => {
-    const parts = line.split(":");
-    const pitchType = normalizeSpeedPitchType(parts.shift());
-    const speeds = parseSpeedValues(parts.join(":"));
+    if (line.includes(":")) {
+      const parts = line.split(":");
+      pitchType = normalizeSpeedPitchType(parts.shift());
+      speedText = parts.join(":");
+    } else {
+      const tokens = line.split(/\s+/).filter(Boolean);
+      const firstNumberIndex = tokens.findIndex(token => Number.isFinite(Number(String(token).replace(",", "."))));
+
+      if (firstNumberIndex > 0) {
+        pitchType = normalizeSpeedPitchType(tokens.slice(0, firstNumberIndex).join(" "));
+        speedText = tokens.slice(firstNumberIndex).join(" ");
+      } else {
+        pitchType = fallbackPitchType;
+        speedText = line;
+      }
+    }
+
+    const speeds = parseSpeedValues(speedText);
     return { pitchType, speeds };
   }).filter(group => group.pitchType && group.speeds.length);
+
+  return groups;
 }
 
 function saveSpeedTraining() {
@@ -3760,13 +3792,10 @@ function syncFromGoogleSheet() {
       saveStoredGames(merged);
 
       const speedItems = convertSheetRowsToSpeedTrainings(payload);
-      if (speedItems.length) {
-        const mergedSpeedItems = mergeSpeedTrainings(getStoredSpeedTrainings(), speedItems);
-        saveStoredSpeedTrainings(mergedSpeedItems);
-      }
+      saveStoredSpeedTrainings(speedItems);
 
       sheetSyncLoaded = true;
-      setSyncStatus(`Google Sheets geladen: ${games.length} games · ${speedItems.length} speed-metingen.`, "ok");
+      setSyncStatus(`Google Sheets geladen: ${games.length} games · ${speedItems.length} speed-metingen uit datasheet.`, "ok");
 
       if (document.getElementById("pitcherStatsScreen")?.classList.contains("active")) renderPitcherStats();
       if (document.getElementById("batterSearchScreen")?.classList.contains("active")) {
