@@ -3551,3 +3551,20 @@ body.gameday-theme .gameday-pitching-stats .card {
     radial-gradient(circle at 92% 0%, rgba(255,116,23,.20), transparent 30%),
     linear-gradient(180deg, #fffaf0 0%, #f4efe6 100%) !important;
 }
+
+
+
+/* Full width back to menu button */
+.back-button,
+button.back-button,
+.secondary.back-button {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 58px !important;
+  border-radius: 18px !important;
+  margin-top: 18px !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+}
