@@ -98,20 +98,12 @@
             <button class="secondary speed-training-button" onclick="openSpeedTrainingModal()">+ Speed training</button>
           </div>
 
-          <div class="speed-range-wrap">
-            <div class="speed-range-track">
-              <div class="speed-range-fill"></div>
-              <div id="speedAvgDot" class="speed-dot avg" style="left:0%">
-                <span>AVG</span>
-              </div>
-              <div id="speedMaxDot" class="speed-dot max" style="left:0%">
-                <span>MAX</span>
-              </div>
+          <div class="speed-chart-wrap">
+            <div class="speed-chart-head">
+              <span>mph</span>
+              <div id="speedChartLegend" class="speed-chart-legend"></div>
             </div>
-            <div class="speed-range-labels">
-              <span>40 mph</span>
-              <span>60 mph</span>
-            </div>
+            <svg id="speedTrainingChart" class="speed-training-chart" viewBox="0 0 720 260" preserveAspectRatio="none" role="img" aria-label="Training speed progressie grafiek"></svg>
           </div>
 
           <div id="speedTypeGrid" class="speed-type-grid"></div>

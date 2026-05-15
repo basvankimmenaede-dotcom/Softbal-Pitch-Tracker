@@ -1492,6 +1492,143 @@ function formatSpeedTrainingDate(dateValue) {
   return raw;
 }
 
+
+function getSpeedColor(index) {
+  const colors = ["#2563eb", "#16a34a", "#ff7417", "#e11d2e", "#7c3aed", "#0891b2", "#111827"];
+  return colors[index % colors.length];
+}
+
+function getSpeedDateLabel(dateValue) {
+  return formatSpeedTrainingDate(dateValue);
+}
+
+function groupSpeedItemsForChart(items) {
+  const byTypeAndDate = new Map();
+
+  items.forEach(item => {
+    const type = normalizeSpeedPitchType(item.pitchType);
+    const date = String(item.date || "").slice(0, 10);
+    if (!type || !date) return;
+
+    const key = `${type}|${date}`;
+    if (!byTypeAndDate.has(key)) {
+      byTypeAndDate.set(key, {
+        type,
+        date,
+        speeds: []
+      });
+    }
+
+    byTypeAndDate.get(key).speeds.push(Number(item.speed));
+  });
+
+  return [...byTypeAndDate.values()]
+    .map(group => ({
+      type: group.type,
+      date: group.date,
+      avg: group.speeds.reduce((sum, value) => sum + value, 0) / group.speeds.length,
+      count: group.speeds.length
+    }))
+    .filter(point => Number.isFinite(point.avg))
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
+
+function renderSpeedTrainingChart(items) {
+  const svg = document.getElementById("speedTrainingChart");
+  const legend = document.getElementById("speedChartLegend");
+  if (!svg) return;
+
+  const points = groupSpeedItemsForChart(items);
+  const types = getSpeedPitchTypesForPitcher(document.getElementById("statsPitcherName")?.value || "", false)
+    .filter(type => points.some(point => point.type === type));
+
+  if (!points.length || !types.length) {
+    svg.innerHTML = `
+      <text x="360" y="132" text-anchor="middle" class="chart-empty-text">Nog geen trainingsdata</text>
+    `;
+    if (legend) legend.innerHTML = "";
+    return;
+  }
+
+  const dates = [...new Set(points.map(point => point.date))].sort();
+  const minSpeed = Math.max(30, Math.floor((Math.min(...points.map(point => point.avg)) - 3) / 5) * 5);
+  const maxSpeed = Math.min(70, Math.ceil((Math.max(...points.map(point => point.avg)) + 3) / 5) * 5);
+
+  const width = 720;
+  const height = 260;
+  const pad = { left: 48, right: 54, top: 20, bottom: 44 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+
+  const xForDate = date => {
+    if (dates.length === 1) return pad.left + plotW / 2;
+    const index = dates.indexOf(date);
+    return pad.left + (index / (dates.length - 1)) * plotW;
+  };
+
+  const yForSpeed = speed => {
+    const span = Math.max(1, maxSpeed - minSpeed);
+    return pad.top + (1 - ((speed - minSpeed) / span)) * plotH;
+  };
+
+  const yTicks = [];
+  for (let speed = minSpeed; speed <= maxSpeed; speed += 5) {
+    yTicks.push(speed);
+  }
+
+  const grid = yTicks.map(speed => {
+    const y = yForSpeed(speed);
+    return `
+      <line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" class="chart-grid-line"></line>
+      <text x="${pad.left - 12}" y="${y + 4}" text-anchor="end" class="chart-axis-label">${speed}</text>
+    `;
+  }).join("");
+
+  const xLabels = dates.map(date => {
+    const x = xForDate(date);
+    return `<text x="${x}" y="${height - 15}" text-anchor="middle" class="chart-axis-label">${getSpeedDateLabel(date)}</text>`;
+  }).join("");
+
+  const lines = types.map((type, typeIndex) => {
+    const typePoints = points.filter(point => point.type === type);
+    const color = getSpeedColor(typeIndex);
+    const coords = typePoints.map(point => ({
+      ...point,
+      x: xForDate(point.date),
+      y: yForSpeed(point.avg)
+    }));
+
+    const polyline = coords.map(point => `${point.x},${point.y}`).join(" ");
+    const dots = coords.map((point, index) => {
+      const isLast = index === coords.length - 1;
+      return `
+        <circle cx="${point.x}" cy="${point.y}" r="${isLast ? 6 : 4.5}" fill="${color}" class="chart-point"></circle>
+        ${isLast ? `<text x="${point.x + 10}" y="${point.y + 4}" class="chart-last-label" fill="${color}">${point.avg.toFixed(1)}</text>` : ""}
+      `;
+    }).join("");
+
+    return `
+      <polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="chart-line"></polyline>
+      ${dots}
+    `;
+  }).join("");
+
+  svg.innerHTML = `
+    <rect x="0" y="0" width="${width}" height="${height}" class="chart-bg"></rect>
+    ${grid}
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${height - pad.bottom}" class="chart-axis-line"></line>
+    <line x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}" class="chart-axis-line"></line>
+    ${xLabels}
+    ${lines}
+  `;
+
+  if (legend) {
+    legend.innerHTML = types.map((type, index) => `
+      <span><i style="background:${getSpeedColor(index)}"></i>${getPitchTypeShortLabel(type)} ${type}</span>
+    `).join("");
+  }
+}
+
 function renderPitcherSpeedOverview() {
   const pitcherName = document.getElementById("statsPitcherName")?.value || "";
   const items = getPitcherSpeedItems(pitcherName);
@@ -1508,6 +1645,7 @@ function renderPitcherSpeedOverview() {
     if (maxDot) maxDot.style.left = "0%";
     if (latest) latest.textContent = pitcherName ? "Nog geen speed-training voor deze pitcher." : "Kies een pitcher om speed-data te tonen.";
     if (grid) grid.innerHTML = `<div class="speed-empty">Nog geen trainingssnelheden gevonden.</div>`;
+    renderSpeedTrainingChart([]);
     return;
   }
 
@@ -1533,6 +1671,8 @@ function renderPitcherSpeedOverview() {
       return renderSpeedTypeCard(type, items.filter(item => normalizeSpeedPitchType(item.pitchType) === type));
     }).join("");
   }
+
+  renderSpeedTrainingChart(items);
 }
 
 function renderSpeedTypeCard(type, items) {

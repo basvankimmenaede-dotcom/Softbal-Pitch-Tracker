@@ -3208,3 +3208,132 @@ button.danger {
   justify-content: center !important;
   font-size: 12px !important;
 }
+
+
+
+/* Training speed line chart */
+.gameday-pitching-stats .speed-chart-wrap,
+.speed-chart-wrap {
+  margin: 12px 0 16px;
+  padding: 10px 10px 8px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(31,41,55,.10);
+}
+
+.gameday-pitching-stats .speed-chart-head,
+.speed-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.gameday-pitching-stats .speed-chart-head > span,
+.speed-chart-head > span {
+  color: var(--gd-muted, #667085);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.gameday-pitching-stats .speed-chart-legend,
+.speed-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.gameday-pitching-stats .speed-chart-legend span,
+.speed-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gd-ink, #1f2937);
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.gameday-pitching-stats .speed-chart-legend i,
+.speed-chart-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.gameday-pitching-stats .speed-training-chart,
+.speed-training-chart {
+  width: 100%;
+  height: 190px;
+  display: block;
+  overflow: visible;
+}
+
+.gameday-pitching-stats .chart-bg {
+  fill: transparent;
+}
+
+.gameday-pitching-stats .chart-grid-line {
+  stroke: rgba(31,41,55,.14);
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+}
+
+.gameday-pitching-stats .chart-axis-line {
+  stroke: rgba(31,41,55,.24);
+  stroke-width: 1.4;
+}
+
+.gameday-pitching-stats .chart-axis-label {
+  fill: var(--gd-muted, #667085);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.gameday-pitching-stats .chart-line {
+  filter: drop-shadow(0 3px 3px rgba(15,23,42,.10));
+}
+
+.gameday-pitching-stats .chart-point {
+  stroke: white;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 3px 4px rgba(15,23,42,.18));
+}
+
+.gameday-pitching-stats .chart-last-label {
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.gameday-pitching-stats .chart-empty-text {
+  fill: var(--gd-muted, #667085);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.gameday-pitching-stats .speed-range-wrap {
+  display: none !important;
+}
+
+@media (max-width: 420px) {
+  .gameday-pitching-stats .speed-training-chart,
+  .speed-training-chart {
+    height: 165px;
+  }
+
+  .gameday-pitching-stats .speed-chart-head,
+  .speed-chart-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .gameday-pitching-stats .speed-chart-legend,
+  .speed-chart-legend {
+    justify-content: flex-start;
+  }
+}
