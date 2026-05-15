@@ -3546,16 +3546,69 @@ function applyResult(result) {
 }
 
 
-function previousBatter(shouldSave = true) {
-  const lineupSize = Math.min(Number(game.activeLineupSize || 9), 9);
 
+function getBatterPlateAppearancePitches(batter) {
+  if (!batter) return [];
+
+  const pitches = [];
+  for (const pitch of (game.pitches || [])) {
+    if (isPitchForBatter(pitch, batter)) pitches.push(pitch);
+    else if (pitches.length) break;
+  }
+
+  return pitches;
+}
+
+function getCountAfterPitchesForBatter(batter) {
+  const paPitches = getBatterPlateAppearancePitches(batter).slice().reverse();
+  let balls = 0;
+  let strikes = 0;
+
+  paPitches.forEach(pitch => {
+    const result = pitch.result;
+
+    if (result === "Ball" || result === "HBP") balls += 1;
+    if (["Strike", "Swing"].includes(result)) strikes += 1;
+    if (result === "Foul" && strikes < 2) strikes += 1;
+
+    balls = Math.min(balls, 3);
+    strikes = Math.min(strikes, 2);
+  });
+
+  return { balls, strikes };
+}
+
+function restoreCountForCurrentBatter() {
+  const batter = game.lineup[game.batterIndex];
+  const count = getCountAfterPitchesForBatter(batter);
+  game.balls = count.balls;
+  game.strikes = count.strikes;
+}
+
+async function deleteBatterPitchesFromGoogleSheet(batter, pitchTimestamps) {
+  if (!game.appsScriptUrl || !batter || !pitchTimestamps || !pitchTimestamps.length) return;
+
+  const payload = {
+    type: "delete_batter_pitches",
+    gameId: game.gameId || `${game.date}-${game.startTime}-${game.opponent}-${game.pitcherName}`,
+    batterOrder: batter.order,
+    batterName: batter.name,
+    batterNumber: batter.number,
+    pitchTimestamps
+  };
+
+  await queueGoogleSheetPayload("delete_batter_pitches", payload, "Reset slagvrouw");
+}
+
+
+function previousBatter(shouldSave = true) {
   if (game.batterIndex <= 0) {
     alert("Je staat al bij de eerste slagvrouw.");
     return;
   }
 
   game.batterIndex -= 1;
-  resetCount(false);
+  restoreCountForCurrentBatter();
   game.pitchLocation = null;
 
   const dot = document.querySelector(".pitch-dot");
@@ -3578,7 +3631,9 @@ function nextBatter(shouldSave = true, allowWrap = false) {
     game.batterIndex += 1;
   }
 
-  resetCount(false);
+  if (allowWrap) resetCount(false);
+  else restoreCountForCurrentBatter();
+
   game.pitchLocation = null;
 
   const dot = document.querySelector(".pitch-dot");
@@ -3608,10 +3663,16 @@ function recalculateActivePitcherTotals() {
   game.totalBalls = pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
   game.totalStrikes = pitcherPitches.filter(p => isStrikeResult(p.result)).length;
   game.firstPitchStrikes = pitcherPitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length;
-  game.totalOuts = pitcherPitches.filter(p => isOutResult(p.result)).length;
+
+  const outsFromSnapshots = pitcherPitches
+    .map(p => Number(p.outsBefore || 0))
+    .filter(n => Number.isFinite(n));
+
+  const outResults = pitcherPitches.filter(p => isOutResult(p.result)).length;
+  game.totalOuts = Math.max(outsFromSnapshots.length ? Math.max(...outsFromSnapshots) : 0, outResults);
   game.outs = game.totalOuts;
-  game.balls = 0;
-  game.strikes = 0;
+
+  restoreCountForCurrentBatter();
 }
 
 function isPitchForBatter(pitch, batter) {
@@ -3630,20 +3691,20 @@ function resetCurrentBatter() {
     return;
   }
 
+  const currentPaPitches = getBatterPlateAppearancePitches(batter);
   const confirmed = confirm(
-    `Reset ${batter.name || "deze slagvrouw"} naar 0-0?\n\nDe pitches van deze slagbeurt worden lokaal verwijderd. Pitches die al naar Google Sheets zijn verstuurd kunnen alleen met een extra Apps Script-delete functie echt uit de datasheet worden verwijderd.`
+    `Reset ${batter.name || "deze slagvrouw"} naar 0-0?\n\nDe pitches van deze slagbeurt worden verwijderd uit de huidige game en ook uit Google Sheets gesynchroniseerd.`
   );
 
   if (!confirmed) return;
 
+  const timestampsToDelete = currentPaPitches
+    .map(p => String(p.timestamp || "").trim())
+    .filter(Boolean);
+
+  const timestampSet = new Set(timestampsToDelete);
   const beforeCount = (game.pitches || []).length;
-
-  // Verwijder alleen de meest recente aaneengesloten pitches van deze slagvrouw.
-  // Zo raak je niet per ongeluk een eerdere slagbeurt van dezelfde speelster kwijt.
-  while (game.pitches.length && isPitchForBatter(game.pitches[0], batter)) {
-    game.pitches.shift();
-  }
-
+  game.pitches = (game.pitches || []).filter(p => !timestampSet.has(String(p.timestamp || "").trim()));
   const removedCount = beforeCount - game.pitches.length;
 
   game.pitchLocation = null;
@@ -3655,7 +3716,11 @@ function resetCurrentBatter() {
   updateUI();
 
   if (removedCount) {
-    setSyncStatus(`${removedCount} pitch(es) lokaal verwijderd voor ${batter.name}.`, "ok");
+    setSyncStatus(`${removedCount} pitch(es) verwijderd. Google Sheets wordt bijgewerkt...`, "loading");
+    deleteBatterPitchesFromGoogleSheet(batter, timestampsToDelete).catch(error => {
+      console.error("Delete sync fout", error);
+      setSyncStatus("Pitch(es) lokaal verwijderd, maar verwijderen uit Google Sheets kon nog niet starten.", "error");
+    });
   } else {
     setSyncStatus(`${batter.name} staat opnieuw op 0-0. Geen pitches verwijderd.`, "ok");
   }
