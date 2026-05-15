@@ -2792,3 +2792,121 @@ button.danger {
     width: 100%;
   }
 }
+
+
+
+/* GameDay alignment fix - 9 stat cards + speed cards */
+.gameday-pitching-stats .pitcher-stats-grid .stat {
+  min-height: 132px !important;
+  padding: 14px 10px !important;
+  display: grid !important;
+  grid-template-rows: 42px 1fr !important;
+  align-items: center !important;
+  justify-items: center !important;
+  text-align: center !important;
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat small {
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: end !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1.08 !important;
+  margin: 0 !important;
+  max-width: 95% !important;
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat strong {
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: start !important;
+  justify-content: center !important;
+  line-height: .95 !important;
+  margin: 0 !important;
+  padding-top: 4px !important;
+}
+
+/* Speed header date: compact and clean */
+.gameday-pitching-stats #speedLatestTraining {
+  max-width: 260px;
+  line-height: 1.2 !important;
+}
+
+/* Speed bar labels: stop AVG/MAX overlap */
+.gameday-pitching-stats .speed-dot span {
+  top: 34px !important;
+  min-width: 42px !important;
+  text-align: center !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  padding: 3px 5px !important;
+}
+
+.gameday-pitching-stats .speed-range-wrap {
+  margin-bottom: 30px !important;
+}
+
+/* Speed cards: better alignment and readable pitch counts */
+.gameday-pitching-stats .speed-type-card {
+  min-height: 120px !important;
+  padding: 12px 12px 13px !important;
+}
+
+.gameday-pitching-stats .speed-type-head {
+  min-height: 42px !important;
+  align-items: flex-start !important;
+}
+
+.gameday-pitching-stats .speed-type-head strong {
+  font-size: 25px !important;
+  line-height: .95 !important;
+}
+
+.gameday-pitching-stats .speed-type-head span {
+  margin-top: 4px !important;
+  line-height: 1.1 !important;
+}
+
+.gameday-pitching-stats .speed-type-head em {
+  flex: 0 0 auto !important;
+  min-width: 34px !important;
+  height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+  border-radius: 999px !important;
+  line-height: 1 !important;
+  font-size: 12px !important;
+}
+
+.gameday-pitching-stats .speed-type-values {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  align-items: start !important;
+  margin-top: 12px !important;
+}
+
+.gameday-pitching-stats .speed-type-values div {
+  min-width: 0 !important;
+}
+
+.gameday-pitching-stats .speed-type-values small {
+  display: block !important;
+  line-height: 1 !important;
+  margin-bottom: 4px !important;
+}
+
+.gameday-pitching-stats .speed-type-values b {
+  display: block !important;
+  font-size: 15px !important;
+  line-height: 1.08 !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 700px) {
+  .gameday-pitching-stats .pitcher-stats-grid .stat {
+    min-height: 122px !important;
+  }
+}
