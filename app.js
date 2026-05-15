@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxioW-DGTZyuJ537C3H9zEv22yeaijzZ6I19b2F4mJiPCnytWpo-ov9SbNC9iKaTIZ5Gg/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMEejc2Q6zA44gcsW6ruazmBpZ9YwHQZVvkf79Lh-eVT3cZqjN__0nY9bUer-kBLqV5w/exec";
 let sitePassword = "";
 let isAuthenticated = false;
 
@@ -1093,7 +1093,7 @@ function showPlaceholder(title) {
 let selectedSpeedPitchType = "Fastball";
 
 function getDefaultSpeedPitchTypes() {
-  return ["Fastball", "Curveball", "Slowball"];
+  return ["Fastball", "Slowball", "Effectball"];
 }
 
 function getSpeedPitchTypesForPitcher(pitcherName) {
@@ -1114,7 +1114,8 @@ function getPitchTypeShortLabel(type) {
   if (!clean) return "?";
   const known = {
     Fastball: "FB",
-    Curveball: "CB",
+    Curveball: "EF",
+    Effectball: "EF",
     Slowball: "SB",
     "Change-up": "CH",
     Changeup: "CH",
@@ -1160,8 +1161,117 @@ function saveStoredSpeedTrainings(items) {
   localStorage.setItem("ogSpeedTrainings", JSON.stringify(items || []));
 }
 
+function getSpeedTrainingKey(item) {
+  return [
+    item.id || "",
+    item.date || "",
+    item.pitcherName || "",
+    item.pitchType || "",
+    item.speed || "",
+    item.createdAt || ""
+  ].join("|");
+}
+
+function mergeSpeedTrainings(localItems, sheetItems) {
+  const merged = new Map();
+
+  [...(localItems || []), ...(sheetItems || [])].forEach(item => {
+    if (!item) return;
+    const normalized = {
+      id: item.id || `speed-${item.date || ""}-${item.pitcherName || ""}-${item.pitchType || ""}-${item.speed || ""}-${item.createdAt || ""}`,
+      pitcherName: item.pitcherName || "",
+      date: item.date || "",
+      pitchType: normalizeSpeedPitchType(item.pitchType || "Fastball"),
+      speed: Number(item.speed || 0),
+      unit: item.unit || "mph",
+      createdAt: item.createdAt || item.timestamp || new Date().toISOString()
+    };
+
+    if (!normalized.pitcherName || !normalized.date || !normalized.pitchType || !Number.isFinite(normalized.speed) || normalized.speed <= 0) return;
+
+    merged.set(getSpeedTrainingKey(normalized), normalized);
+  });
+
+  return [...merged.values()].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+}
+
+function convertSheetRowsToSpeedTrainings(payload) {
+  if (!payload || !payload.rows || !payload.rows.length) return [];
+
+  const headers = payload.headers || [];
+  const rows = payload.rows;
+
+  const records = rows.map(row => {
+    const record = {};
+    headers.forEach((header, index) => {
+      record[String(header || "").trim()] = row[index];
+      record[`_${index}`] = row[index];
+    });
+    return record;
+  });
+
+  const get = (record, names, fallbackIndex = null) => {
+    for (const name of names) {
+      if (record[name] !== undefined && record[name] !== "") return record[name];
+    }
+    if (fallbackIndex !== null) return record[`_${fallbackIndex}`];
+    return "";
+  };
+
+  return records.map(record => {
+    const rowType = String(get(record, ["Row Type", "type"], 0) || "").trim();
+    if (rowType && rowType !== "speed_training") return null;
+
+    return {
+      id: String(get(record, ["ID", "id"], rowType ? 1 : 0) || "").trim(),
+      date: String(get(record, ["Datum", "date"], rowType ? 2 : 0) || "").trim(),
+      pitcherName: String(get(record, ["Pitcher", "pitcherName"], rowType ? 3 : 1) || "").trim(),
+      pitchType: normalizeSpeedPitchType(get(record, ["Pitch Type", "pitchType"], rowType ? 4 : 2)),
+      speed: Number(get(record, ["Speed MPH", "speed", "speedMph"], rowType ? 5 : 3)),
+      unit: "mph",
+      createdAt: String(get(record, ["Timestamp", "createdAt"], rowType ? 6 : 4) || "").trim()
+    };
+  }).filter(item => item && item.pitcherName && item.date && item.pitchType && Number.isFinite(item.speed) && item.speed > 0);
+}
+
+async function sendSpeedTrainingToGoogleSheet(item) {
+  if (!APPS_SCRIPT_URL) {
+    setSyncStatus("Google Sheets niet gekoppeld.", "error");
+    return;
+  }
+
+  const payload = {
+    type: "speed_training",
+    id: item.id,
+    date: item.date,
+    pitcherName: item.pitcherName,
+    pitchType: item.pitchType,
+    speed: item.speed,
+    unit: "mph",
+    createdAt: item.createdAt || new Date().toISOString()
+  };
+
+  await queueGoogleSheetPayload("speed_training", payload, "Speed training");
+}
+
+async function syncSpeedTrainingFromGoogleSheet() {
+  try {
+    const payload = await loadSheetDataJsonp();
+    const sheetItems = convertSheetRowsToSpeedTrainings(payload);
+    if (!sheetItems.length) return;
+
+    const merged = mergeSpeedTrainings(getStoredSpeedTrainings(), sheetItems);
+    saveStoredSpeedTrainings(merged);
+    renderPitcherSpeedOverview();
+  } catch (error) {
+    console.error("Speed training teruglezen mislukt", error);
+  }
+}
+
 function normalizeSpeedPitchType(type) {
-  return String(type || "Fastball").trim() || "Fastball";
+  const clean = String(type || "Fastball").trim() || "Fastball";
+  if (clean.toLowerCase() === "curveball" || clean.toLowerCase() === "curve") return "Effectball";
+  return clean;
 }
 
 function openSpeedTrainingModal() {
@@ -1223,22 +1333,29 @@ function saveSpeedTraining() {
   const items = getStoredSpeedTrainings();
   const now = new Date().toISOString();
 
-  values.forEach(speed => {
-    items.push({
-      id: `speed-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      pitcherName,
-      date,
-      pitchType: pitchTypeToSave,
-      speed,
-      unit: "mph",
-      createdAt: now
-    });
-  });
+  const newItems = values.map(speed => ({
+    id: `speed-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    pitcherName,
+    date,
+    pitchType: pitchTypeToSave,
+    speed,
+    unit: "mph",
+    createdAt: now
+  }));
+
+  newItems.forEach(item => items.push(item));
 
   saveStoredSpeedTrainings(items);
   closeSpeedTrainingModal();
   renderPitcherSpeedOverview();
-  setSyncStatus("Speed training opgeslagen.", "ok");
+  setSyncStatus("Speed training lokaal opgeslagen. Sync wordt gestart...", "loading");
+
+  newItems.forEach(item => {
+    sendSpeedTrainingToGoogleSheet(item).catch(error => {
+      console.error("Speed training sync fout", error);
+      setSyncStatus("Speed training lokaal opgeslagen, maar online sync kon nog niet starten.", "error");
+    });
+  });
 }
 
 function getPitcherSpeedItems(pitcherName) {
@@ -1277,7 +1394,8 @@ function getSpeedStats(items) {
 function renderPitcherSpeedOverview() {
   const pitcherName = document.getElementById("statsPitcherName")?.value || "";
   const items = getPitcherSpeedItems(pitcherName);
-  const allStats = getSpeedStats(items);
+  const fastballItems = items.filter(item => normalizeSpeedPitchType(item.pitchType) === "Fastball");
+  const rangeStats = getSpeedStats(fastballItems);
 
   const avgDot = document.getElementById("speedAvgDot");
   const maxDot = document.getElementById("speedMaxDot");
@@ -1292,18 +1410,30 @@ function renderPitcherSpeedOverview() {
     if (avgValue) avgValue.textContent = "-";
     if (maxValue) maxValue.textContent = "-";
     if (latest) latest.textContent = pitcherName ? "Nog geen speed-training voor deze pitcher." : "Kies een pitcher om speed-data te tonen.";
-    if (grid) grid.innerHTML = getSpeedPitchTypesForPitcher(pitcherName).map(type => renderSpeedTypeCard(type, [])).join("");
+    if (grid) grid.innerHTML = getDefaultSpeedPitchTypes().map(type => renderSpeedTypeCard(type, [])).join("");
     return;
   }
 
-  if (avgDot) avgDot.style.left = `${getSpeedPercent(allStats.avg)}%`;
-  if (maxDot) maxDot.style.left = `${getSpeedPercent(allStats.max)}%`;
-  if (avgValue) avgValue.textContent = formatMph(allStats.avg);
-  if (maxValue) maxValue.textContent = formatMph(allStats.max);
+  if (!fastballItems.length) {
+    if (avgDot) avgDot.style.left = "0%";
+    if (maxDot) maxDot.style.left = "0%";
+    if (avgValue) avgValue.textContent = "-";
+    if (maxValue) maxValue.textContent = "-";
+  } else {
+    if (avgDot) avgDot.style.left = `${getSpeedPercent(rangeStats.avg)}%`;
+    if (maxDot) maxDot.style.left = `${getSpeedPercent(rangeStats.max)}%`;
+    if (avgValue) avgValue.textContent = formatMph(rangeStats.avg);
+    if (maxValue) maxValue.textContent = formatMph(rangeStats.max);
+  }
+
   if (latest) latest.textContent = `Laatste training: ${items[0].date || "-"}`;
 
   if (grid) {
-    const types = getSpeedPitchTypesForPitcher(pitcherName);
+    const preferred = ["Fastball", "Slowball", "Effectball"];
+    const existingTypes = getSpeedPitchTypesForPitcher(pitcherName);
+    const extraTypes = existingTypes.filter(type => !preferred.includes(type));
+    const types = [...preferred, ...extraTypes];
+
     grid.innerHTML = types.map(type => {
       return renderSpeedTypeCard(type, items.filter(item => normalizeSpeedPitchType(item.pitchType) === type));
     }).join("");
@@ -1332,7 +1462,7 @@ function renderSpeedTypeCard(type, items) {
 
 function showPitcherStats() {
   setActiveScreen("pitcherStatsScreen");
-  syncFromGoogleSheet().then(() => { renderPitcherStats(); renderPitcherSpeedOverview(); });
+  syncFromGoogleSheet().then(() => { renderPitcherStats(); return syncSpeedTrainingFromGoogleSheet(); }).finally(() => renderPitcherSpeedOverview());
 }
 
 function getPitcherGames(pitcherName) {
