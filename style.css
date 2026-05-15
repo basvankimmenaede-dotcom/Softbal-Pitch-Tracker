@@ -3337,3 +3337,66 @@ button.danger {
     justify-content: flex-start;
   }
 }
+
+
+
+/* Speed card count as normal layout row */
+.gameday-pitching-stats .speed-type-card {
+  min-height: 116px !important;
+  padding: 12px !important;
+}
+
+.gameday-pitching-stats .speed-type-head {
+  display: none !important;
+}
+
+.gameday-pitching-stats .speed-type-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+}
+
+.gameday-pitching-stats .speed-type-topline strong {
+  color: var(--gd-ink);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.gameday-pitching-stats .speed-type-topline em {
+  position: static !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #1f2937;
+  color: white;
+  border: 1px solid rgba(255,116,23,.45);
+  box-shadow: none;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.gameday-pitching-stats .speed-type-name {
+  display: block;
+  margin-top: 3px;
+  color: var(--gd-muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .10em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.gameday-pitching-stats .speed-type-values {
+  margin-top: 14px !important;
+}

@@ -1681,13 +1681,11 @@ function renderSpeedTypeCard(type, items) {
 
   return `
     <div class="speed-type-card">
-      <div class="speed-type-head">
-        <div>
-          <strong>${short}</strong>
-          <span>${type}</span>
-        </div>
+      <div class="speed-type-topline">
+        <strong>${short}</strong>
         <em>${stats.count}x</em>
       </div>
+      <span class="speed-type-name">${type}</span>
       <div class="speed-type-values">
         <div><small>AVG</small><b>${formatMph(stats.avg)}</b></div>
         <div><small>MAX</small><b>${formatMph(stats.max)}</b></div>
