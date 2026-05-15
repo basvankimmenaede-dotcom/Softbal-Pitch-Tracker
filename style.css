@@ -2273,3 +2273,43 @@ button.danger {
     grid-template-columns: 1fr;
   }
 }
+
+
+
+/* Speed overview layout fix */
+.pitcher-stats-grid + .speed-overview-card {
+  margin-top: 16px;
+}
+
+.speed-overview-card {
+  width: 100%;
+  display: block;
+  clear: both;
+}
+
+.speed-range-track {
+  width: 100%;
+  min-width: 0;
+}
+
+.speed-dot span {
+  white-space: nowrap;
+}
+
+#customSpeedPitchTypeRow {
+  margin-top: 10px;
+}
+
+@media (max-width: 420px) {
+  .speed-overview-card {
+    padding: 12px;
+  }
+
+  .speed-range-wrap {
+    margin-top: 20px;
+  }
+
+  .speed-values strong {
+    font-size: 16px;
+  }
+}

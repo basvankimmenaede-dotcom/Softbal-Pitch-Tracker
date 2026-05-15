@@ -1092,6 +1092,62 @@ function showPlaceholder(title) {
 
 let selectedSpeedPitchType = "Fastball";
 
+function getDefaultSpeedPitchTypes() {
+  return ["Fastball", "Curveball", "Slowball"];
+}
+
+function getSpeedPitchTypesForPitcher(pitcherName) {
+  const types = new Set(getDefaultSpeedPitchTypes());
+
+  getStoredSpeedTrainings()
+    .filter(item => !pitcherName || String(item.pitcherName || "") === String(pitcherName || ""))
+    .forEach(item => {
+      const type = String(item.pitchType || "").trim();
+      if (type) types.add(type);
+    });
+
+  return [...types];
+}
+
+function getPitchTypeShortLabel(type) {
+  const clean = String(type || "").trim();
+  if (!clean) return "?";
+  const known = {
+    Fastball: "FB",
+    Curveball: "CB",
+    Slowball: "SB",
+    "Change-up": "CH",
+    Changeup: "CH",
+    Riseball: "RB",
+    Dropball: "DB",
+    Screwball: "SC"
+  };
+
+  if (known[clean]) return known[clean];
+
+  const words = clean.split(/\s+|-/).filter(Boolean);
+  if (words.length >= 2) return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  return clean.slice(0, 2).toUpperCase();
+}
+
+function renderSpeedPitchTypeButtons() {
+  const holder = document.getElementById("speedPitchTypes");
+  const pitcherName = document.getElementById("speedTrainingPitcher")?.value || document.getElementById("statsPitcherName")?.value || "";
+  if (!holder) return;
+
+  const types = getSpeedPitchTypesForPitcher(pitcherName);
+  if (!types.includes(selectedSpeedPitchType) && selectedSpeedPitchType !== "__custom__") {
+    selectedSpeedPitchType = types[0] || "Fastball";
+  }
+
+  holder.innerHTML = types.map(type => `
+    <button type="button" class="secondary ${selectedSpeedPitchType === type ? "selected" : ""}" onclick="selectSpeedPitchType('${type.replace(/'/g, "\\'")}')">${type}</button>
+  `).join("") + `<button type="button" class="secondary ${selectedSpeedPitchType === "__custom__" ? "selected" : ""}" onclick="selectSpeedPitchType('__custom__')">+ Ander</button>`;
+
+  const customRow = document.getElementById("customSpeedPitchTypeRow");
+  if (customRow) customRow.classList.toggle("hidden", selectedSpeedPitchType !== "__custom__");
+}
+
 function getStoredSpeedTrainings() {
   try {
     return JSON.parse(localStorage.getItem("ogSpeedTrainings") || "[]");
@@ -1105,10 +1161,7 @@ function saveStoredSpeedTrainings(items) {
 }
 
 function normalizeSpeedPitchType(type) {
-  const value = String(type || "").toLowerCase();
-  if (value.includes("curve")) return "Curveball";
-  if (value.includes("slow")) return "Slowball";
-  return "Fastball";
+  return String(type || "Fastball").trim() || "Fastball";
 }
 
 function openSpeedTrainingModal() {
@@ -1122,7 +1175,8 @@ function openSpeedTrainingModal() {
   if (dateInput) dateInput.valueAsDate = new Date();
   if (valuesInput) valuesInput.value = "";
 
-  selectSpeedPitchType("Fastball");
+  selectedSpeedPitchType = "Fastball";
+  renderSpeedPitchTypeButtons();
 
   if (modal) modal.classList.remove("hidden");
 }
@@ -1133,11 +1187,8 @@ function closeSpeedTrainingModal() {
 }
 
 function selectSpeedPitchType(type) {
-  selectedSpeedPitchType = normalizeSpeedPitchType(type);
-
-  document.querySelectorAll("#speedPitchTypes button").forEach(button => {
-    button.classList.toggle("selected", button.textContent.trim() === selectedSpeedPitchType);
-  });
+  selectedSpeedPitchType = type === "__custom__" ? "__custom__" : normalizeSpeedPitchType(type);
+  renderSpeedPitchTypeButtons();
 }
 
 function parseSpeedValues(raw) {
@@ -1151,6 +1202,8 @@ function saveSpeedTraining() {
   const pitcherName = document.getElementById("speedTrainingPitcher")?.value || "";
   const date = document.getElementById("speedTrainingDate")?.value || new Date().toISOString().slice(0, 10);
   const values = parseSpeedValues(document.getElementById("speedTrainingValues")?.value || "");
+  const customType = String(document.getElementById("customSpeedPitchType")?.value || "").trim();
+  const pitchTypeToSave = selectedSpeedPitchType === "__custom__" ? customType : selectedSpeedPitchType;
 
   if (!pitcherName) {
     alert("Kies eerst een pitcher.");
@@ -1162,6 +1215,11 @@ function saveSpeedTraining() {
     return;
   }
 
+  if (!pitchTypeToSave) {
+    alert("Vul een pitch type in.");
+    return;
+  }
+
   const items = getStoredSpeedTrainings();
   const now = new Date().toISOString();
 
@@ -1170,7 +1228,7 @@ function saveSpeedTraining() {
       id: `speed-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       pitcherName,
       date,
-      pitchType: selectedSpeedPitchType,
+      pitchType: pitchTypeToSave,
       speed,
       unit: "mph",
       createdAt: now
@@ -1234,7 +1292,7 @@ function renderPitcherSpeedOverview() {
     if (avgValue) avgValue.textContent = "-";
     if (maxValue) maxValue.textContent = "-";
     if (latest) latest.textContent = pitcherName ? "Nog geen speed-training voor deze pitcher." : "Kies een pitcher om speed-data te tonen.";
-    if (grid) grid.innerHTML = ["Fastball", "Curveball", "Slowball"].map(type => renderSpeedTypeCard(type, [])).join("");
+    if (grid) grid.innerHTML = getSpeedPitchTypesForPitcher(pitcherName).map(type => renderSpeedTypeCard(type, [])).join("");
     return;
   }
 
@@ -1245,7 +1303,8 @@ function renderPitcherSpeedOverview() {
   if (latest) latest.textContent = `Laatste training: ${items[0].date || "-"}`;
 
   if (grid) {
-    grid.innerHTML = ["Fastball", "Curveball", "Slowball"].map(type => {
+    const types = getSpeedPitchTypesForPitcher(pitcherName);
+    grid.innerHTML = types.map(type => {
       return renderSpeedTypeCard(type, items.filter(item => normalizeSpeedPitchType(item.pitchType) === type));
     }).join("");
   }
@@ -1253,7 +1312,7 @@ function renderPitcherSpeedOverview() {
 
 function renderSpeedTypeCard(type, items) {
   const stats = getSpeedStats(items);
-  const short = type === "Fastball" ? "FB" : type === "Curveball" ? "CB" : "SB";
+  const short = getPitchTypeShortLabel(type);
 
   return `
     <div class="speed-type-card">
