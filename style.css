@@ -5093,3 +5093,79 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   background: linear-gradient(180deg, #ff8738, #f05a00) !important;
   color: #fff !important;
 }
+
+
+
+/* Final spray field cleanup */
+.batted-ball-modal-card h2 {
+  color: #1f2937 !important;
+}
+
+.batted-ball-modal-card h2::first-letter {
+  color: inherit !important;
+}
+
+/* cleaner actual 2D field */
+.softball-field-svg .sf-fair {
+  d: path("M50 91 L14 24 Q50 -4 86 24 Z");
+}
+
+.batted-ball-field-2d {
+  background: linear-gradient(180deg,#041425 0%,#081b33 100%) !important;
+}
+
+.sf-fair {
+  fill: #2f7d39 !important;
+  stroke: #ff7417 !important;
+  stroke-width: 1.2 !important;
+}
+
+.sf-infield {
+  fill: #c68d54 !important;
+}
+
+.sf-line {
+  stroke-width: .8 !important;
+}
+
+.sf-arc {
+  opacity: .55;
+}
+
+.batted-ball-field-2d .bb-pos {
+  width: 38px !important;
+  height: 38px !important;
+  font-size: 13px !important;
+}
+
+/* Proper softball placement */
+.batted-ball-field-2d .bb-pos.left { left: 18% !important; top: 28% !important; }
+.batted-ball-field-2d .bb-pos.center { left: 47% !important; top: 16% !important; }
+.batted-ball-field-2d .bb-pos.right { left: 76% !important; top: 28% !important; }
+
+.batted-ball-field-2d .bb-pos.short { left: 35% !important; top: 55% !important; }
+.batted-ball-field-2d .bb-pos.second { left: 57% !important; top: 55% !important; }
+
+.batted-ball-field-2d .bb-pos.third { left: 26% !important; top: 68% !important; }
+.batted-ball-field-2d .bb-pos.first { left: 68% !important; top: 68% !important; }
+
+.batted-ball-field-2d .bb-pos.pitcher { left: 47% !important; top: 69% !important; }
+.batted-ball-field-2d .bb-pos.catcher { left: 47% !important; top: 88% !important; }
+
+/* action buttons aligned */
+.batted-ball-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.batted-ball-actions button {
+  margin: 0 !important;
+  min-height: 64px !important;
+  height: 64px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: stretch !important;
+}
