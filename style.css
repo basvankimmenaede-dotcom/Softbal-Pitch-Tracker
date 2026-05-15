@@ -5514,3 +5514,122 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+
+/* Simple clean 2D softball spray chart */
+.simple-softball-field {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1.35 / 1 !important;
+  min-height: 390px !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background: #07111f !important;
+  border: 2px solid rgba(255,116,23,.42) !important;
+  cursor: crosshair !important;
+}
+
+.simple-field-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.simple-bg { fill: #07111f; }
+.simple-fair { fill: #2f7d39; stroke: #ff7417; stroke-width: 1.35; }
+.simple-infield { fill: #c68d54; stroke: rgba(255,255,255,.78); stroke-width: .55; }
+.simple-basepath { fill: none; stroke: rgba(255,255,255,.60); stroke-width: .45; }
+.simple-foul { stroke: #ffffff; stroke-width: .75; fill: none; }
+.simple-guide { stroke: rgba(255,255,255,.22); stroke-width: .42; stroke-dasharray: 2 2; fill: none; }
+.simple-arc { stroke: rgba(255,255,255,.34); stroke-width: .5; stroke-dasharray: 2 2; fill: none; }
+.simple-base { fill: #ffffff; transform-box: fill-box; transform-origin: center; transform: rotate(45deg); }
+.simple-mound { fill: none; stroke: rgba(255,255,255,.90); stroke-width: .8; }
+.simple-home { fill: #ffffff; }
+.simple-zone-label {
+  fill: #ffffff;
+  font-size: 4px;
+  font-weight: 900;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  letter-spacing: .04em;
+  paint-order: stroke;
+  stroke: rgba(7,17,31,.72);
+  stroke-width: .8px;
+}
+
+.simple-softball-field .batted-ball-marker-clean {
+  z-index: 8 !important;
+}
+
+/* hide old absolute position badges completely in this modal */
+.batted-ball-modal-card-clean .spray-pos,
+.batted-ball-modal-card-clean .bb-pos {
+  display: none !important;
+}
+
+/* Ultra clear selected state for hardness / height */
+.batted-button-stack-clean button[data-bb-key] {
+  position: relative !important;
+  height: 54px !important;
+  border: 2px solid rgba(255,116,23,.28) !important;
+  background: rgba(255,250,240,.88) !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+}
+
+.batted-button-stack-clean button[data-bb-key].selected,
+.batted-button-stack-clean button[data-bb-key][aria-pressed="true"] {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  box-shadow:
+    0 0 0 3px rgba(255,116,23,.28),
+    0 10px 22px rgba(255,116,23,.28) !important;
+}
+
+.batted-button-stack-clean button[data-bb-key].selected::after,
+.batted-button-stack-clean button[data-bb-key][aria-pressed="true"]::after {
+  content: "✓";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.22);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+/* keep actions identical height */
+.batted-ball-actions-clean button {
+  height: 62px !important;
+  min-height: 62px !important;
+  max-height: 62px !important;
+  align-self: stretch !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .simple-softball-field {
+    min-height: 320px !important;
+  }
+}
+
+
+/* Precise zone alignment */
+.simple-field-svg .simple-guide,
+.simple-field-svg .simple-arc {
+  opacity: .42 !important;
+}
+
+.batted-ball-marker-clean {
+  transition: left .08s linear, top .08s linear !important;
+}

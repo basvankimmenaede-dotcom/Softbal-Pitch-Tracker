@@ -712,46 +712,43 @@
 
         <div class="batted-ball-content-clean">
           <div class="spray-chart-panel">
-            <div id="battedBallField" class="softball-spray-chart">
-              <svg viewBox="0 0 100 100" class="softball-spray-svg" aria-hidden="true">
-                <rect x="0" y="0" width="100" height="100" class="sc-bg"></rect>
+            <div id="battedBallField" class="softball-spray-chart simple-softball-field">
+              <svg viewBox="0 0 100 100" class="simple-field-svg" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" class="simple-bg"></rect>
 
-                <!-- fair territory -->
-                <path d="M50 94 L14 25 Q50 2 86 25 Z" class="sc-outfield"></path>
+                <!-- Outfield / fair territory -->
+                <path d="M50 94 L12 26 Q50 4 88 26 Z" class="simple-fair"></path>
 
-                <!-- foul lines -->
-                <line x1="50" y1="94" x2="14" y2="25" class="sc-foul"></line>
-                <line x1="50" y1="94" x2="86" y2="25" class="sc-foul"></line>
+                <!-- Zone guides -->
+                <path d="M50 94 L12 26" class="simple-foul"></path>
+                <path d="M50 94 L88 26" class="simple-foul"></path>
+                <path d="M50 94 L50 8" class="simple-guide"></path>
+                <path d="M50 94 L30 18" class="simple-guide"></path>
+                <path d="M50 94 L70 18" class="simple-guide"></path>
+                <path d="M24 44 Q50 28 76 44" class="simple-arc"></path>
+                <path d="M33 58 Q50 48 67 58" class="simple-arc"></path>
 
-                <!-- outfield guide arcs -->
-                <path d="M24 42 Q50 26 76 42" class="sc-guide"></path>
-                <path d="M31 54 Q50 43 69 54" class="sc-guide"></path>
+                <!-- Infield dirt -->
+                <path d="M50 92 L30 66 L50 48 L70 66 Z" class="simple-infield"></path>
+                <path d="M50 92 L30 66 L50 48 L70 66 Z" class="simple-basepath"></path>
 
-                <!-- infield dirt -->
-                <path d="M50 92 L29 64 L50 45 L71 64 Z" class="sc-infield"></path>
+                <!-- Bases / mound / home -->
+                <rect x="28.8" y="64.8" width="3.2" height="3.2" class="simple-base"></rect>
+                <rect x="48.4" y="46.4" width="3.2" height="3.2" class="simple-base"></rect>
+                <rect x="68" y="64.8" width="3.2" height="3.2" class="simple-base"></rect>
+                <circle cx="50" cy="71" r="3" class="simple-mound"></circle>
+                <path d="M48.1 90.8 L51.9 90.8 L51.9 93.7 L50 95.2 L48.1 93.7 Z" class="simple-home"></path>
 
-                <!-- base path -->
-                <path d="M50 92 L29 64 L50 45 L71 64 Z" class="sc-basepath"></path>
-
-                <!-- bases -->
-                <rect x="27.7" y="62.7" width="3.2" height="3.2" class="sc-base"></rect>
-                <rect x="48.4" y="43.4" width="3.2" height="3.2" class="sc-base"></rect>
-                <rect x="69.1" y="62.7" width="3.2" height="3.2" class="sc-base"></rect>
-                <path d="M48.2 91.1 L51.8 91.1 L51.8 94.0 L50 95.3 L48.2 94.0 Z" class="sc-home"></path>
-
-                <!-- mound -->
-                <circle cx="50" cy="70" r="3.2" class="sc-mound"></circle>
+                <!-- Text labels in zones -->
+                <text x="24" y="33" class="simple-zone-label">LF</text>
+                <text x="50" y="22" class="simple-zone-label">CF</text>
+                <text x="76" y="33" class="simple-zone-label">RF</text>
+                <text x="38" y="62" class="simple-zone-label">SS</text>
+                <text x="62" y="62" class="simple-zone-label">2B</text>
+                <text x="30" y="73" class="simple-zone-label">3B</text>
+                <text x="70" y="73" class="simple-zone-label">1B</text>
+                <text x="50" y="73" class="simple-zone-label">P</text>
               </svg>
-
-              <span class="spray-pos lf">LF</span>
-              <span class="spray-pos cf">CF</span>
-              <span class="spray-pos rf">RF</span>
-              <span class="spray-pos ss">SS</span>
-              <span class="spray-pos b2">2B</span>
-              <span class="spray-pos b3">3B</span>
-              <span class="spray-pos b1">1B</span>
-              <span class="spray-pos p">P</span>
-              <span class="spray-pos c">C</span>
 
               <div id="battedBallMarker" class="batted-ball-marker-clean hidden"></div>
             </div>

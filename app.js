@@ -3616,24 +3616,55 @@ function selectBattedBallOption(key, value) {
 }
 
 function setBattedBallSelectedButtons() {
-  document.querySelectorAll("[data-bb-key='hardness']").forEach(button => {
-    button.classList.toggle("selected", button.dataset.bbValue === pendingBattedBall?.hardness);
-  });
+  document.querySelectorAll("[data-bb-key]").forEach(button => {
+    const key = button.dataset.bbKey;
+    const value = button.dataset.bbValue;
+    const isSelected = pendingBattedBall && pendingBattedBall[key] === value;
 
-  document.querySelectorAll("[data-bb-key='height']").forEach(button => {
-    button.classList.toggle("selected", button.dataset.bbValue === pendingBattedBall?.height);
+    button.classList.toggle("selected", Boolean(isSelected));
+    button.setAttribute("aria-pressed", isSelected ? "true" : "false");
   });
 }
 
 function getBattedBallZone(x, y) {
-  if (y >= 83) return "Catcher / fout achter";
-  if (y >= 66 && x <= 33) return "Derde honk lijn";
-  if (y >= 66 && x >= 67) return "Eerste honk lijn";
-  if (y >= 50 && x <= 42) return "Shortstop";
-  if (y >= 50 && x >= 58) return "Tweede honk";
-  if (y <= 52 && x < 32) return "Linksveld";
-  if (y <= 52 && x > 68) return "Rechtsveld";
-  if (y <= 45 && x >= 32 && x <= 68) return "Centerfield";
+  // Catcher / behind plate
+  if (y >= 88) return "Catcher / fout achter";
+
+  // Outfield
+  if (y <= 38) {
+    if (x < 38) return "Linksveld";
+    if (x > 62) return "Rechtsveld";
+    return "Centerfield";
+  }
+
+  // Deep gaps
+  if (y <= 52) {
+    if (x < 34) return "Left-center";
+    if (x > 66) return "Right-center";
+    return "Middenveld";
+  }
+
+  // Infield aligned to drawn diamond
+  const dx = Math.abs(x - 50);
+
+  // Pitcher circle
+  if (y >= 64 && y <= 76 && dx <= 7) {
+    return "Pitcher";
+  }
+
+  // Left side infield
+  if (x < 43) {
+    if (y >= 64) return "Derde honk";
+    return "Shortstop";
+  }
+
+  // Right side infield
+  if (x > 57) {
+    if (y >= 64) return "Eerste honk";
+    return "Tweede honk";
+  }
+
+  // Middle lane
   return "Middenveld";
 }
 
