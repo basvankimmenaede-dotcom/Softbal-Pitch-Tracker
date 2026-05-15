@@ -5169,3 +5169,109 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   justify-content: center !important;
   align-self: stretch !important;
 }
+
+
+
+/* ===== SPRAY FIELD FINAL FIX ===== */
+
+/* proper centered field */
+.batted-ball-field-2d{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:24px !important;
+  overflow:hidden !important;
+}
+
+/* scale SVG correctly */
+.softball-field-svg{
+  width:100% !important;
+  height:100% !important;
+  max-width:900px !important;
+  max-height:100% !important;
+}
+
+/* fix diamond proportions */
+.sf-infield{
+  transform: translateY(-2px) !important;
+}
+
+/* better player positioning */
+.batted-ball-field-2d .bb-pos{
+  transform:translate(-50%,-50%) !important;
+}
+
+.batted-ball-field-2d .bb-pos.left{
+  left:22% !important;
+  top:33% !important;
+}
+
+.batted-ball-field-2d .bb-pos.center{
+  left:50% !important;
+  top:22% !important;
+}
+
+.batted-ball-field-2d .bb-pos.right{
+  left:78% !important;
+  top:33% !important;
+}
+
+.batted-ball-field-2d .bb-pos.short{
+  left:38% !important;
+  top:58% !important;
+}
+
+.batted-ball-field-2d .bb-pos.second{
+  left:62% !important;
+  top:58% !important;
+}
+
+.batted-ball-field-2d .bb-pos.third{
+  left:30% !important;
+  top:70% !important;
+}
+
+.batted-ball-field-2d .bb-pos.first{
+  left:70% !important;
+  top:70% !important;
+}
+
+.batted-ball-field-2d .bb-pos.pitcher{
+  left:50% !important;
+  top:72% !important;
+}
+
+.batted-ball-field-2d .bb-pos.catcher{
+  left:50% !important;
+  top:91% !important;
+}
+
+/* buttons equal height */
+.batted-ball-actions{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:18px !important;
+  align-items:stretch !important;
+}
+
+.batted-ball-actions .btn,
+.batted-ball-actions button{
+  height:72px !important;
+  min-height:72px !important;
+  max-height:72px !important;
+  margin:0 !important;
+  padding:0 20px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  line-height:1 !important;
+  box-sizing:border-box !important;
+}
+
+/* force confirm button vertical alignment */
+.batted-ball-actions .primary{
+  transform:none !important;
+  top:auto !important;
+  bottom:auto !important;
+  position:relative !important;
+}
