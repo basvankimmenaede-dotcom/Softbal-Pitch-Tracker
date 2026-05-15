@@ -3631,3 +3631,81 @@ body.gameday-theme .choices button.selected,
     grid-template-columns: 1fr !important;
   }
 }
+
+
+
+/* Nieuwe game knoppen layout fix */
+#setupScreen .actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+#setupScreen .actions button {
+  min-height: 58px !important;
+  margin-top: 0 !important;
+  padding: 13px 16px !important;
+  border-radius: 18px !important;
+  font-size: 16px !important;
+  line-height: 1.1 !important;
+}
+
+#setupScreen .actions button[onclick="startGame()"] {
+  width: 100% !important;
+  min-height: 58px !important;
+  font-size: 16px !important;
+}
+
+#setupScreen .actions button[onclick="showHome()"] {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-height: 58px !important;
+  margin-top: 8px !important;
+}
+
+@media (max-width: 520px) {
+  #setupScreen .actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+
+/* Globale schaalfix voor oranje CTA knoppen */
+button.primary,
+.primary,
+body.gameday-theme button:not(.secondary):not(.modal-close-button) {
+  min-height: 54px !important;
+  padding: 12px 18px !important;
+  border-radius: 18px !important;
+  font-size: 16px !important;
+  line-height: 1.1 !important;
+  width: auto;
+  max-width: 100%;
+}
+
+/* CTA knoppen binnen action rows */
+.actions button,
+.button-row button,
+.team-actions button {
+  flex: 1 1 auto;
+}
+
+/* Voorkom mega verticale knoppen */
+.actions,
+.button-row,
+.team-actions {
+  align-items: center !important;
+}
+
+/* Mobiel iets compacter */
+@media (max-width: 520px) {
+  button.primary,
+  .primary,
+  body.gameday-theme button:not(.secondary):not(.modal-close-button) {
+    min-height: 50px !important;
+    padding: 11px 16px !important;
+    font-size: 15px !important;
+  }
+}
