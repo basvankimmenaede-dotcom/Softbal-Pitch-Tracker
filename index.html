@@ -704,75 +704,84 @@
 
 
     <div id="battedBallModal" class="modal hidden">
-      <div class="modal-card batted-ball-modal-card">
+      <div class="modal-card batted-ball-modal-card-clean">
         <button type="button" class="modal-close-button" onclick="cancelBattedBallModal()">×</button>
+
         <h2 id="battedBallTitle">Waar is de bal geslagen?</h2>
-        <p id="battedBallHelp" class="batted-ball-help">Tik op de plek op het veld en kies daarna hardheid en hoogte.</p>
+        <p id="battedBallHelp" class="batted-ball-help-clean">Tik op de plek op het veld waar de bal is geslagen.</p>
 
-        <div class="batted-ball-layout">
-          <div>
-            <div id="battedBallField" class="batted-ball-field batted-ball-field-2d">
-              <svg class="softball-field-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                <rect x="0" y="0" width="100" height="100" class="sf-bg"></rect>
+        <div class="batted-ball-content-clean">
+          <div class="spray-chart-panel">
+            <div id="battedBallField" class="softball-spray-chart">
+              <svg viewBox="0 0 100 100" class="softball-spray-svg" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" class="sc-bg"></rect>
 
-                <path d="M50 91 L14 24 Q50 -2 86 24 Z" class="sf-fair"></path>
+                <!-- fair territory -->
+                <path d="M50 94 L14 25 Q50 2 86 25 Z" class="sc-outfield"></path>
 
-                <path d="M50 91 L29 63 L50 44 L71 63 Z" class="sf-infield"></path>
+                <!-- foul lines -->
+                <line x1="50" y1="94" x2="14" y2="25" class="sc-foul"></line>
+                <line x1="50" y1="94" x2="86" y2="25" class="sc-foul"></line>
 
-                <line x1="50" y1="91" x2="14" y2="24" class="sf-line"></line>
-                <line x1="50" y1="91" x2="86" y2="24" class="sf-line"></line>
+                <!-- outfield guide arcs -->
+                <path d="M24 42 Q50 26 76 42" class="sc-guide"></path>
+                <path d="M31 54 Q50 43 69 54" class="sc-guide"></path>
 
-                <path d="M29 63 Q50 47 71 63" class="sf-arc"></path>
-                <path d="M36 53 Q50 45 64 53" class="sf-arc"></path>
+                <!-- infield dirt -->
+                <path d="M50 92 L29 64 L50 45 L71 64 Z" class="sc-infield"></path>
 
-                <rect x="29" y="62" width="3" height="3" class="sf-base"></rect>
-                <rect x="48.5" y="43" width="3" height="3" class="sf-base"></rect>
-                <rect x="68" y="62" width="3" height="3" class="sf-base"></rect>
+                <!-- base path -->
+                <path d="M50 92 L29 64 L50 45 L71 64 Z" class="sc-basepath"></path>
 
-                <circle cx="50" cy="68" r="2.8" class="sf-mound"></circle>
+                <!-- bases -->
+                <rect x="27.7" y="62.7" width="3.2" height="3.2" class="sc-base"></rect>
+                <rect x="48.4" y="43.4" width="3.2" height="3.2" class="sc-base"></rect>
+                <rect x="69.1" y="62.7" width="3.2" height="3.2" class="sc-base"></rect>
+                <path d="M48.2 91.1 L51.8 91.1 L51.8 94.0 L50 95.3 L48.2 94.0 Z" class="sc-home"></path>
 
-                <rect x="48.5" y="89" width="3" height="3" class="sf-home"></rect>
+                <!-- mound -->
+                <circle cx="50" cy="70" r="3.2" class="sc-mound"></circle>
               </svg>
 
-              <span class="bb-pos left">LF</span>
-              <span class="bb-pos center">CF</span>
-              <span class="bb-pos right">RF</span>
-              <span class="bb-pos short">SS</span>
-              <span class="bb-pos second">2B</span>
-              <span class="bb-pos third">3B</span>
-              <span class="bb-pos first">1B</span>
-              <span class="bb-pos pitcher">P</span>
-              <span class="bb-pos catcher">C</span>
+              <span class="spray-pos lf">LF</span>
+              <span class="spray-pos cf">CF</span>
+              <span class="spray-pos rf">RF</span>
+              <span class="spray-pos ss">SS</span>
+              <span class="spray-pos b2">2B</span>
+              <span class="spray-pos b3">3B</span>
+              <span class="spray-pos b1">1B</span>
+              <span class="spray-pos p">P</span>
+              <span class="spray-pos c">C</span>
 
-              <div id="battedBallMarker" class="batted-ball-marker hidden"></div>
+              <div id="battedBallMarker" class="batted-ball-marker-clean hidden"></div>
             </div>
-            <p id="battedBallChosen" class="batted-ball-chosen">Nog geen plek gekozen.</p>
+
+            <p id="battedBallChosen" class="batted-ball-chosen-clean">Nog geen plek gekozen.</p>
           </div>
 
-          <div class="batted-ball-options">
+          <div class="batted-ball-controls-clean">
             <label>Hardheid</label>
-            <div class="batted-option-stack" id="battedBallHardness">
-              <button type="button" class="secondary selected" data-bb-key="hardness" data-bb-value="Hard">Hard</button>
-              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Normaal">Normaal</button>
-              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Zacht">Zacht</button>
+            <div id="battedBallHardness" class="batted-button-stack-clean">
+              <button type="button" data-bb-key="hardness" data-bb-value="Hard" class="selected">Hard</button>
+              <button type="button" data-bb-key="hardness" data-bb-value="Normaal">Normaal</button>
+              <button type="button" data-bb-key="hardness" data-bb-value="Zacht">Zacht</button>
             </div>
 
             <label>Hoogte</label>
-            <div class="batted-option-stack" id="battedBallHeight">
-              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Hoog">Hoog</button>
-              <button type="button" class="secondary selected" data-bb-key="height" data-bb-value="Line Drive">Line Drive</button>
-              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Laag">Laag</button>
+            <div id="battedBallHeight" class="batted-button-stack-clean">
+              <button type="button" data-bb-key="height" data-bb-value="Hoog">Hoog</button>
+              <button type="button" data-bb-key="height" data-bb-value="Line Drive" class="selected">Line Drive</button>
+              <button type="button" data-bb-key="height" data-bb-value="Laag">Laag</button>
             </div>
           </div>
         </div>
 
-        <div class="actions batted-ball-actions">
-          <button class="secondary" onclick="cancelBattedBallModal()">Annuleren</button>
-          <button onclick="confirmBattedBallModal()">Bevestigen</button>
+        <div class="batted-ball-actions-clean">
+          <button type="button" class="bb-cancel" onclick="cancelBattedBallModal()">Annuleren</button>
+          <button type="button" class="bb-confirm" onclick="confirmBattedBallModal()">Bevestigen</button>
         </div>
       </div>
     </div>
-
   </main>
 
   <script src="app.js"></script>

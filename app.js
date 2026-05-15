@@ -3574,7 +3574,7 @@ function openBattedBallModal(result) {
     y: "",
     zone: "",
     hardness: "Hard",
-    height: "Normaal"
+    height: "Line Drive"
   };
 
   const modal = document.getElementById("battedBallModal");
@@ -3616,11 +3616,11 @@ function selectBattedBallOption(key, value) {
 }
 
 function setBattedBallSelectedButtons() {
-  document.querySelectorAll("#battedBallHardness button").forEach(button => {
+  document.querySelectorAll("[data-bb-key='hardness']").forEach(button => {
     button.classList.toggle("selected", button.dataset.bbValue === pendingBattedBall?.hardness);
   });
 
-  document.querySelectorAll("#battedBallHeight button").forEach(button => {
+  document.querySelectorAll("[data-bb-key='height']").forEach(button => {
     button.classList.toggle("selected", button.dataset.bbValue === pendingBattedBall?.height);
   });
 }

@@ -5275,3 +5275,242 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   bottom:auto !important;
   position:relative !important;
 }
+
+
+
+/* ===== CLEAN REBUILT BATTED BALL POPUP - no old classes ===== */
+.batted-ball-modal-card-clean {
+  width: min(940px, 96vw) !important;
+  padding: 20px !important;
+  border-radius: 28px !important;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(255,116,23,.18), transparent 30%),
+    linear-gradient(180deg, #fffaf0 0%, #f4efe6 100%) !important;
+  border: 2px solid rgba(255,116,23,.24) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.65) !important;
+  color: #1f2937 !important;
+}
+
+.batted-ball-modal-card-clean h2 {
+  margin: 0 52px 12px 0 !important;
+  color: #1f2937 !important;
+  font-size: 30px !important;
+  line-height: 1 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+}
+
+.batted-ball-help-clean {
+  margin: 0 0 16px !important;
+  padding: 12px 16px !important;
+  border-radius: 14px !important;
+  background: rgba(31,61,96,.78) !important;
+  color: #f8fafc !important;
+  font-weight: 900 !important;
+  font-size: 16px !important;
+}
+
+.batted-ball-content-clean {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 230px !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.spray-chart-panel {
+  min-width: 0 !important;
+}
+
+.softball-spray-chart {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1.38 / 1 !important;
+  min-height: 390px !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background: #07111f !important;
+  border: 2px solid rgba(255,116,23,.35) !important;
+  cursor: crosshair !important;
+}
+
+.softball-spray-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.sc-bg { fill: #07111f; }
+.sc-outfield { fill: #2f7d39; stroke: #ff7417; stroke-width: 1.25; }
+.sc-foul { stroke: #ffffff; stroke-width: .62; }
+.sc-guide { fill: none; stroke: rgba(255,255,255,.34); stroke-width: .45; stroke-dasharray: 2 2; }
+.sc-infield { fill: #c58b52; stroke: rgba(255,255,255,.70); stroke-width: .48; }
+.sc-basepath { fill: none; stroke: rgba(255,255,255,.55); stroke-width: .42; }
+.sc-base { fill: #ffffff; transform-box: fill-box; transform-origin: center; transform: rotate(45deg); }
+.sc-home { fill: #ffffff; }
+.sc-mound { fill: none; stroke: rgba(255,255,255,.95); stroke-width: .78; }
+
+.spray-pos {
+  position: absolute !important;
+  z-index: 4 !important;
+  transform: translate(-50%, -50%) !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #081c35 !important;
+  color: #ffffff !important;
+  border: 2px solid rgba(255,255,255,.12) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,.32) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  pointer-events: none !important;
+}
+
+.spray-pos.lf { left: 22%; top: 34%; }
+.spray-pos.cf { left: 50%; top: 22%; }
+.spray-pos.rf { left: 78%; top: 34%; }
+.spray-pos.ss { left: 38%; top: 57%; }
+.spray-pos.b2 { left: 62%; top: 57%; }
+.spray-pos.b3 { left: 29%; top: 69%; }
+.spray-pos.b1 { left: 71%; top: 69%; }
+.spray-pos.p { left: 50%; top: 71%; }
+.spray-pos.c { left: 50%; top: 91%; }
+
+.batted-ball-marker-clean {
+  position: absolute !important;
+  z-index: 8 !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin-left: -14px !important;
+  margin-top: -14px !important;
+  border-radius: 999px !important;
+  background: #ff7417 !important;
+  border: 4px solid #fffaf0 !important;
+  box-shadow: 0 0 0 8px rgba(255,116,23,.20), 0 10px 24px rgba(0,0,0,.28) !important;
+  pointer-events: none !important;
+}
+
+.batted-ball-chosen-clean {
+  margin: 10px 0 0 !important;
+  color: #1f2937 !important;
+  font-weight: 900 !important;
+  font-size: 15px !important;
+}
+
+.batted-ball-controls-clean {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+.batted-ball-controls-clean label {
+  margin: 0 0 -8px !important;
+  color: #ff7417 !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .12em !important;
+  font-size: 14px !important;
+}
+
+.batted-button-stack-clean {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.batted-button-stack-clean button {
+  width: 100% !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  margin: 0 !important;
+  border-radius: 14px !important;
+  border: 1.5px solid rgba(255,116,23,.30) !important;
+  background: rgba(255,250,240,.82) !important;
+  color: #1f2937 !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.batted-button-stack-clean button.selected {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 10px 24px rgba(255,116,23,.26) !important;
+}
+
+.batted-ball-actions-clean {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  margin-top: 18px !important;
+  align-items: stretch !important;
+}
+
+.batted-ball-actions-clean button {
+  height: 62px !important;
+  min-height: 62px !important;
+  max-height: 62px !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  border-radius: 16px !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+}
+
+.batted-ball-actions-clean .bb-cancel {
+  background: rgba(255,250,240,.82) !important;
+  color: #1f2937 !important;
+  border: 1.5px solid rgba(255,116,23,.32) !important;
+  box-shadow: none !important;
+}
+
+.batted-ball-actions-clean .bb-confirm {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 24px rgba(255,116,23,.26) !important;
+}
+
+@media (max-width: 760px) {
+  .batted-ball-content-clean {
+    grid-template-columns: 1fr !important;
+  }
+
+  .softball-spray-chart {
+    min-height: 320px !important;
+  }
+
+  .batted-ball-controls-clean {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 460px) {
+  .batted-ball-modal-card-clean h2 {
+    font-size: 22px !important;
+  }
+
+  .batted-ball-controls-clean {
+    grid-template-columns: 1fr !important;
+  }
+
+  .batted-ball-actions-clean {
+    grid-template-columns: 1fr !important;
+  }
+}
