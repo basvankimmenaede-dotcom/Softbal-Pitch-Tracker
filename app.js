@@ -3610,15 +3610,15 @@ function setBattedBallSelectedButtons() {
 }
 
 function getBattedBallZone(x, y) {
-  if (y > 84) return "Catcher";
-  if (y > 66 && x < 31) return "Derde honk";
-  if (y > 66 && x > 69) return "Eerste honk";
-  if (y > 50 && x < 45) return "Shortstop";
-  if (y > 50 && x > 55) return "Tweede honk";
-  if (y <= 52 && x < 33) return "Linksveld";
-  if (y <= 52 && x > 67) return "Rechtsveld";
-  if (y <= 50) return "Centerfield";
-  return "Pitcher / middenveld";
+  if (y >= 83) return "Catcher / fout achter";
+  if (y >= 66 && x <= 33) return "Derde honk lijn";
+  if (y >= 66 && x >= 67) return "Eerste honk lijn";
+  if (y >= 50 && x <= 42) return "Shortstop";
+  if (y >= 50 && x >= 58) return "Tweede honk";
+  if (y <= 52 && x < 32) return "Linksveld";
+  if (y <= 52 && x > 68) return "Rechtsveld";
+  if (y <= 45 && x >= 32 && x <= 68) return "Centerfield";
+  return "Middenveld";
 }
 
 function setBattedBallLocation(event) {

@@ -691,30 +691,36 @@
       <div class="modal-card batted-ball-modal-card">
         <button type="button" class="modal-close-button" onclick="cancelBattedBallModal()">×</button>
         <h2 id="battedBallTitle">Waar is de bal geslagen?</h2>
-        <p id="battedBallHelp" class="batted-ball-help">Tik op het veld waar de bal terecht kwam.</p>
+        <p id="battedBallHelp" class="batted-ball-help">Tik op de plek op het veld en kies daarna hardheid en hoogte.</p>
 
         <div class="batted-ball-layout">
           <div>
-            <div id="battedBallField" class="batted-ball-field" onclick="setBattedBallLocation(event)">
-              <div class="bb-outfield-arc"></div>
-              <div class="bb-outfield-grass"></div>
-              <div class="bb-infield-dirt"></div>
-              <div class="bb-base-line left"></div>
-              <div class="bb-base-line right"></div>
-              <div class="bb-home-plate"></div>
-              <div class="bb-base first-base"></div>
-              <div class="bb-base second-base"></div>
-              <div class="bb-base third-base"></div>
+            <div id="battedBallField" class="batted-ball-field spray-field" onclick="setBattedBallLocation(event)">
+              <div class="spray-outfield"></div>
+              <div class="spray-stripe stripe-1"></div>
+              <div class="spray-stripe stripe-2"></div>
+              <div class="spray-stripe stripe-3"></div>
+              <div class="spray-arc arc-1"></div>
+              <div class="spray-arc arc-2"></div>
+              <div class="spray-foul-line left"></div>
+              <div class="spray-foul-line right"></div>
+              <div class="spray-infield"></div>
+              <div class="spray-infield-cutout"></div>
+              <div class="spray-mound"></div>
+              <div class="spray-home"></div>
+              <div class="spray-base base-1"></div>
+              <div class="spray-base base-2"></div>
+              <div class="spray-base base-3"></div>
 
-              <span class="bb-pos pitcher">P</span>
-              <span class="bb-pos catcher">C</span>
-              <span class="bb-pos first">1B</span>
-              <span class="bb-pos second">2B</span>
-              <span class="bb-pos short">SS</span>
-              <span class="bb-pos third">3B</span>
               <span class="bb-pos left">LF</span>
               <span class="bb-pos center">CF</span>
               <span class="bb-pos right">RF</span>
+              <span class="bb-pos short">SS</span>
+              <span class="bb-pos second">2B</span>
+              <span class="bb-pos third">3B</span>
+              <span class="bb-pos first">1B</span>
+              <span class="bb-pos pitcher">P</span>
+              <span class="bb-pos catcher">C</span>
 
               <div id="battedBallMarker" class="batted-ball-marker hidden"></div>
             </div>
@@ -724,16 +730,16 @@
           <div class="batted-ball-options">
             <label>Hardheid</label>
             <div class="batted-option-stack" id="battedBallHardness">
-              <button type="button" class="secondary selected" data-bb-key="hardness" data-bb-value="Hard" onclick="selectBattedBallOption('hardness','Hard', event)">Hard</button>
-              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Normaal" onclick="selectBattedBallOption('hardness','Normaal', event)">Normaal</button>
-              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Zacht" onclick="selectBattedBallOption('hardness','Zacht', event)">Zacht</button>
+              <button type="button" class="secondary selected" data-bb-key="hardness" data-bb-value="Hard" data-bb-value="Hard" onclick="selectBattedBallOption('hardness','Hard', event)">● Hard</button>
+              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Normaal" data-bb-value="Normaal" onclick="selectBattedBallOption('hardness','Normaal', event)">— Normaal</button>
+              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Zacht" data-bb-value="Zacht" onclick="selectBattedBallOption('hardness','Zacht', event)">◌ Zacht</button>
             </div>
 
             <label>Hoogte</label>
             <div class="batted-option-stack" id="battedBallHeight">
-              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Hoog" onclick="selectBattedBallOption('height','Hoog', event)">Hoog</button>
-              <button type="button" class="secondary selected" data-bb-key="height" data-bb-value="Normaal" onclick="selectBattedBallOption('height','Normaal', event)">Normaal</button>
-              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Laag" onclick="selectBattedBallOption('height','Laag', event)">Laag</button>
+              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Hoog" data-bb-value="Hoog" onclick="selectBattedBallOption('height','Hoog', event)">↑ Hoog</button>
+              <button type="button" class="secondary selected" data-bb-key="height" data-bb-value="Normaal" data-bb-value="Normaal" onclick="selectBattedBallOption('height','Normaal', event)">— Normaal</button>
+              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Laag" data-bb-value="Laag" onclick="selectBattedBallOption('height','Laag', event)">↓ Laag</button>
             </div>
           </div>
         </div>
