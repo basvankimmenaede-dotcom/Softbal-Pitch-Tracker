@@ -2910,3 +2910,42 @@ button.danger {
     min-height: 122px !important;
   }
 }
+
+
+
+/* Fix badge alignment + AVG/MAX readability */
+.gameday-pitching-stats .speed-type-head {
+  position: relative;
+}
+
+.gameday-pitching-stats .speed-type-head em {
+  position: absolute !important;
+  top: -2px !important;
+  right: -2px !important;
+  min-width: 44px !important;
+  height: 36px !important;
+  padding: 0 10px !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  border: 2px solid rgba(255,116,23,.55) !important;
+  box-shadow: 0 6px 16px rgba(15,23,42,.16);
+}
+
+.gameday-pitching-stats .speed-dot span {
+  min-width: 54px !important;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: .08em !important;
+  background: rgba(255,250,240,.98) !important;
+  border: 1px solid rgba(31,41,55,.12) !important;
+  box-shadow: 0 6px 16px rgba(15,23,42,.10) !important;
+}
+
+.gameday-pitching-stats .speed-dot:first-of-type span {
+  transform: translateX(-10px);
+}
+
+.gameday-pitching-stats .speed-dot:last-of-type span {
+  transform: translateX(10px);
+}
