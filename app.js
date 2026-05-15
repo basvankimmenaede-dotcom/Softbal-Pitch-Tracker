@@ -3497,7 +3497,7 @@ function applyResult(result) {
   if (result === "HBP") {
     game.balls += 1;
     game.totalBalls += 1;
-    nextBatter(false);
+    nextBatter(false, true);
     return;
   }
 
@@ -3514,7 +3514,7 @@ function applyResult(result) {
   if (result === "HIT") {
     game.strikes += 1;
     game.totalStrikes += 1;
-    nextBatter(false);
+    nextBatter(false, true);
     return;
   }
 
@@ -3522,7 +3522,7 @@ function applyResult(result) {
     game.strikes += 1;
     game.totalStrikes += 1;
     addOut(false);
-    nextBatter(false);
+    nextBatter(false, true);
     return;
   }
 
@@ -3530,25 +3530,31 @@ function applyResult(result) {
     game.strikes += 1;
     game.totalStrikes += 1;
     addOut(false);
-    nextBatter(false);
+    nextBatter(false, true);
     return;
   }
 
   if (game.balls >= 4) {
-    nextBatter(false);
+    nextBatter(false, true);
     return;
   }
 
   if (game.strikes >= 3) {
     addOut(false);
-    nextBatter(false);
+    nextBatter(false, true);
   }
 }
 
 
 function previousBatter(shouldSave = true) {
   const lineupSize = Math.min(Number(game.activeLineupSize || 9), 9);
-  game.batterIndex = (game.batterIndex - 1 + lineupSize) % lineupSize;
+
+  if (game.batterIndex <= 0) {
+    alert("Je staat al bij de eerste slagvrouw.");
+    return;
+  }
+
+  game.batterIndex -= 1;
   resetCount(false);
   game.pitchLocation = null;
 
@@ -3559,9 +3565,25 @@ function previousBatter(shouldSave = true) {
   updateUI();
 }
 
-function nextBatter(shouldSave = true) {
-  game.batterIndex = (game.batterIndex + 1) % Math.min(Number(game.activeLineupSize || 9), 9);
+function nextBatter(shouldSave = true, allowWrap = false) {
+  const lineupSize = Math.min(Number(game.activeLineupSize || 9), 9);
+
+  if (game.batterIndex >= lineupSize - 1) {
+    if (!allowWrap) {
+      alert("Je staat al bij de laatste slagvrouw.");
+      return;
+    }
+    game.batterIndex = 0;
+  } else {
+    game.batterIndex += 1;
+  }
+
   resetCount(false);
+  game.pitchLocation = null;
+
+  const dot = document.querySelector(".pitch-dot");
+  if (dot) dot.remove();
+
   if (shouldSave) saveLocalGame();
   updateUI();
 }
@@ -3580,14 +3602,68 @@ function resetCount(shouldSave = true) {
   updateUI();
 }
 
-function undoPitch() {
-  if (game.pitches.length === 0) return;
-  game.pitches.shift();
-  alert("Pitch verwijderd. Let op: totalen worden in deze versie niet automatisch teruggezet.");
-  saveLocalGame();
-  updateUI();
+function recalculateActivePitcherTotals() {
+  const pitcherPitches = (game.pitches || []).filter(p => p.pitcherName === game.pitcherName);
+
+  game.totalBalls = pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
+  game.totalStrikes = pitcherPitches.filter(p => isStrikeResult(p.result)).length;
+  game.firstPitchStrikes = pitcherPitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length;
+  game.totalOuts = pitcherPitches.filter(p => isOutResult(p.result)).length;
+  game.outs = game.totalOuts;
+  game.balls = 0;
+  game.strikes = 0;
 }
 
+function isPitchForBatter(pitch, batter) {
+  if (!pitch || !batter) return false;
+
+  return Number(pitch.batterOrder) === Number(batter.order) &&
+    String(pitch.batterName || "") === String(batter.name || "") &&
+    String(pitch.batterNumber || "") === String(batter.number || "");
+}
+
+function resetCurrentBatter() {
+  const batter = game.lineup[game.batterIndex];
+
+  if (!batter) {
+    alert("Geen slagvrouw geselecteerd.");
+    return;
+  }
+
+  const confirmed = confirm(
+    `Reset ${batter.name || "deze slagvrouw"} naar 0-0?\n\nDe pitches van deze slagbeurt worden lokaal verwijderd. Pitches die al naar Google Sheets zijn verstuurd kunnen alleen met een extra Apps Script-delete functie echt uit de datasheet worden verwijderd.`
+  );
+
+  if (!confirmed) return;
+
+  const beforeCount = (game.pitches || []).length;
+
+  // Verwijder alleen de meest recente aaneengesloten pitches van deze slagvrouw.
+  // Zo raak je niet per ongeluk een eerdere slagbeurt van dezelfde speelster kwijt.
+  while (game.pitches.length && isPitchForBatter(game.pitches[0], batter)) {
+    game.pitches.shift();
+  }
+
+  const removedCount = beforeCount - game.pitches.length;
+
+  game.pitchLocation = null;
+  const dot = document.querySelector(".pitch-dot");
+  if (dot) dot.remove();
+
+  recalculateActivePitcherTotals();
+  saveLocalGame();
+  updateUI();
+
+  if (removedCount) {
+    setSyncStatus(`${removedCount} pitch(es) lokaal verwijderd voor ${batter.name}.`, "ok");
+  } else {
+    setSyncStatus(`${batter.name} staat opnieuw op 0-0. Geen pitches verwijderd.`, "ok");
+  }
+}
+
+function undoPitch() {
+  resetCurrentBatter();
+}
 
 function startPitcherSession(pitcherName) {
   game.pitcherSessions = game.pitcherSessions || [];

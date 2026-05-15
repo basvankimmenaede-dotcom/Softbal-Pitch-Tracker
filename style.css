@@ -3568,3 +3568,37 @@ button.back-button,
   font-size: 18px !important;
   font-weight: 900 !important;
 }
+
+
+
+/* Full width 'Terug naar hoofdmenu' buttons sitewide */
+.actions .secondary,
+.back-button,
+button.back-button,
+button[onclick*="showHome"],
+button[onclick*="goHome"] {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 58px !important;
+  border-radius: 18px !important;
+  margin-top: 18px !important;
+  box-sizing: border-box !important;
+}
+
+
+
+/* Nieuwe game: duidelijke geselecteerde keuze */
+.choices button.selected,
+body.gameday-theme .choices button.selected,
+.gameday-theme .choices button.selected.secondary {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 10px 24px rgba(255,116,23,.30) !important;
+}
+
+.choices button.selected::after {
+  display: none !important;
+}

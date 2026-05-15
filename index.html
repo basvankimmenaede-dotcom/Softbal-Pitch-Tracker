@@ -501,7 +501,7 @@
         <div id="results" class="choices"></div>
 
         <div class="actions">
-          <button class="secondary" onclick="undoPitch()">Undo</button>
+          <button class="secondary" onclick="resetCurrentBatter()">Reset slagvrouw</button>
           <button class="good" onclick="savePitch()">Pitch opslaan</button>
         </div>
       </div>
@@ -510,6 +510,7 @@
         <h3>Wedstrijd bediening</h3>
         <div class="actions game-controls-actions">
           <button class="secondary" onclick="previousBatter()">Vorige slagvrouw</button>
+          <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
           <button class="secondary" onclick="openPitcherModal()">Wissel pitcher</button>
           <button class="secondary" onclick="openSubModal()">Wissel slagvrouw</button>
           <button class="secondary" onclick="openAddBatterModal()">Slagvrouw toevoegen</button>
