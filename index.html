@@ -711,22 +711,21 @@
 
         <div class="batted-ball-layout">
           <div>
-            <div id="battedBallField" class="batted-ball-field spray-field" onclick="setBattedBallLocation(event)">
-              <div class="spray-outfield"></div>
-              <div class="spray-stripe stripe-1"></div>
-              <div class="spray-stripe stripe-2"></div>
-              <div class="spray-stripe stripe-3"></div>
-              <div class="spray-arc arc-1"></div>
-              <div class="spray-arc arc-2"></div>
-              <div class="spray-foul-line left"></div>
-              <div class="spray-foul-line right"></div>
-              <div class="spray-infield"></div>
-              <div class="spray-infield-cutout"></div>
-              <div class="spray-mound"></div>
-              <div class="spray-home"></div>
-              <div class="spray-base base-1"></div>
-              <div class="spray-base base-2"></div>
-              <div class="spray-base base-3"></div>
+            <div id="battedBallField" class="batted-ball-field batted-ball-field-2d">
+              <svg class="softball-field-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" class="sf-bg"></rect>
+                <path d="M50 92 L8 18 A54 54 0 0 1 92 18 Z" class="sf-fair"></path>
+                <path d="M50 92 L30 62 L50 42 L70 62 Z" class="sf-infield"></path>
+                <path d="M50 92 L8 18" class="sf-line"></path>
+                <path d="M50 92 L92 18" class="sf-line"></path>
+                <path d="M22 39 A37 37 0 0 1 78 39" class="sf-arc"></path>
+                <path d="M31 55 A24 24 0 0 1 69 55" class="sf-arc"></path>
+                <rect x="48.2" y="89.2" width="3.6" height="3.6" class="sf-home"></rect>
+                <rect x="68" y="60" width="3" height="3" class="sf-base"></rect>
+                <rect x="48.5" y="40" width="3" height="3" class="sf-base"></rect>
+                <rect x="29" y="60" width="3" height="3" class="sf-base"></rect>
+                <circle cx="50" cy="66" r="2.8" class="sf-mound"></circle>
+              </svg>
 
               <span class="bb-pos left">LF</span>
               <span class="bb-pos center">CF</span>
@@ -746,16 +745,16 @@
           <div class="batted-ball-options">
             <label>Hardheid</label>
             <div class="batted-option-stack" id="battedBallHardness">
-              <button type="button" class="secondary selected" data-bb-key="hardness" data-bb-value="Hard" data-bb-value="Hard" onclick="selectBattedBallOption('hardness','Hard', event)">● Hard</button>
-              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Normaal" data-bb-value="Normaal" onclick="selectBattedBallOption('hardness','Normaal', event)">— Normaal</button>
-              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Zacht" data-bb-value="Zacht" onclick="selectBattedBallOption('hardness','Zacht', event)">◌ Zacht</button>
+              <button type="button" class="secondary selected" data-bb-key="hardness" data-bb-value="Hard">Hard</button>
+              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Normaal">Normaal</button>
+              <button type="button" class="secondary" data-bb-key="hardness" data-bb-value="Zacht">Zacht</button>
             </div>
 
             <label>Hoogte</label>
             <div class="batted-option-stack" id="battedBallHeight">
-              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Hoog" data-bb-value="Hoog" onclick="selectBattedBallOption('height','Hoog', event)">↑ Hoog</button>
-              <button type="button" class="secondary selected" data-bb-key="height" data-bb-value="Normaal" data-bb-value="Normaal" onclick="selectBattedBallOption('height','Normaal', event)">— Normaal</button>
-              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Laag" data-bb-value="Laag" onclick="selectBattedBallOption('height','Laag', event)">↓ Laag</button>
+              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Hoog">Hoog</button>
+              <button type="button" class="secondary selected" data-bb-key="height" data-bb-value="Normaal">Normaal</button>
+              <button type="button" class="secondary" data-bb-key="height" data-bb-value="Laag">Laag</button>
             </div>
           </div>
         </div>

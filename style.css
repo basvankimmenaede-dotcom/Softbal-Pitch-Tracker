@@ -4899,3 +4899,89 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     height: 120px;
   }
 }
+
+
+
+/* 2D softball spray chart + click fix */
+.batted-ball-field-2d {
+  position: relative !important;
+  height: 430px !important;
+  border-radius: 22px !important;
+  background: #07111f !important;
+  border: 1.5px solid rgba(255,116,23,.35) !important;
+  overflow: hidden !important;
+  cursor: crosshair !important;
+}
+
+.softball-field-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sf-bg { fill: #07111f; }
+.sf-fair { fill: #2f7a3b; stroke: #ff7417; stroke-width: 1.2; }
+.sf-infield { fill: #c78b52; stroke: rgba(255,255,255,.72); stroke-width: .35; }
+.sf-line { stroke: rgba(255,255,255,.88); stroke-width: .55; fill: none; }
+.sf-arc { stroke: rgba(255,255,255,.38); stroke-width: .45; fill: none; stroke-dasharray: 2 2; }
+.sf-home { fill: #ffffff; transform-box: fill-box; transform-origin: center; transform: rotate(45deg); }
+.sf-base { fill: #ffffff; transform-box: fill-box; transform-origin: center; transform: rotate(45deg); }
+.sf-mound { fill: none; stroke: rgba(255,255,255,.84); stroke-width: .7; }
+
+.batted-ball-field-2d .bb-pos {
+  z-index: 4 !important;
+  pointer-events: none !important;
+  background: rgba(6,26,51,.92) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.20) !important;
+}
+
+.batted-ball-field-2d .bb-pos.left { left: 17% !important; top: 30% !important; }
+.batted-ball-field-2d .bb-pos.center { left: 47% !important; top: 18% !important; }
+.batted-ball-field-2d .bb-pos.right { left: 77% !important; top: 30% !important; }
+.batted-ball-field-2d .bb-pos.short { left: 34% !important; top: 55% !important; }
+.batted-ball-field-2d .bb-pos.second { left: 59% !important; top: 55% !important; }
+.batted-ball-field-2d .bb-pos.third { left: 25% !important; top: 65% !important; }
+.batted-ball-field-2d .bb-pos.first { left: 72% !important; top: 65% !important; }
+.batted-ball-field-2d .bb-pos.pitcher { left: 47% !important; top: 66% !important; }
+.batted-ball-field-2d .bb-pos.catcher { left: 47% !important; top: 88% !important; }
+
+.batted-ball-field-2d .batted-ball-marker {
+  z-index: 8 !important;
+  pointer-events: none !important;
+}
+
+.batted-option-stack {
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+.batted-option-stack button[data-bb-key] {
+  pointer-events: auto !important;
+  user-select: none !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  position: relative !important;
+  z-index: 60 !important;
+}
+
+.batted-option-stack button[data-bb-key].selected {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+@media (max-width: 760px) {
+  .batted-ball-field-2d {
+    height: 360px !important;
+  }
+}
+
+@media (max-width: 460px) {
+  .batted-ball-field-2d {
+    height: 320px !important;
+  }
+}

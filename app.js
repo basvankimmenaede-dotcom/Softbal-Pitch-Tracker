@@ -833,6 +833,7 @@ function openEditTeamPlayerModal(index) {
   document.getElementById("editTeamPlayerNumber").value = player.number || "";
 
   const modal = document.getElementById("editTeamPlayerModal");
+  bindBattedBallModalEvents();
   if (modal) modal.classList.remove("hidden");
 }
 
@@ -1041,6 +1042,7 @@ function init() {
   renderChoices("results", resultOptions, "result");
   startOfflineAutoRetry();
   applyAllStrikeZoneLayouts();
+  bindBattedBallModalEvents();
 }
 
 function setActiveScreen(screenId) {
@@ -3471,6 +3473,25 @@ function setPitchLocation(event) {
   field.appendChild(dot);
 }
 
+
+function bindBattedBallModalEvents() {
+  const field = document.getElementById("battedBallField");
+  if (field && !field.dataset.bound) {
+    field.dataset.bound = "true";
+    field.addEventListener("click", setBattedBallLocation);
+  }
+
+  document.querySelectorAll("[data-bb-key][data-bb-value]").forEach(button => {
+    if (button.dataset.bound) return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      selectBattedBallOption(button.dataset.bbKey, button.dataset.bbValue);
+    });
+  });
+}
+
 function savePitch() {
   if (!game.pitchLocation) {
     alert("Tik eerst op de plek waar de bal kwam.");
@@ -3587,12 +3608,7 @@ function cancelBattedBallModal() {
   pendingBattedBall = null;
 }
 
-function selectBattedBallOption(key, value, event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
+function selectBattedBallOption(key, value) {
   if (!pendingBattedBall) return;
 
   pendingBattedBall[key] = value;
