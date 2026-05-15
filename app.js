@@ -1093,35 +1093,45 @@ function showPlaceholder(title) {
 let selectedSpeedPitchType = "Fastball";
 
 function getDefaultSpeedPitchTypes() {
-  return ["Fastball", "Slowball", "Effectball"];
+  return ["Fastball", "Slowball", "Curveball"];
 }
 
-function getSpeedPitchTypesForPitcher(pitcherName) {
-  const types = new Set(getDefaultSpeedPitchTypes());
+function getSpeedPitchTypesForPitcher(pitcherName, includeDefaults = true) {
+  const types = new Set(includeDefaults ? getDefaultSpeedPitchTypes() : []);
 
   getStoredSpeedTrainings()
     .filter(item => !pitcherName || String(item.pitcherName || "") === String(pitcherName || ""))
     .forEach(item => {
-      const type = String(item.pitchType || "").trim();
+      const type = normalizeSpeedPitchType(item.pitchType || "");
       if (type) types.add(type);
     });
 
-  return [...types];
+  const preferredOrder = ["Fastball", "Slowball", "Change-up", "Riseball", "Dropball", "Curveball", "Screwball", "Effectball"];
+
+  return [...types].sort((a, b) => {
+    const ai = preferredOrder.indexOf(a);
+    const bi = preferredOrder.indexOf(b);
+    if (ai !== -1 || bi !== -1) {
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    }
+    return a.localeCompare(b);
+  });
 }
 
 function getPitchTypeShortLabel(type) {
   const clean = String(type || "").trim();
   if (!clean) return "?";
+
   const known = {
     Fastball: "FB",
-    Curveball: "EF",
-    Effectball: "EF",
     Slowball: "SB",
+    Curveball: "CB",
     "Change-up": "CH",
     Changeup: "CH",
     Riseball: "RB",
     Dropball: "DB",
-    Screwball: "SC"
+    Screwball: "SC",
+    Effectball: "EF"
   };
 
   if (known[clean]) return known[clean];
@@ -1136,7 +1146,7 @@ function renderSpeedPitchTypeButtons() {
   const pitcherName = document.getElementById("speedTrainingPitcher")?.value || document.getElementById("statsPitcherName")?.value || "";
   if (!holder) return;
 
-  const types = getSpeedPitchTypesForPitcher(pitcherName);
+  const types = getSpeedPitchTypesForPitcher(pitcherName, true);
   if (!types.includes(selectedSpeedPitchType) && selectedSpeedPitchType !== "__custom__") {
     selectedSpeedPitchType = types[0] || "Fastball";
   }
@@ -1288,14 +1298,15 @@ async function syncSpeedTrainingFromGoogleSheet(payloadFromSheet = null) {
 
 function normalizeSpeedPitchType(type) {
   const clean = String(type || "Fastball").trim() || "Fastball";
-  const lower = clean.toLowerCase().replace(/\s+/g, "");
+  const lower = clean.toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
 
   if (["fast", "fb", "fastball"].includes(lower)) return "Fastball";
   if (["slow", "sb", "slowball"].includes(lower)) return "Slowball";
   if (["rise", "rb", "riseball"].includes(lower)) return "Riseball";
   if (["drop", "db", "dropball"].includes(lower)) return "Dropball";
-  if (["change", "changeup", "change-up", "ch"].includes(lower)) return "Change-up";
-  if (["curve", "curveball", "effect", "effectball"].includes(lower)) return "Effectball";
+  if (["change", "changeup", "ch"].includes(lower)) return "Change-up";
+  if (["curve", "cb", "curveball"].includes(lower)) return "Curveball";
+  if (["effect", "ef", "effectball"].includes(lower)) return "Effectball";
 
   return clean;
 }
@@ -1468,41 +1479,35 @@ function renderPitcherSpeedOverview() {
 
   const avgDot = document.getElementById("speedAvgDot");
   const maxDot = document.getElementById("speedMaxDot");
-  const avgValue = document.getElementById("speedAvgValue");
-  const maxValue = document.getElementById("speedMaxValue");
   const latest = document.getElementById("speedLatestTraining");
   const grid = document.getElementById("speedTypeGrid");
 
   if (!pitcherName || !items.length) {
     if (avgDot) avgDot.style.left = "0%";
     if (maxDot) maxDot.style.left = "0%";
-    if (avgValue) avgValue.textContent = "-";
-    if (maxValue) maxValue.textContent = "-";
     if (latest) latest.textContent = pitcherName ? "Nog geen speed-training voor deze pitcher." : "Kies een pitcher om speed-data te tonen.";
-    if (grid) grid.innerHTML = getDefaultSpeedPitchTypes().map(type => renderSpeedTypeCard(type, [])).join("");
+    if (grid) grid.innerHTML = `<div class="speed-empty">Nog geen trainingssnelheden gevonden.</div>`;
     return;
   }
 
   if (!fastballItems.length) {
     if (avgDot) avgDot.style.left = "0%";
     if (maxDot) maxDot.style.left = "0%";
-    if (avgValue) avgValue.textContent = "-";
-    if (maxValue) maxValue.textContent = "-";
   } else {
-    if (avgDot) avgDot.style.left = `${getSpeedPercent(rangeStats.avg)}%`;
-    if (maxDot) maxDot.style.left = `${getSpeedPercent(rangeStats.max)}%`;
-    if (avgValue) avgValue.textContent = formatMph(rangeStats.avg);
-    if (maxValue) maxValue.textContent = formatMph(rangeStats.max);
+    if (avgDot) {
+      avgDot.style.left = `${getSpeedPercent(rangeStats.avg)}%`;
+      avgDot.title = `Fastball AVG ${formatMph(rangeStats.avg)}`;
+    }
+    if (maxDot) {
+      maxDot.style.left = `${getSpeedPercent(rangeStats.max)}%`;
+      maxDot.title = `Fastball MAX ${formatMph(rangeStats.max)}`;
+    }
   }
 
   if (latest) latest.textContent = `Laatste training: ${items[0].date || "-"}`;
 
   if (grid) {
-    const preferred = ["Fastball", "Slowball", "Effectball"];
-    const existingTypes = getSpeedPitchTypesForPitcher(pitcherName);
-    const extraTypes = existingTypes.filter(type => !preferred.includes(type));
-    const types = [...preferred, ...extraTypes];
-
+    const types = getSpeedPitchTypesForPitcher(pitcherName, false);
     grid.innerHTML = types.map(type => {
       return renderSpeedTypeCard(type, items.filter(item => normalizeSpeedPitchType(item.pitchType) === type));
     }).join("");
@@ -1516,18 +1521,19 @@ function renderSpeedTypeCard(type, items) {
   return `
     <div class="speed-type-card">
       <div class="speed-type-head">
-        <strong>${short}</strong>
-        <span>${type}</span>
+        <div>
+          <strong>${short}</strong>
+          <span>${type}</span>
+        </div>
+        <em>${stats.count}x</em>
       </div>
       <div class="speed-type-values">
         <div><small>AVG</small><b>${formatMph(stats.avg)}</b></div>
         <div><small>MAX</small><b>${formatMph(stats.max)}</b></div>
       </div>
-      <p>${stats.count} pitches</p>
     </div>
   `;
 }
-
 
 function showPitcherStats() {
   setActiveScreen("pitcherStatsScreen");

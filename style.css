@@ -2320,3 +2320,128 @@ button.danger {
   margin-top: 0;
   margin-bottom: 8px;
 }
+
+
+
+/* Speed overview sexy compacte layout */
+.speed-overview-card {
+  padding: 18px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(255,122,24,.12), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(243,244,246,.96));
+  border-radius: 24px;
+}
+
+.speed-overview-head {
+  align-items: center;
+}
+
+.speed-overview-head label {
+  font-size: 20px;
+  letter-spacing: .09em;
+}
+
+#speedLatestTraining {
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+.speed-range-wrap {
+  margin: 20px 0 26px;
+  padding: 0 4px;
+}
+
+.speed-range-track {
+  height: 12px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.12);
+}
+
+.speed-dot {
+  width: 28px;
+  height: 28px;
+  top: 50%;
+}
+
+.speed-dot span {
+  top: 32px;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+.speed-range-labels {
+  margin-top: 24px;
+  font-size: 13px;
+}
+
+.speed-type-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.speed-type-card {
+  min-height: 0;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 10px 24px rgba(15,23,42,.06);
+}
+
+.speed-type-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.speed-type-head strong {
+  font-size: 27px;
+}
+
+.speed-type-head em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(243,244,246,.95);
+}
+
+.speed-type-values {
+  margin-top: 16px;
+}
+
+.speed-type-values b {
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.speed-empty {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-radius: 18px;
+  background: white;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-weight: 850;
+  text-align: center;
+}
+
+.speed-values,
+.speed-note {
+  display: none !important;
+}
+
+@media (max-width: 420px) {
+  .speed-overview-card {
+    padding: 14px;
+  }
+
+  .speed-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .speed-overview-head label {
+    font-size: 17px;
+  }
+}
