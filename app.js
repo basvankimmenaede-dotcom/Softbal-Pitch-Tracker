@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZQm_aHvuQ1ErsWV-lAo8RdYFNESz5x1PePA9IwcWxtn9RevuiilpXYx5lgLJzx2DCrA/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSWylAxHQA5Efq8ngkLNBfXYX27RDf1YIoiXcGHEJyQXZ-lnSMbxuqQwCunz1lVm-C_w/exec";
 let sitePassword = "";
 let isAuthenticated = false;
 
@@ -4179,6 +4179,54 @@ function getBattedBallHistoryText(pitch) {
   ].filter(Boolean);
 
   return parts.length ? ` · ${parts.join(" · ")}` : "";
+}
+
+
+function getCurrentBatterBattedBalls() {
+  const batter = game.lineup[game.batterIndex];
+  if (!batter) return [];
+
+  return (game.pitches || [])
+    .filter(p => {
+      return String(p.batterName || "") === String(batter.name || "") &&
+        String(p.batterNumber || "") === String(batter.number || "") &&
+        ["HIT", "Veld uit"].includes(p.result) &&
+        p.battedBallZone;
+    });
+}
+
+function renderPreviousBattedBall() {
+  const title = document.getElementById("previousBattedTitle");
+  const meta = document.getElementById("previousBattedMeta");
+  const marker = document.getElementById("previousBattedMarker");
+  if (!title || !meta || !marker) return;
+
+  const last = getCurrentBatterBattedBalls()[0];
+
+  if (!last) {
+    title.textContent = "Nog geen geslagen bal bekend";
+    meta.textContent = "Bij HIT of Veld uit wordt hier zichtbaar waar de bal kwam.";
+    marker.classList.add("hidden");
+    return;
+  }
+
+  title.textContent = `${last.result}: ${last.battedBallZone}`;
+  meta.textContent = [
+    last.battedBallHardness,
+    last.battedBallHeight,
+    last.pitchType
+  ].filter(Boolean).join(" · ");
+
+  const x = Number(last.battedBallX);
+  const y = Number(last.battedBallY);
+
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    marker.style.left = `${Math.max(0, Math.min(100, x))}%`;
+    marker.style.top = `${Math.max(0, Math.min(100, y))}%`;
+    marker.classList.remove("hidden");
+  } else {
+    marker.classList.add("hidden");
+  }
 }
 
 function updateUI() {

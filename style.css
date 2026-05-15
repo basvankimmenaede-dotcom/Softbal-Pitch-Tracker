@@ -4809,3 +4809,93 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     height: 320px !important;
   }
 }
+
+
+
+/* Vorige geslagen bal bij huidige slagvrouw */
+.previous-batted-card {
+  margin-top: 14px !important;
+}
+
+.previous-batted-layout {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.previous-batted-mini-field {
+  position: relative;
+  height: 92px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,116,23,.26);
+  background: linear-gradient(180deg, #153757, #07111f);
+}
+
+.mini-spray-outfield {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 8%;
+  height: 68%;
+  border-radius: 50% 50% 10% 10%;
+  background: linear-gradient(180deg, #3f7f34, #225d2b);
+  border-top: 2px solid rgba(255,116,23,.9);
+}
+
+.mini-spray-infield {
+  position: absolute;
+  left: 34%;
+  top: 52%;
+  width: 32%;
+  height: 30%;
+  background: #c49458;
+  clip-path: polygon(50% 0, 100% 48%, 50% 100%, 0 48%);
+}
+
+.mini-spray-home {
+  position: absolute;
+  left: 47%;
+  top: 82%;
+  width: 6%;
+  height: 8%;
+  background: #fff;
+  clip-path: polygon(50% 100%, 100% 55%, 82% 0, 18% 0, 0 55%);
+}
+
+.previous-batted-marker {
+  position: absolute;
+  z-index: 5;
+  width: 15px;
+  height: 15px;
+  margin-left: -7.5px;
+  margin-top: -7.5px;
+  border-radius: 999px;
+  background: #ff7417;
+  border: 2px solid #fffaf0;
+  box-shadow: 0 0 0 5px rgba(255,116,23,.20);
+}
+
+.previous-batted-layout strong {
+  display: block;
+  font-size: 17px;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.previous-batted-layout p {
+  margin: 0;
+  color: #667085;
+  font-weight: 800;
+}
+
+@media (max-width: 420px) {
+  .previous-batted-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .previous-batted-mini-field {
+    height: 120px;
+  }
+}
