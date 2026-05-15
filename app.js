@@ -1496,11 +1496,11 @@ function renderPitcherSpeedOverview() {
   } else {
     if (avgDot) {
       avgDot.style.left = `${getSpeedPercent(rangeStats.avg)}%`;
-      avgDot.title = `Fastball AVG ${formatMph(rangeStats.avg)}`;
+      avgDot.title = `AVG Fastball ${formatMph(rangeStats.avg)}`;
     }
     if (maxDot) {
       maxDot.style.left = `${getSpeedPercent(rangeStats.max)}%`;
-      maxDot.title = `Fastball MAX ${formatMph(rangeStats.max)}`;
+      maxDot.title = `MAX Fastball ${formatMph(rangeStats.max)}`;
     }
   }
 

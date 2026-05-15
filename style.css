@@ -2445,3 +2445,350 @@ button.danger {
     font-size: 17px;
   }
 }
+
+
+
+/* Compactere speed overview */
+.speed-overview-card {
+  padding: 16px !important;
+}
+
+.speed-overview-head {
+  margin-bottom: 10px;
+}
+
+.speed-overview-head label {
+  font-size: 16px !important;
+  line-height: 1;
+}
+
+#speedLatestTraining {
+  font-size: 13px !important;
+  margin-top: 4px !important;
+}
+
+.speed-range-wrap {
+  margin: 12px 0 18px !important;
+}
+
+.speed-range-track {
+  height: 10px !important;
+}
+
+.speed-dot {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.speed-dot span {
+  top: 30px !important;
+  font-size: 10px !important;
+  letter-spacing: .04em !important;
+  background: rgba(255,255,255,.92);
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.speed-range-labels {
+  margin-top: 18px !important;
+  font-size: 12px !important;
+}
+
+.speed-type-grid {
+  grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+  gap: 10px !important;
+}
+
+.speed-type-card {
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+.speed-type-head strong {
+  font-size: 24px !important;
+  line-height: 1;
+}
+
+.speed-type-head span {
+  font-size: 11px !important;
+}
+
+.speed-type-head em {
+  font-size: 11px !important;
+  padding: 4px 7px !important;
+}
+
+.speed-type-values {
+  margin-top: 12px !important;
+  gap: 8px !important;
+}
+
+.speed-type-values small {
+  font-size: 10px !important;
+}
+
+.speed-type-values b {
+  font-size: 14px !important;
+}
+
+.speed-training-btn {
+  padding: 10px 16px !important;
+  font-size: 14px !important;
+}
+
+@media (max-width: 700px) {
+  .speed-type-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .speed-type-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+
+/* === GameDay theme - ALLEEN Pitching Stats pagina === */
+.gameday-pitching-stats {
+  --gd-panel: #fffaf0;
+  --gd-orange: #ff7417;
+  --gd-red: #e11d2e;
+  --gd-ink: #1f2937;
+  --gd-muted: #667085;
+}
+
+.gameday-pitching-stats .card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(255,116,23,.20), transparent 30%),
+    linear-gradient(180deg, #fffaf0 0%, #f4efe6 100%);
+  border: 2px solid rgba(255,116,23,.26);
+  box-shadow: 0 18px 50px rgba(15,23,42,.16), inset 0 0 0 1px rgba(255,255,255,.65);
+}
+
+.gameday-pitching-stats .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .07;
+  background:
+    linear-gradient(135deg, transparent 0 46%, rgba(0,0,0,.45) 47%, transparent 49%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.24) 0 1px, transparent 1px 9px);
+}
+
+.gameday-pitching-stats label {
+  color: var(--gd-muted);
+  letter-spacing: .13em;
+}
+
+.gameday-pitching-stats label[for="statsPitcherName"] {
+  color: var(--gd-orange);
+  font-size: 16px;
+  letter-spacing: .18em;
+}
+
+.gameday-pitching-stats #statsPitcherName {
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,239,230,.94));
+  border: 2px solid rgba(255,116,23,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 10px 22px rgba(15,23,42,.06);
+  font-weight: 850;
+}
+
+.gameday-pitching-stats .pitcher-stats-grid {
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,238,230,.96));
+  border: 1.5px solid rgba(31,41,55,.12);
+  border-left: 5px solid rgba(255,116,23,.85);
+  box-shadow: 0 10px 22px rgba(15,23,42,.06);
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  bottom: -24px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 12px solid rgba(255,116,23,.06);
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat small {
+  color: var(--gd-muted);
+  font-size: 12px;
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat strong {
+  color: var(--gd-ink);
+  font-weight: 950;
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat.good-stat {
+  background: linear-gradient(180deg, rgba(255,247,237,.98), rgba(255,237,213,.92));
+  border-color: rgba(255,116,23,.32);
+  border-left-color: var(--gd-orange);
+}
+
+.gameday-pitching-stats .pitcher-stats-grid .stat.good-stat small,
+.gameday-pitching-stats .pitcher-stats-grid .stat.good-stat strong {
+  color: #b94d00;
+}
+
+.gameday-pitching-stats .speed-overview-card {
+  position: relative;
+  overflow: hidden;
+  padding: 16px !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(255,116,23,.20), transparent 32%),
+    linear-gradient(180deg, #fffaf0 0%, #f1ebe1 100%);
+  border: 2px solid rgba(255,116,23,.30);
+  border-radius: 22px;
+  box-shadow: 0 14px 34px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.gameday-pitching-stats .speed-overview-card::before {
+  content: "";
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 18px solid rgba(255,116,23,.06);
+  pointer-events: none;
+}
+
+.gameday-pitching-stats .speed-overview-head label {
+  color: var(--gd-ink);
+  font-weight: 950;
+  font-size: 18px !important;
+  letter-spacing: .14em;
+}
+
+.gameday-pitching-stats #speedLatestTraining {
+  color: var(--gd-muted);
+  font-weight: 750;
+}
+
+.gameday-pitching-stats .speed-training-button {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  border: 0 !important;
+  color: white !important;
+  box-shadow: 0 10px 24px rgba(255,116,23,.28);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.gameday-pitching-stats .speed-range-track {
+  height: 11px !important;
+  background: linear-gradient(90deg, #2563eb 0%, #ff7417 52%, #e11d2e 100%) !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.22), 0 8px 20px rgba(255,116,23,.16);
+}
+
+.gameday-pitching-stats .speed-dot {
+  width: 24px !important;
+  height: 24px !important;
+  border: 4px solid #fffaf0 !important;
+}
+
+.gameday-pitching-stats .speed-dot span {
+  color: var(--gd-ink);
+  background: rgba(255,250,240,.94);
+  border: 1px solid rgba(31,41,55,.08);
+  box-shadow: 0 4px 10px rgba(15,23,42,.08);
+}
+
+.gameday-pitching-stats .speed-range-labels {
+  color: var(--gd-muted);
+}
+
+.gameday-pitching-stats .speed-type-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.gameday-pitching-stats .speed-type-card {
+  position: relative;
+  overflow: hidden;
+  padding: 12px !important;
+  min-height: 126px;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,241,232,.98));
+  border: 1.5px solid rgba(31,41,55,.14);
+  border-left: 5px solid var(--gd-orange);
+  border-radius: 18px !important;
+  box-shadow: 0 10px 22px rgba(15,23,42,.08);
+}
+
+.gameday-pitching-stats .speed-type-card::after {
+  content: "";
+  position: absolute;
+  right: -30px;
+  bottom: -38px;
+  width: 95px;
+  height: 95px;
+  border: 10px solid rgba(255,116,23,.055);
+  border-radius: 50%;
+}
+
+.gameday-pitching-stats .speed-type-head strong {
+  color: var(--gd-ink);
+  font-size: 24px !important;
+}
+
+.gameday-pitching-stats .speed-type-head span {
+  color: var(--gd-muted);
+  font-size: 10px !important;
+  letter-spacing: .07em;
+}
+
+.gameday-pitching-stats .speed-type-head em {
+  background: #1f2937;
+  color: white;
+  border: 1px solid rgba(255,116,23,.35);
+}
+
+.gameday-pitching-stats .speed-type-values b {
+  color: var(--gd-orange);
+}
+
+.gameday-pitching-stats .speed-type-values div:last-child b {
+  color: var(--gd-red);
+}
+
+.gameday-pitching-stats .stats-table {
+  background: rgba(255,250,240,.92);
+}
+
+.gameday-pitching-stats .stats-table th {
+  color: var(--gd-orange);
+}
+
+@media (max-width: 700px) {
+  .gameday-pitching-stats .speed-type-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .gameday-pitching-stats .speed-type-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .gameday-pitching-stats .speed-overview-head {
+    grid-template-columns: 1fr;
+  }
+
+  .gameday-pitching-stats .speed-training-button {
+    width: 100%;
+  }
+}
