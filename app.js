@@ -3552,30 +3552,46 @@ function getBatterPlateAppearancePitches(batter) {
 
   const pitches = [];
   for (const pitch of (game.pitches || [])) {
-    if (isPitchForBatter(pitch, batter)) pitches.push(pitch);
-    else if (pitches.length) break;
+    if (isPitchForBatter(pitch, batter)) {
+      pitches.push(pitch);
+      continue;
+    }
+
+    // Zodra we de meest recente slagbeurt gevonden hebben en daarna een andere
+    // slagvrouw tegenkomen, stoppen we. Zo pakken we niet per ongeluk een oudere beurt.
+    if (pitches.length) break;
   }
 
   return pitches;
 }
 
+function getCountAfterPitchSnapshot(pitch) {
+  let balls = Number(pitch?.ballsBefore || 0);
+  let strikes = Number(pitch?.strikesBefore || 0);
+  const result = pitch?.result;
+
+  if (result === "Ball" || result === "HBP") balls += 1;
+  if (["Strike", "Swing"].includes(result)) strikes += 1;
+  if (result === "Foul" && strikes < 2) strikes += 1;
+
+  // Bij terminale resultaten wil je bij teruggaan vooral de count van die slagbeurt
+  // kunnen herstellen. Daarom houden we hem op max 3-2 i.p.v. naar 0-0 te resetten.
+  return {
+    balls: Math.max(0, Math.min(3, balls)),
+    strikes: Math.max(0, Math.min(2, strikes))
+  };
+}
+
 function getCountAfterPitchesForBatter(batter) {
-  const paPitches = getBatterPlateAppearancePitches(batter).slice().reverse();
-  let balls = 0;
-  let strikes = 0;
+  const paPitches = getBatterPlateAppearancePitches(batter);
 
-  paPitches.forEach(pitch => {
-    const result = pitch.result;
+  if (!paPitches.length) {
+    return { balls: 0, strikes: 0 };
+  }
 
-    if (result === "Ball" || result === "HBP") balls += 1;
-    if (["Strike", "Swing"].includes(result)) strikes += 1;
-    if (result === "Foul" && strikes < 2) strikes += 1;
-
-    balls = Math.min(balls, 3);
-    strikes = Math.min(strikes, 2);
-  });
-
-  return { balls, strikes };
+  // game.pitches is newest-first, dus paPitches[0] is de laatst gegooide pitch
+  // van deze slagbeurt. De opgeslagen ballsBefore/strikesBefore zijn leidend.
+  return getCountAfterPitchSnapshot(paPitches[0]);
 }
 
 function restoreCountForCurrentBatter() {
