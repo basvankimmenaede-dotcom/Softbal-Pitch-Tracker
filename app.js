@@ -968,6 +968,7 @@ let game = {
   activeLineupSize: 9,
   substitutionHistory: [],
   batterIndex: 0,
+  batterCounts: {},
   balls: 0,
   strikes: 0,
   totalBalls: 0,
@@ -3367,6 +3368,7 @@ function continuePreviousGame() {
 function startGame() {
   game.pitcherName = document.getElementById("pitcherName").value;
   game.pitcherSessions = [];
+  game.batterCounts = {};
   if (!game.pitcherName) {
     alert("Kies eerst een pitcher.");
     return;
@@ -3489,6 +3491,8 @@ function savePitch() {
 }
 
 function applyResult(result) {
+  let plateAppearanceEnded = false;
+
   if (result === "Ball") {
     game.balls += 1;
     game.totalBalls += 1;
@@ -3497,8 +3501,7 @@ function applyResult(result) {
   if (result === "HBP") {
     game.balls += 1;
     game.totalBalls += 1;
-    nextBatter(false, true);
-    return;
+    plateAppearanceEnded = true;
   }
 
   if (["Strike", "Swing"].includes(result)) {
@@ -3514,38 +3517,40 @@ function applyResult(result) {
   if (result === "HIT") {
     game.strikes += 1;
     game.totalStrikes += 1;
-    nextBatter(false, true);
-    return;
+    plateAppearanceEnded = true;
   }
 
   if (result === "Veld uit") {
     game.strikes += 1;
     game.totalStrikes += 1;
     addOut(false);
-    nextBatter(false, true);
-    return;
+    plateAppearanceEnded = true;
   }
 
   if (result === "Strike out") {
     game.strikes += 1;
     game.totalStrikes += 1;
     addOut(false);
-    nextBatter(false, true);
-    return;
+    plateAppearanceEnded = true;
   }
 
   if (game.balls >= 4) {
-    nextBatter(false, true);
-    return;
+    plateAppearanceEnded = true;
   }
 
   if (game.strikes >= 3) {
     addOut(false);
-    nextBatter(false, true);
+    plateAppearanceEnded = true;
   }
+
+  if (plateAppearanceEnded) {
+    clearBatterCount(game.batterIndex);
+    nextBatter(false, true);
+    return;
+  }
+
+  saveCurrentBatterCount();
 }
-
-
 
 function getBatterPlateAppearancePitches(batter) {
   if (!batter) return [];
@@ -3617,14 +3622,47 @@ async function deleteBatterPitchesFromGoogleSheet(batter, pitchTimestamps) {
 }
 
 
+
+function getBatterCountKey(index = game.batterIndex) {
+  return String(Number(index || 0));
+}
+
+function ensureBatterCounts() {
+  if (!game.batterCounts || typeof game.batterCounts !== "object") {
+    game.batterCounts = {};
+  }
+}
+
+function saveCurrentBatterCount() {
+  ensureBatterCounts();
+  game.batterCounts[getBatterCountKey()] = {
+    balls: Number(game.balls || 0),
+    strikes: Number(game.strikes || 0)
+  };
+}
+
+function loadBatterCount(index = game.batterIndex) {
+  ensureBatterCounts();
+  const count = game.batterCounts[getBatterCountKey(index)] || { balls: 0, strikes: 0 };
+  game.balls = Number(count.balls || 0);
+  game.strikes = Number(count.strikes || 0);
+}
+
+function clearBatterCount(index = game.batterIndex) {
+  ensureBatterCounts();
+  game.batterCounts[getBatterCountKey(index)] = { balls: 0, strikes: 0 };
+}
+
+
 function previousBatter(shouldSave = true) {
   if (game.batterIndex <= 0) {
     alert("Je staat al bij de eerste slagvrouw.");
     return;
   }
 
+  saveCurrentBatterCount();
   game.batterIndex -= 1;
-  restoreCountForCurrentBatter();
+  loadBatterCount(game.batterIndex);
   game.pitchLocation = null;
 
   const dot = document.querySelector(".pitch-dot");
@@ -3637,6 +3675,8 @@ function previousBatter(shouldSave = true) {
 function nextBatter(shouldSave = true, allowWrap = false) {
   const lineupSize = Math.min(Number(game.activeLineupSize || 9), 9);
 
+  if (!allowWrap) saveCurrentBatterCount();
+
   if (game.batterIndex >= lineupSize - 1) {
     if (!allowWrap) {
       alert("Je staat al bij de laatste slagvrouw.");
@@ -3647,8 +3687,12 @@ function nextBatter(shouldSave = true, allowWrap = false) {
     game.batterIndex += 1;
   }
 
-  if (allowWrap) resetCount(false);
-  else restoreCountForCurrentBatter();
+  if (allowWrap) {
+    clearBatterCount(game.batterIndex);
+    resetCount(false);
+  } else {
+    loadBatterCount(game.batterIndex);
+  }
 
   game.pitchLocation = null;
 
@@ -3669,6 +3713,7 @@ function addOut(shouldSave = true) {
 function resetCount(shouldSave = true) {
   game.balls = 0;
   game.strikes = 0;
+  clearBatterCount(game.batterIndex);
   if (shouldSave) saveLocalGame();
   updateUI();
 }
@@ -3727,6 +3772,7 @@ function resetCurrentBatter() {
   const dot = document.querySelector(".pitch-dot");
   if (dot) dot.remove();
 
+  clearBatterCount(game.batterIndex);
   recalculateActivePitcherTotals();
   saveLocalGame();
   updateUI();
