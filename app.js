@@ -263,7 +263,6 @@ function startOfflineAutoRetry() {
 
   updateOfflineSyncStatus();
   syncOfflineQueue(false).catch(error => console.error("Start sync mislukt", error));
-  if (typeof seedInitialSpeedDataToSheet === "function") setTimeout(seedInitialSpeedDataToSheet, 1500);
 }
 
 
@@ -1255,45 +1254,9 @@ async function sendSpeedTrainingToGoogleSheet(item) {
   await queueGoogleSheetPayload("speed_training", payload, "Speed training");
 }
 
-
-/* === Initial speed data auto-sync naar Google Sheet === */
-const INITIAL_SPEED_TRAINING_DATA = [{"id": "initial-speed-elin-fastball-1", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 51, "unit": "mph", "createdAt": "2026-05-15T12:00:00"}, {"id": "initial-speed-elin-fastball-2", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 49, "unit": "mph", "createdAt": "2026-05-15T12:01:00"}, {"id": "initial-speed-elin-fastball-3", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 54, "unit": "mph", "createdAt": "2026-05-15T12:02:00"}, {"id": "initial-speed-elin-fastball-4", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:03:00"}, {"id": "initial-speed-elin-fastball-5", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 49, "unit": "mph", "createdAt": "2026-05-15T12:04:00"}, {"id": "initial-speed-elin-fastball-6", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 50, "unit": "mph", "createdAt": "2026-05-15T12:05:00"}, {"id": "initial-speed-elin-fastball-7", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:06:00"}, {"id": "initial-speed-elin-fastball-8", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Fastball", "speed": 49, "unit": "mph", "createdAt": "2026-05-15T12:07:00"}, {"id": "initial-speed-elin-slowball-1", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Slowball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:08:00"}, {"id": "initial-speed-elin-slowball-2", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Slowball", "speed": 43, "unit": "mph", "createdAt": "2026-05-15T12:09:00"}, {"id": "initial-speed-elin-slowball-3", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Slowball", "speed": 41, "unit": "mph", "createdAt": "2026-05-15T12:10:00"}, {"id": "initial-speed-elin-slowball-4", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Slowball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:11:00"}, {"id": "initial-speed-elin-slowball-5", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Slowball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:12:00"}, {"id": "initial-speed-elin-change-up-1", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Change-up", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:13:00"}, {"id": "initial-speed-elin-change-up-2", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Change-up", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:14:00"}, {"id": "initial-speed-elin-change-up-3", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Change-up", "speed": 42, "unit": "mph", "createdAt": "2026-05-15T12:15:00"}, {"id": "initial-speed-elin-change-up-4", "date": "2026-05-15", "pitcherName": "Elin", "pitchType": "Change-up", "speed": 40, "unit": "mph", "createdAt": "2026-05-15T12:16:00"}, {"id": "initial-speed-tessa-fastball-1", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 49, "unit": "mph", "createdAt": "2026-05-15T12:17:00"}, {"id": "initial-speed-tessa-fastball-2", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:18:00"}, {"id": "initial-speed-tessa-fastball-3", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 47, "unit": "mph", "createdAt": "2026-05-15T12:19:00"}, {"id": "initial-speed-tessa-fastball-4", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:20:00"}, {"id": "initial-speed-tessa-fastball-5", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:21:00"}, {"id": "initial-speed-tessa-fastball-6", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 47, "unit": "mph", "createdAt": "2026-05-15T12:22:00"}, {"id": "initial-speed-tessa-fastball-7", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 47, "unit": "mph", "createdAt": "2026-05-15T12:23:00"}, {"id": "initial-speed-tessa-fastball-8", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Fastball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:24:00"}, {"id": "initial-speed-tessa-slowball-1", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Slowball", "speed": 41, "unit": "mph", "createdAt": "2026-05-15T12:25:00"}, {"id": "initial-speed-tessa-slowball-2", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Slowball", "speed": 38, "unit": "mph", "createdAt": "2026-05-15T12:26:00"}, {"id": "initial-speed-tessa-slowball-3", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Slowball", "speed": 40, "unit": "mph", "createdAt": "2026-05-15T12:27:00"}, {"id": "initial-speed-tessa-slowball-4", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Slowball", "speed": 38, "unit": "mph", "createdAt": "2026-05-15T12:28:00"}, {"id": "initial-speed-tessa-slowball-5", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Slowball", "speed": 43, "unit": "mph", "createdAt": "2026-05-15T12:29:00"}, {"id": "initial-speed-tessa-slowball-6", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Slowball", "speed": 40, "unit": "mph", "createdAt": "2026-05-15T12:30:00"}, {"id": "initial-speed-tessa-riseball-1", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Riseball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:31:00"}, {"id": "initial-speed-tessa-riseball-2", "date": "2026-05-15", "pitcherName": "Tessa", "pitchType": "Riseball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:32:00"}, {"id": "initial-speed-amy-slowball-1", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Slowball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:33:00"}, {"id": "initial-speed-amy-slowball-2", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Slowball", "speed": 41, "unit": "mph", "createdAt": "2026-05-15T12:34:00"}, {"id": "initial-speed-amy-slowball-3", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Slowball", "speed": 39, "unit": "mph", "createdAt": "2026-05-15T12:35:00"}, {"id": "initial-speed-amy-slowball-4", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Slowball", "speed": 39, "unit": "mph", "createdAt": "2026-05-15T12:36:00"}, {"id": "initial-speed-amy-slowball-5", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Slowball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:37:00"}, {"id": "initial-speed-amy-slowball-6", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Slowball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:38:00"}, {"id": "initial-speed-amy-fastball-1", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 47, "unit": "mph", "createdAt": "2026-05-15T12:39:00"}, {"id": "initial-speed-amy-fastball-2", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:40:00"}, {"id": "initial-speed-amy-fastball-3", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:41:00"}, {"id": "initial-speed-amy-fastball-4", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:42:00"}, {"id": "initial-speed-amy-fastball-5", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:43:00"}, {"id": "initial-speed-amy-fastball-6", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:44:00"}, {"id": "initial-speed-amy-fastball-7", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Fastball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:45:00"}, {"id": "initial-speed-amy-dropball-1", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Dropball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:46:00"}, {"id": "initial-speed-amy-dropball-2", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Dropball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:47:00"}, {"id": "initial-speed-amy-dropball-3", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Dropball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:48:00"}, {"id": "initial-speed-amy-dropball-4", "date": "2026-05-15", "pitcherName": "Amy", "pitchType": "Dropball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:49:00"}, {"id": "initial-speed-lottie-effectball-1", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:50:00"}, {"id": "initial-speed-lottie-effectball-2", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:51:00"}, {"id": "initial-speed-lottie-effectball-3", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:52:00"}, {"id": "initial-speed-lottie-effectball-4", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:53:00"}, {"id": "initial-speed-lottie-effectball-5", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 45, "unit": "mph", "createdAt": "2026-05-15T12:54:00"}, {"id": "initial-speed-lottie-effectball-6", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:55:00"}, {"id": "initial-speed-lottie-effectball-7", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 46, "unit": "mph", "createdAt": "2026-05-15T12:56:00"}, {"id": "initial-speed-lottie-effectball-8", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:57:00"}, {"id": "initial-speed-lottie-effectball-9", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Effectball", "speed": 44, "unit": "mph", "createdAt": "2026-05-15T12:58:00"}, {"id": "initial-speed-lottie-fastball-1", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 51, "unit": "mph", "createdAt": "2026-05-15T12:59:00"}, {"id": "initial-speed-lottie-fastball-2", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:00:00"}, {"id": "initial-speed-lottie-fastball-3", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 51, "unit": "mph", "createdAt": "2026-05-15T12:01:00"}, {"id": "initial-speed-lottie-fastball-4", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 51, "unit": "mph", "createdAt": "2026-05-15T12:02:00"}, {"id": "initial-speed-lottie-fastball-5", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 51, "unit": "mph", "createdAt": "2026-05-15T12:03:00"}, {"id": "initial-speed-lottie-fastball-6", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 49, "unit": "mph", "createdAt": "2026-05-15T12:04:00"}, {"id": "initial-speed-lottie-fastball-7", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Fastball", "speed": 48, "unit": "mph", "createdAt": "2026-05-15T12:05:00"}, {"id": "initial-speed-lottie-slowball-1", "date": "2026-05-15", "pitcherName": "Lottie", "pitchType": "Slowball", "speed": 41, "unit": "mph", "createdAt": "2026-05-15T12:06:00"}];
-
-function seedInitialSpeedDataToSheet() {
-  const flagKey = "ogInitialSpeedTrainingSyncedV1";
-
-  if (localStorage.getItem(flagKey) === "done") return;
-  if (typeof sendSpeedTrainingToGoogleSheet !== "function") return;
-
-  const existing = getStoredSpeedTrainings();
-  const existingIds = new Set(existing.map(item => item.id));
-  const merged = [...existing];
-
-  INITIAL_SPEED_TRAINING_DATA.forEach(item => {
-    if (!existingIds.has(item.id)) {
-      merged.push(item);
-      existingIds.add(item.id);
-    }
-  });
-
-  saveStoredSpeedTrainings(merged);
-  renderPitcherSpeedOverview();
-
-  Promise.allSettled(
-    INITIAL_SPEED_TRAINING_DATA.map(item => sendSpeedTrainingToGoogleSheet(item))
-  ).then(() => {
-    localStorage.setItem(flagKey, "done");
-    setSyncStatus("Initiële speed-data naar SpeedTraining gesynchroniseerd.", "ok");
-  }).catch(error => {
-    console.error("Initiële speed-data sync mislukt", error);
-    setSyncStatus("Initiële speed-data lokaal opgeslagen. Online sync probeert later opnieuw.", "loading");
-  });
-}
-
-
-async function syncSpeedTrainingFromGoogleSheet() {
+async function syncSpeedTrainingFromGoogleSheet(payloadFromSheet = null) {
   try {
-    const payload = await loadSheetDataJsonp();
+    const payload = payloadFromSheet || await loadSheetDataJsonp();
     const sheetItems = convertSheetRowsToSpeedTrainings(payload);
     const merged = mergeSpeedTrainings(getStoredSpeedTrainings(), sheetItems);
 
@@ -1303,8 +1266,11 @@ async function syncSpeedTrainingFromGoogleSheet() {
     if (sheetItems.length) {
       setSyncStatus(`Speed training geladen: ${sheetItems.length} metingen.`, "ok");
     }
+
+    return sheetItems;
   } catch (error) {
     console.error("Speed training teruglezen mislukt", error);
+    return [];
   }
 }
 
@@ -1348,24 +1314,49 @@ function parseSpeedValues(raw) {
     .filter(value => Number.isFinite(value) && value > 0);
 }
 
+
+function parseBulkSpeedLines(raw, fallbackPitchType) {
+  const text = String(raw || "").trim();
+  if (!text) return [];
+
+  const lines = text.split(/\n+/).map(line => line.trim()).filter(Boolean);
+  const hasNamedLines = lines.some(line => line.includes(":"));
+
+  if (!hasNamedLines) {
+    return [{
+      pitchType: fallbackPitchType,
+      speeds: parseSpeedValues(text)
+    }].filter(group => group.pitchType && group.speeds.length);
+  }
+
+  return lines.map(line => {
+    const parts = line.split(":");
+    const pitchType = normalizeSpeedPitchType(parts.shift());
+    const speeds = parseSpeedValues(parts.join(":"));
+    return { pitchType, speeds };
+  }).filter(group => group.pitchType && group.speeds.length);
+}
+
 function saveSpeedTraining() {
   const pitcherName = document.getElementById("speedTrainingPitcher")?.value || "";
   const date = document.getElementById("speedTrainingDate")?.value || new Date().toISOString().slice(0, 10);
-  const values = parseSpeedValues(document.getElementById("speedTrainingValues")?.value || "");
+  const rawValues = document.getElementById("speedTrainingValues")?.value || "";
   const customType = String(document.getElementById("customSpeedPitchType")?.value || "").trim();
-  const pitchTypeToSave = selectedSpeedPitchType === "__custom__" ? customType : selectedSpeedPitchType;
+  const fallbackPitchType = selectedSpeedPitchType === "__custom__" ? customType : selectedSpeedPitchType;
 
   if (!pitcherName) {
     alert("Kies eerst een pitcher.");
     return;
   }
 
-  if (!values.length) {
+  const groups = parseBulkSpeedLines(rawValues, fallbackPitchType);
+
+  if (!groups.length) {
     alert("Vul minimaal één snelheid in.");
     return;
   }
 
-  if (!pitchTypeToSave) {
+  if (groups.some(group => !group.pitchType)) {
     alert("Vul een pitch type in.");
     return;
   }
@@ -1373,22 +1364,28 @@ function saveSpeedTraining() {
   const items = getStoredSpeedTrainings();
   const now = new Date().toISOString();
 
-  const newItems = values.map(speed => ({
-    id: `speed-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    pitcherName,
-    date,
-    pitchType: pitchTypeToSave,
-    speed,
-    unit: "mph",
-    createdAt: now
-  }));
+  const newItems = [];
+
+  groups.forEach(group => {
+    group.speeds.forEach(speed => {
+      newItems.push({
+        id: `speed-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        pitcherName,
+        date,
+        pitchType: group.pitchType,
+        speed,
+        unit: "mph",
+        createdAt: now
+      });
+    });
+  });
 
   newItems.forEach(item => items.push(item));
 
   saveStoredSpeedTrainings(items);
   closeSpeedTrainingModal();
   renderPitcherSpeedOverview();
-  setSyncStatus("Speed training lokaal opgeslagen. Sync wordt gestart...", "loading");
+  setSyncStatus(`Speed training opgeslagen: ${newItems.length} meting(en). Sync wordt gestart...`, "loading");
 
   newItems.forEach(item => {
     sendSpeedTrainingToGoogleSheet(item).catch(error => {
@@ -1502,7 +1499,10 @@ function renderSpeedTypeCard(type, items) {
 
 function showPitcherStats() {
   setActiveScreen("pitcherStatsScreen");
-  syncFromGoogleSheet().then(() => { renderPitcherStats(); return syncSpeedTrainingFromGoogleSheet(); }).finally(() => { renderPitcherSpeedOverview(); seedInitialSpeedDataToSheet(); });
+  syncFromGoogleSheet().finally(() => {
+    renderPitcherStats();
+    renderPitcherSpeedOverview();
+  });
 }
 
 function getPitcherGames(pitcherName) {
@@ -3759,8 +3759,14 @@ function syncFromGoogleSheet() {
       const merged = mergeGames([], games);
       saveStoredGames(merged);
 
+      const speedItems = convertSheetRowsToSpeedTrainings(payload);
+      if (speedItems.length) {
+        const mergedSpeedItems = mergeSpeedTrainings(getStoredSpeedTrainings(), speedItems);
+        saveStoredSpeedTrainings(mergedSpeedItems);
+      }
+
       sheetSyncLoaded = true;
-      setSyncStatus(`Google Sheets geladen: ${games.length} games.`, "ok");
+      setSyncStatus(`Google Sheets geladen: ${games.length} games · ${speedItems.length} speed-metingen.`, "ok");
 
       if (document.getElementById("pitcherStatsScreen")?.classList.contains("active")) renderPitcherStats();
       if (document.getElementById("batterSearchScreen")?.classList.contains("active")) {

@@ -668,7 +668,7 @@
     <div id="speedTrainingModal" class="modal hidden">
       <div class="modal-card">
         <h2>Speed training</h2>
-        <p class="small-note">Voeg trainingssnelheden toe per pitcher en pitch type. Gebruik komma's of enters.</p>
+        <p class="small-note">Voeg trainingssnelheden toe. Je kunt één pitch type kiezen, of meerdere regels tegelijk invoeren.</p>
 
         <label for="speedTrainingPitcher">Pitcher</label>
         <select id="speedTrainingPitcher" onchange="renderSpeedPitchTypeButtons()">
@@ -694,7 +694,8 @@
         </div>
 
         <label for="speedTrainingValues">Snelheden (mph)</label>
-        <textarea id="speedTrainingValues" class="speed-input" placeholder="Bijv. 52, 53, 54&#10;Of één snelheid per regel"></textarea>
+        <p class="small-note speed-bulk-help">Voor meerdere types: gebruik één regel per type, bijvoorbeeld <strong>Fastball: 51 49 54</strong>.</p>
+        <textarea id="speedTrainingValues" class="speed-input" placeholder="Los invoeren: 52, 53, 54&#10;&#10;Of meerdere regels tegelijk:&#10;Fastball: 51 49 54&#10;Slowball: 46 43 41&#10;Effectball: 44 42 40"></textarea>
 
         <div class="actions">
           <button class="secondary" onclick="closeSpeedTrainingModal()">Annuleren</button>
