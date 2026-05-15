@@ -1089,9 +1089,191 @@ function showPlaceholder(title) {
   setActiveScreen("placeholderScreen");
 }
 
+
+let selectedSpeedPitchType = "Fastball";
+
+function getStoredSpeedTrainings() {
+  try {
+    return JSON.parse(localStorage.getItem("ogSpeedTrainings") || "[]");
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveStoredSpeedTrainings(items) {
+  localStorage.setItem("ogSpeedTrainings", JSON.stringify(items || []));
+}
+
+function normalizeSpeedPitchType(type) {
+  const value = String(type || "").toLowerCase();
+  if (value.includes("curve")) return "Curveball";
+  if (value.includes("slow")) return "Slowball";
+  return "Fastball";
+}
+
+function openSpeedTrainingModal() {
+  const modal = document.getElementById("speedTrainingModal");
+  const pitcherSelect = document.getElementById("speedTrainingPitcher");
+  const statsPitcher = document.getElementById("statsPitcherName");
+  const dateInput = document.getElementById("speedTrainingDate");
+  const valuesInput = document.getElementById("speedTrainingValues");
+
+  if (pitcherSelect && statsPitcher?.value) pitcherSelect.value = statsPitcher.value;
+  if (dateInput) dateInput.valueAsDate = new Date();
+  if (valuesInput) valuesInput.value = "";
+
+  selectSpeedPitchType("Fastball");
+
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeSpeedTrainingModal() {
+  const modal = document.getElementById("speedTrainingModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function selectSpeedPitchType(type) {
+  selectedSpeedPitchType = normalizeSpeedPitchType(type);
+
+  document.querySelectorAll("#speedPitchTypes button").forEach(button => {
+    button.classList.toggle("selected", button.textContent.trim() === selectedSpeedPitchType);
+  });
+}
+
+function parseSpeedValues(raw) {
+  return String(raw || "")
+    .split(/[\s,;]+/)
+    .map(value => Number(String(value).replace(",", ".")))
+    .filter(value => Number.isFinite(value) && value > 0);
+}
+
+function saveSpeedTraining() {
+  const pitcherName = document.getElementById("speedTrainingPitcher")?.value || "";
+  const date = document.getElementById("speedTrainingDate")?.value || new Date().toISOString().slice(0, 10);
+  const values = parseSpeedValues(document.getElementById("speedTrainingValues")?.value || "");
+
+  if (!pitcherName) {
+    alert("Kies eerst een pitcher.");
+    return;
+  }
+
+  if (!values.length) {
+    alert("Vul minimaal één snelheid in.");
+    return;
+  }
+
+  const items = getStoredSpeedTrainings();
+  const now = new Date().toISOString();
+
+  values.forEach(speed => {
+    items.push({
+      id: `speed-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      pitcherName,
+      date,
+      pitchType: selectedSpeedPitchType,
+      speed,
+      unit: "mph",
+      createdAt: now
+    });
+  });
+
+  saveStoredSpeedTrainings(items);
+  closeSpeedTrainingModal();
+  renderPitcherSpeedOverview();
+  setSyncStatus("Speed training opgeslagen.", "ok");
+}
+
+function getPitcherSpeedItems(pitcherName) {
+  return getStoredSpeedTrainings()
+    .filter(item => String(item.pitcherName || "") === String(pitcherName || ""))
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+}
+
+function getSpeedPercent(speed) {
+  const min = 40;
+  const max = 60;
+  return Math.max(0, Math.min(100, ((Number(speed || min) - min) / (max - min)) * 100));
+}
+
+function formatMph(value) {
+  if (!Number.isFinite(Number(value))) return "-";
+  return `${Number(value).toFixed(1)} mph`;
+}
+
+function getSpeedStats(items) {
+  const speeds = items.map(item => Number(item.speed)).filter(Number.isFinite);
+  if (!speeds.length) {
+    return { count: 0, avg: null, max: null };
+  }
+
+  const avg = speeds.reduce((sum, value) => sum + value, 0) / speeds.length;
+  const max = Math.max(...speeds);
+
+  return {
+    count: speeds.length,
+    avg,
+    max
+  };
+}
+
+function renderPitcherSpeedOverview() {
+  const pitcherName = document.getElementById("statsPitcherName")?.value || "";
+  const items = getPitcherSpeedItems(pitcherName);
+  const allStats = getSpeedStats(items);
+
+  const avgDot = document.getElementById("speedAvgDot");
+  const maxDot = document.getElementById("speedMaxDot");
+  const avgValue = document.getElementById("speedAvgValue");
+  const maxValue = document.getElementById("speedMaxValue");
+  const latest = document.getElementById("speedLatestTraining");
+  const grid = document.getElementById("speedTypeGrid");
+
+  if (!pitcherName || !items.length) {
+    if (avgDot) avgDot.style.left = "0%";
+    if (maxDot) maxDot.style.left = "0%";
+    if (avgValue) avgValue.textContent = "-";
+    if (maxValue) maxValue.textContent = "-";
+    if (latest) latest.textContent = pitcherName ? "Nog geen speed-training voor deze pitcher." : "Kies een pitcher om speed-data te tonen.";
+    if (grid) grid.innerHTML = ["Fastball", "Curveball", "Slowball"].map(type => renderSpeedTypeCard(type, [])).join("");
+    return;
+  }
+
+  if (avgDot) avgDot.style.left = `${getSpeedPercent(allStats.avg)}%`;
+  if (maxDot) maxDot.style.left = `${getSpeedPercent(allStats.max)}%`;
+  if (avgValue) avgValue.textContent = formatMph(allStats.avg);
+  if (maxValue) maxValue.textContent = formatMph(allStats.max);
+  if (latest) latest.textContent = `Laatste training: ${items[0].date || "-"}`;
+
+  if (grid) {
+    grid.innerHTML = ["Fastball", "Curveball", "Slowball"].map(type => {
+      return renderSpeedTypeCard(type, items.filter(item => normalizeSpeedPitchType(item.pitchType) === type));
+    }).join("");
+  }
+}
+
+function renderSpeedTypeCard(type, items) {
+  const stats = getSpeedStats(items);
+  const short = type === "Fastball" ? "FB" : type === "Curveball" ? "CB" : "SB";
+
+  return `
+    <div class="speed-type-card">
+      <div class="speed-type-head">
+        <strong>${short}</strong>
+        <span>${type}</span>
+      </div>
+      <div class="speed-type-values">
+        <div><small>AVG</small><b>${formatMph(stats.avg)}</b></div>
+        <div><small>MAX</small><b>${formatMph(stats.max)}</b></div>
+      </div>
+      <p>${stats.count} pitches</p>
+    </div>
+  `;
+}
+
+
 function showPitcherStats() {
   setActiveScreen("pitcherStatsScreen");
-  syncFromGoogleSheet().then(() => renderPitcherStats());
+  syncFromGoogleSheet().then(() => { renderPitcherStats(); renderPitcherSpeedOverview(); });
 }
 
 function getPitcherGames(pitcherName) {
@@ -1328,6 +1510,8 @@ function renderPitcherStats() {
       </tr>
     `;
   }).join("");
+
+  renderPitcherSpeedOverview();
 }
 
 function showPitcherHeatmaps() {

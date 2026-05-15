@@ -2063,3 +2063,213 @@ button.danger {
   box-sizing: border-box !important;
   text-align: center !important;
 }
+
+
+
+/* Speed overview training op Pitching Stats */
+.speed-overview-card {
+  margin: 14px 0 18px;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(243,244,246,.95);
+  border: 1px solid var(--line);
+}
+
+.speed-overview-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.speed-overview-head label {
+  margin-top: 0;
+}
+
+.speed-training-button {
+  padding: 10px 12px;
+  border-color: rgba(255,122,24,.45) !important;
+  color: var(--orange) !important;
+  white-space: nowrap;
+}
+
+.speed-range-wrap {
+  margin: 18px 0 10px;
+}
+
+.speed-range-track {
+  position: relative;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb 0%, #ff7a18 50%, #ef4444 100%);
+}
+
+.speed-range-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.speed-dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+  z-index: 2;
+}
+
+.speed-dot.avg {
+  background: var(--orange);
+}
+
+.speed-dot.max {
+  background: #e11d2e;
+}
+
+.speed-dot span {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.speed-range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.speed-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: center;
+  margin: 6px 0 14px;
+}
+
+.speed-values small,
+.speed-type-values small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.speed-values strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--orange);
+  font-size: 18px;
+}
+
+.speed-values div:last-child strong {
+  color: #e11d2e;
+}
+
+.speed-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.speed-type-card {
+  padding: 12px;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid var(--line);
+}
+
+.speed-type-head strong {
+  display: block;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.speed-type-head span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.speed-type-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.speed-type-values b {
+  display: block;
+  margin-top: 3px;
+  color: var(--orange);
+  font-size: 14px;
+}
+
+.speed-type-values div:last-child b {
+  color: #e11d2e;
+}
+
+.speed-type-card p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.speed-note {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.speed-input {
+  width: 100%;
+  min-height: 95px;
+  border: 1px solid var(--line);
+  background: rgba(243,244,246,.95);
+  color: var(--text);
+  border-radius: 16px;
+  padding: 13px 14px;
+  font-size: 16px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.speed-pitch-types {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 420px) {
+  .speed-overview-head {
+    grid-template-columns: 1fr;
+  }
+
+  .speed-training-button {
+    width: 100%;
+  }
+
+  .speed-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .speed-pitch-types {
+    grid-template-columns: 1fr;
+  }
+}

@@ -80,6 +80,48 @@
 
         <div class="stats-grid pitcher-stats-grid">
           <div class="stat"><small>Innings pitched</small><strong id="statsTotalIP">0.000</strong></div>
+
+        <div class="speed-overview-card">
+          <div class="speed-overview-head">
+            <div>
+              <label>Speed overview (training)</label>
+              <p id="speedLatestTraining" class="small-note">Nog geen speed-training opgeslagen.</p>
+            </div>
+            <button class="secondary speed-training-button" onclick="openSpeedTrainingModal()">+ Speed training</button>
+          </div>
+
+          <div class="speed-range-wrap">
+            <div class="speed-range-track">
+              <div class="speed-range-fill"></div>
+              <div id="speedAvgDot" class="speed-dot avg" style="left:0%">
+                <span>AVG</span>
+              </div>
+              <div id="speedMaxDot" class="speed-dot max" style="left:0%">
+                <span>MAX</span>
+              </div>
+            </div>
+            <div class="speed-range-labels">
+              <span>40 mph</span>
+              <span>60 mph</span>
+            </div>
+          </div>
+
+          <div class="speed-values">
+            <div>
+              <small>Average speed</small>
+              <strong id="speedAvgValue">-</strong>
+            </div>
+            <div>
+              <small>Highest speed</small>
+              <strong id="speedMaxValue">-</strong>
+            </div>
+          </div>
+
+          <div id="speedTypeGrid" class="speed-type-grid"></div>
+
+          <p class="small-note speed-note">Snelheid wordt alleen gemeten tijdens trainingen, niet tijdens wedstrijden.</p>
+        </div>
+
           <div class="stat"><small>Total pitches</small><strong id="statsTotalPitches">0</strong></div>
           <div class="stat"><small>Total batters</small><strong id="statsTotalBatters">0</strong></div>
           <div class="stat"><small>Total strikes</small><strong id="statsTotalStrikes">0</strong></div>
@@ -621,6 +663,43 @@
         <div id="gameRecapModalBody" class="game-recap-output"></div>
         <div class="actions">
           <button class="game-recap-close-full" onclick="closeGameRecapModal()">Sluiten</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="speedTrainingModal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Speed training</h2>
+        <p class="small-note">Voeg trainingssnelheden toe per pitcher en pitch type. Gebruik komma's of enters.</p>
+
+        <label for="speedTrainingPitcher">Pitcher</label>
+        <select id="speedTrainingPitcher">
+          <option value="" disabled selected>Kies pitcher</option>
+          <option>Amy Blom</option>
+          <option>Lottie Twisk</option>
+          <option>Elin Baas</option>
+          <option>Tessa Schenk</option>
+          <option>Annick Jansen</option>
+          <option>Nina van der Putten</option>
+          <option>Overig</option>
+        </select>
+
+        <label for="speedTrainingDate">Training datum</label>
+        <input id="speedTrainingDate" type="date" />
+
+        <label>Pitch type</label>
+        <div id="speedPitchTypes" class="choices speed-pitch-types">
+          <button type="button" class="secondary selected" onclick="selectSpeedPitchType('Fastball')">Fastball</button>
+          <button type="button" class="secondary" onclick="selectSpeedPitchType('Curveball')">Curveball</button>
+          <button type="button" class="secondary" onclick="selectSpeedPitchType('Slowball')">Slowball</button>
+        </div>
+
+        <label for="speedTrainingValues">Snelheden (mph)</label>
+        <textarea id="speedTrainingValues" class="speed-input" placeholder="Bijv. 52, 53, 54&#10;Of één snelheid per regel"></textarea>
+
+        <div class="actions">
+          <button class="secondary" onclick="closeSpeedTrainingModal()">Annuleren</button>
+          <button onclick="saveSpeedTraining()">Opslaan</button>
         </div>
       </div>
     </div>
