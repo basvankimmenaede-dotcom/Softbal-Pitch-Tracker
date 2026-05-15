@@ -4985,3 +4985,111 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     height: 320px !important;
   }
 }
+
+
+
+/* Visual sprayfield refinement */
+.batted-ball-modal-card h2 {
+  color: #ffffff !important;
+}
+
+.batted-ball-modal-card h2::first-letter {
+  color: #ff7417 !important;
+}
+
+.batted-ball-field-2d {
+  background:
+    radial-gradient(circle at 50% 100%, rgba(255,116,23,.10), transparent 22%),
+    linear-gradient(180deg, #03101f 0%, #061a33 100%) !important;
+  border: 2px solid rgba(255,116,23,.40) !important;
+}
+
+.sf-fair {
+  fill: #2f7d39 !important;
+  stroke: #ff7417 !important;
+  stroke-width: 1.1 !important;
+}
+
+.sf-infield {
+  fill: #c48a52 !important;
+  stroke: rgba(255,255,255,.82) !important;
+  stroke-width: .5 !important;
+}
+
+.sf-line {
+  stroke: rgba(255,255,255,.95) !important;
+  stroke-width: .65 !important;
+}
+
+.sf-home,
+.sf-base {
+  fill: #ffffff !important;
+}
+
+.sf-mound {
+  stroke: rgba(255,255,255,.95) !important;
+}
+
+/* Positioning fix */
+.batted-ball-field-2d .bb-pos {
+  width: 42px !important;
+  height: 42px !important;
+  font-size: 14px !important;
+  background: #081c35 !important;
+  border: 2px solid rgba(255,255,255,.10) !important;
+}
+
+.batted-ball-field-2d .bb-pos.left {
+  left: 16% !important;
+  top: 31% !important;
+}
+
+.batted-ball-field-2d .bb-pos.center {
+  left: 47% !important;
+  top: 18% !important;
+}
+
+.batted-ball-field-2d .bb-pos.right {
+  left: 78% !important;
+  top: 31% !important;
+}
+
+.batted-ball-field-2d .bb-pos.short {
+  left: 33% !important;
+  top: 56% !important;
+}
+
+.batted-ball-field-2d .bb-pos.second {
+  left: 58% !important;
+  top: 56% !important;
+}
+
+.batted-ball-field-2d .bb-pos.third {
+  left: 24% !important;
+  top: 66% !important;
+}
+
+.batted-ball-field-2d .bb-pos.first {
+  left: 71% !important;
+  top: 66% !important;
+}
+
+.batted-ball-field-2d .bb-pos.pitcher {
+  left: 47% !important;
+  top: 67% !important;
+}
+
+.batted-ball-field-2d .bb-pos.catcher {
+  left: 47% !important;
+  top: 89% !important;
+}
+
+/* cleaner diamond */
+.softball-field-svg {
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.18));
+}
+
+.batted-option-stack button[data-bb-key].selected {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: #fff !important;
+}
