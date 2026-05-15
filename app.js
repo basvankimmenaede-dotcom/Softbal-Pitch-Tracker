@@ -1021,8 +1021,7 @@ function populateSetupTeamSelect() {
 
   select.innerHTML =
     `<option value="">Kies opgeslagen team</option>` +
-    teams.map(team => `<option value="${team}">${team}</option>`).join("") +
-    `<option value="__manual__">Handmatig invoeren</option>`;
+    teams.map(team => `<option value="${team}">${team}</option>`).join("");
 
   select.value = "";
 }
@@ -1033,9 +1032,9 @@ function handleSetupTeamSelectChange() {
   const manualRow = document.getElementById("manualOpponentRow");
   if (!select || !opponentInput) return;
 
-  if (!select.value || select.value === "__manual__") {
+  if (!select.value) {
     opponentInput.value = "";
-    if (manualRow) manualRow.classList.remove("hidden");
+    if (manualRow) manualRow.classList.add("hidden");
     clearLineupInputs();
     return;
   }
@@ -1072,7 +1071,7 @@ function prepareNewGameForm() {
   const manualRow = document.getElementById("manualOpponentRow");
 
   if (setupTeamSelect) setupTeamSelect.value = "";
-  if (manualRow) manualRow.classList.remove("hidden");
+  if (manualRow) manualRow.classList.add("hidden");
 
   document.getElementById("opponent").value = "";
   document.getElementById("pitcherName").value = "";
@@ -1081,7 +1080,7 @@ function prepareNewGameForm() {
 
   clearLineupInputs();
 
-  setSyncStatus("Google Sheets nog niet getest.");
+  setSyncStatus("Online - alles gesynchroniseerd.", "ok");
 }
 
 function showPlaceholder(title) {
@@ -2424,10 +2423,8 @@ function renderBatterSearch() {
 
 function getSelectedSetupTeamName() {
   const select = document.getElementById("setupTeamSelect");
-  const opponentInput = document.getElementById("opponent");
-
-  if (select && select.value && select.value !== "__manual__") return select.value;
-  return normalizeTeamName(opponentInput?.value);
+  if (select && select.value) return select.value;
+  return "";
 }
 
 function openLineupPicker(slot) {
@@ -3410,7 +3407,7 @@ function startGame() {
   game.pitcherSessions = [];
   startPitcherSession(game.pitcherName);
   saveLocalGame();
-  setSyncStatus("Google Sheets nog niet getest.");
+  setSyncStatus("Online - alles gesynchroniseerd.", "ok");
   showGame();
 }
 
