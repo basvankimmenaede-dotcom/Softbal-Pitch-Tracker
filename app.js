@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw92nKC5mqUhM4BcodYeGYZDqr00f-M_-07SLtznVuKTmPuXH-PNi5VceYLzeV4nOPeIg/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZQm_aHvuQ1ErsWV-lAo8RdYFNESz5x1PePA9IwcWxtn9RevuiilpXYx5lgLJzx2DCrA/exec";
 let sitePassword = "";
 let isAuthenticated = false;
 
@@ -3639,9 +3639,12 @@ function restoreCountForCurrentBatter() {
   game.strikes = count.strikes;
 }
 
-async function deleteBatterPitchesFromGoogleSheet(batter, pitchTimestamps) {
+async function deleteBatterPitchesFromGoogleSheet(batter, pitchTimestamps, pitchCount = 0) {
   if (!APPS_SCRIPT_URL) throw new Error("Google Sheets niet gekoppeld.");
-  if (!batter || !pitchTimestamps || !pitchTimestamps.length) return;
+  if (!batter) return;
+
+  const resetPitchCount = Number(pitchCount || (pitchTimestamps ? pitchTimestamps.length : 0) || 0);
+  if (!resetPitchCount) return;
 
   const payload = {
     type: "delete_batter_pitches",
@@ -3649,11 +3652,11 @@ async function deleteBatterPitchesFromGoogleSheet(batter, pitchTimestamps) {
     batterOrder: batter.order,
     batterName: batter.name,
     batterNumber: batter.number,
-    pitchTimestamps
+    resetPitchCount,
+    pitchTimestamps: Array.isArray(pitchTimestamps) ? pitchTimestamps : []
   };
 
   // Reset moet direct naar Apps Script, niet via de offline queue.
-  // Anders lijkt het alsof de delete gelukt is terwijl de sheet nog niet is aangepast.
   await fetch(APPS_SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
@@ -3661,7 +3664,7 @@ async function deleteBatterPitchesFromGoogleSheet(batter, pitchTimestamps) {
     body: JSON.stringify(payload)
   });
 
-  setSyncStatus("Reset slagvrouw verzonden naar Google Sheets.", "ok");
+  setSyncStatus(`Reset slagvrouw verzonden naar Google Sheets (${resetPitchCount} pitch(es)).`, "ok");
 }
 
 function getBatterCountKey(index = game.batterIndex) {
@@ -3837,7 +3840,7 @@ function resetCurrentBatter() {
 
   if (removedCount) {
     setSyncStatus(`${removedCount} pitch(es) lokaal verwijderd. Google Sheets wordt bijgewerkt...`, "loading");
-    deleteBatterPitchesFromGoogleSheet(batter, timestampsToDelete).catch(error => {
+    deleteBatterPitchesFromGoogleSheet(batter, timestampsToDelete, removedCount).catch(error => {
       console.error("Delete sync fout", error);
       setSyncStatus("Pitch(es) lokaal verwijderd, maar verwijderen uit Google Sheets kon nog niet starten.", "error");
     });
