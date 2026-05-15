@@ -4067,3 +4067,58 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     height: 300px !important;
   }
 }
+
+
+
+/* Wedstrijd bediening zelfde thema als overige cards */
+.game-controls-card,
+#gameScreen .game-controls-card,
+#gameScreen .card.game-controls-card {
+  position: relative !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at top right, rgba(255,122,24,.14), transparent 34%),
+    linear-gradient(180deg, rgba(15,32,54,.96) 0%, rgba(8,16,30,.98) 100%) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 28px !important;
+  box-shadow:
+    0 24px 60px rgba(0,0,0,.42),
+    inset 0 1px 0 rgba(255,255,255,.04) !important;
+  padding: 22px !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+#gameScreen .game-controls-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255,122,24,.06), transparent 40%);
+  pointer-events: none;
+}
+
+#gameScreen .game-controls-card h3,
+#gameScreen .game-controls-card .card-title {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  letter-spacing: .02em !important;
+  margin-bottom: 16px !important;
+}
+
+#gameScreen .game-controls-actions button.secondary {
+  background: rgba(255,255,255,.05) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  color: #f3f7ff !important;
+}
+
+#gameScreen .game-controls-actions button.secondary:hover {
+  background: rgba(255,122,24,.14) !important;
+  border-color: rgba(255,122,24,.35) !important;
+}
+
+#gameScreen .game-controls-actions button.danger {
+  background: linear-gradient(135deg, #ff7a18 0%, #ff9a3d 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 10px 24px rgba(255,122,24,.28) !important;
+}
