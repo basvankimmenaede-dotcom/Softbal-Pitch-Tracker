@@ -4122,3 +4122,68 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   border: none !important;
   box-shadow: 0 10px 24px rgba(255,122,24,.28) !important;
 }
+
+
+
+/* Wedstrijd bediening: exact licht GameDay-card thema zoals Nieuwe game */
+#gameScreen .game-controls-card,
+.game-controls-card {
+  position: relative !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(255,116,23,.18), transparent 30%),
+    linear-gradient(180deg, #fffaf0 0%, #f4efe6 100%) !important;
+  border: 2px solid rgba(255,116,23,.24) !important;
+  border-radius: 28px !important;
+  box-shadow:
+    0 18px 50px rgba(15,23,42,.14),
+    inset 0 0 0 1px rgba(255,255,255,.65) !important;
+  padding: 22px !important;
+  backdrop-filter: none !important;
+}
+
+#gameScreen .game-controls-card::before,
+.game-controls-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .055;
+  background:
+    linear-gradient(135deg, transparent 0 46%, rgba(0,0,0,.38) 47%, transparent 49%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.20) 0 1px, transparent 1px 9px) !important;
+}
+
+#gameScreen .game-controls-card h3 {
+  position: relative;
+  z-index: 1;
+  color: #1f2937 !important;
+  font-weight: 950 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  margin: 0 0 16px !important;
+}
+
+#gameScreen .game-controls-actions {
+  position: relative;
+  z-index: 1;
+}
+
+#gameScreen .game-controls-actions button.secondary {
+  background: rgba(255,250,240,.82) !important;
+  color: #1f2937 !important;
+  border: 1.5px solid rgba(255,116,23,.32) !important;
+  box-shadow: 0 8px 18px rgba(15,23,42,.04) !important;
+}
+
+#gameScreen .game-controls-actions button.secondary:hover {
+  background: rgba(255,255,255,.92) !important;
+  border-color: rgba(255,116,23,.55) !important;
+}
+
+#gameScreen .game-controls-actions button.danger {
+  background: linear-gradient(180deg, #ff8738, #f05a00) !important;
+  color: white !important;
+  border: 0 !important;
+  box-shadow: 0 10px 24px rgba(255,116,23,.26) !important;
+}
