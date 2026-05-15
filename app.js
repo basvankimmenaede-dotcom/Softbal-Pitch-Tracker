@@ -1196,10 +1196,10 @@ function mergeSpeedTrainings(localItems, sheetItems) {
 }
 
 function convertSheetRowsToSpeedTrainings(payload) {
-  if (!payload || !payload.rows || !payload.rows.length) return [];
+  if (!payload || !payload.speedTrainingRows || !payload.speedTrainingRows.length) return [];
 
-  const headers = payload.headers || [];
-  const rows = payload.rows;
+  const headers = payload.speedTrainingHeaders || [];
+  const rows = payload.speedTrainingRows;
 
   const records = rows.map(row => {
     const record = {};
@@ -1223,13 +1223,13 @@ function convertSheetRowsToSpeedTrainings(payload) {
     if (rowType && rowType !== "speed_training") return null;
 
     return {
-      id: String(get(record, ["ID", "id"], rowType ? 1 : 0) || "").trim(),
-      date: String(get(record, ["Datum", "date"], rowType ? 2 : 0) || "").trim(),
-      pitcherName: String(get(record, ["Pitcher", "pitcherName"], rowType ? 3 : 1) || "").trim(),
-      pitchType: normalizeSpeedPitchType(get(record, ["Pitch Type", "pitchType"], rowType ? 4 : 2)),
-      speed: Number(get(record, ["Speed MPH", "speed", "speedMph"], rowType ? 5 : 3)),
-      unit: "mph",
-      createdAt: String(get(record, ["Timestamp", "createdAt"], rowType ? 6 : 4) || "").trim()
+      id: String(get(record, ["ID", "id"], 1) || "").trim(),
+      date: String(get(record, ["Datum", "date"], 2) || "").trim(),
+      pitcherName: String(get(record, ["Pitcher", "pitcherName"], 3) || "").trim(),
+      pitchType: normalizeSpeedPitchType(get(record, ["Pitch Type", "pitchType"], 4)),
+      speed: Number(get(record, ["Speed MPH", "speed", "speedMph"], 5)),
+      unit: String(get(record, ["Unit", "unit"], 6) || "mph").trim() || "mph",
+      createdAt: String(get(record, ["Timestamp", "createdAt"], 7) || "").trim()
     };
   }).filter(item => item && item.pitcherName && item.date && item.pitchType && Number.isFinite(item.speed) && item.speed > 0);
 }
@@ -1258,11 +1258,14 @@ async function syncSpeedTrainingFromGoogleSheet() {
   try {
     const payload = await loadSheetDataJsonp();
     const sheetItems = convertSheetRowsToSpeedTrainings(payload);
-    if (!sheetItems.length) return;
-
     const merged = mergeSpeedTrainings(getStoredSpeedTrainings(), sheetItems);
+
     saveStoredSpeedTrainings(merged);
     renderPitcherSpeedOverview();
+
+    if (sheetItems.length) {
+      setSyncStatus(`Speed training geladen: ${sheetItems.length} metingen.`, "ok");
+    }
   } catch (error) {
     console.error("Speed training teruglezen mislukt", error);
   }
