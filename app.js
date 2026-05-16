@@ -3656,8 +3656,12 @@ function isPointInPolygon(point, polygon) {
   return inside;
 }
 
+function getBattedBallAngle(x, y) {
+  return Math.atan2(BATTED_BALL_HOME.y - y, x - BATTED_BALL_HOME.x) * 180 / Math.PI;
+}
+
 function getOutfieldSprayZone(x, y) {
-  const angle = Math.atan2(BATTED_BALL_HOME.y - y, x - BATTED_BALL_HOME.x) * 180 / Math.PI;
+  const angle = getBattedBallAngle(x, y);
   const span = BATTED_BALL_LEFT_FOUL_ANGLE - BATTED_BALL_RIGHT_FOUL_ANGLE;
   const pct = Math.max(0, Math.min(100, ((BATTED_BALL_LEFT_FOUL_ANGLE - angle) / span) * 100));
 
@@ -3670,7 +3674,9 @@ function getOutfieldSprayZone(x, y) {
 
 function getInfieldSprayZone(x, y) {
   if (y >= 82) return "Catcher";
-  if (y >= 62 && Math.abs(x - 50) <= 10) return "Pitcher";
+
+  // Pitcher-bereik bewust klein: alleen ballen heel dicht rond de cirkel.
+  if (y >= 67 && y <= 77 && Math.abs(x - 50) <= 5) return "Pitcher";
 
   if (x < 36) return "Derde honk";
   if (x < 50) return "Kortstop";
@@ -3680,8 +3686,15 @@ function getInfieldSprayZone(x, y) {
 
 function getBattedBallZone(x, y) {
   const point = { x: Number(x), y: Number(y) };
+  const angle = getBattedBallAngle(point.x, point.y);
 
-  // Alles op het gravel = infielder. Alles daarbuiten op de foto = gras/outfield.
+  // Buiten de foullijnen ter hoogte van het infield hoort bij de corner-infielders.
+  if (point.y >= 42 && point.y <= 82) {
+    if (angle > BATTED_BALL_LEFT_FOUL_ANGLE) return "Derde honk";
+    if (angle < BATTED_BALL_RIGHT_FOUL_ANGLE) return "Eerste honk";
+  }
+
+  // Alles op het gravel = infielder.
   if (isPointInPolygon(point, BATTED_BALL_DIRT_POLYGON)) {
     return getInfieldSprayZone(point.x, point.y);
   }

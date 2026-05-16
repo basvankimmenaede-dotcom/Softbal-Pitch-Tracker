@@ -4403,3 +4403,29 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* Exacte update: vinkje tonen op gekozen snelheid/hoogte */
+.batted-button-stack-clean button {
+  position: relative !important;
+  padding-left: 36px !important;
+  text-align: left !important;
+}
+
+.batted-button-stack-clean button.selected::before,
+.batted-button-stack-clean button[aria-pressed="true"]::before {
+  content: "✓";
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 1000;
+}
