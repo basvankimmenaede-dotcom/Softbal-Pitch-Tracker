@@ -5763,16 +5763,37 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
 }
 
 
-/* === Update mei 2026 === */
+/* === Definitieve batted-ball kaart === */
 
-/* Popup 25% kleiner zodat deze volledig op mobiel scherm past */
+.softball-spray-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.softball-spray-image {
+  width: 100%;
+  display: block;
+  border-radius: 18px;
+}
+
+.spray-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.spray-zone {
+  position: absolute;
+  background: rgba(255,255,255,0.01);
+}
+
 #battedBallModal .modal-card {
-  width: min(720px, 92vw) !important;
+  width: min(760px, 92vw) !important;
   transform: scale(0.75);
   transform-origin: center center;
 }
 
-/* Op kleinere telefoons iets groter voor leesbaarheid */
 @media (max-width: 480px) {
   #battedBallModal .modal-card {
     transform: scale(0.82);
