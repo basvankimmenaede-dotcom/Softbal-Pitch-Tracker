@@ -3626,45 +3626,95 @@ function setBattedBallSelectedButtons() {
   });
 }
 
+const BATTED_FIELD_GEOMETRY = {
+  // Alle waarden zijn percentages van de originele afbeelding.
+  // De afbeelding zelf blijft ongewijzigd; deze punten worden alleen gebruikt voor registratie.
+  home: { x: 50, y: 82.5 },
+  leftFoul: { x: 2.1, y: 35.0 },
+  rightFoul: { x: 97.9, y: 35.0 },
+  outfieldStartY: 42.0,
+  dirt: [
+    { x: 50.0, y: 82.5 },
+    { x: 42.0, y: 79.0 },
+    { x: 42.0, y: 67.0 },
+    { x: 23.0, y: 59.0 },
+    { x: 29.0, y: 48.0 },
+    { x: 50.0, y: 40.0 },
+    { x: 71.0, y: 48.0 },
+    { x: 77.0, y: 59.0 },
+    { x: 58.0, y: 67.0 },
+    { x: 58.0, y: 79.0 }
+  ]
+};
+
+function isPointInPolygon(point, polygon) {
+  let inside = false;
+
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+
+    const intersects = ((yi > point.y) !== (yj > point.y)) &&
+      (point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi);
+
+    if (intersects) inside = !inside;
+  }
+
+  return inside;
+}
+
+function getAngleFromHome(point) {
+  const home = BATTED_FIELD_GEOMETRY.home;
+  return Math.atan2(home.y - point.y, point.x - home.x);
+}
+
+function getOutfieldSprayZone(x, y) {
+  const point = { x, y };
+  const leftAngle = getAngleFromHome(BATTED_FIELD_GEOMETRY.leftFoul);
+  const rightAngle = getAngleFromHome(BATTED_FIELD_GEOMETRY.rightFoul);
+  const angle = Math.max(rightAngle, Math.min(leftAngle, getAngleFromHome(point)));
+  const span = leftAngle - rightAngle;
+  const fromLeft = (leftAngle - angle) / span;
+
+  if (fromLeft <= 0.25) return "Linksveld";
+  if (fromLeft <= 0.35) return "Links-center";
+  if (fromLeft <= 0.65) return "Center";
+  if (fromLeft <= 0.75) return "Rechts-center";
+  return "Rechtsveld";
+}
+
+function getInfieldSprayZone(x, y) {
+  if (y >= 78) return "Catcher";
+  if (y >= 64 && Math.abs(x - 50) <= 9) return "Pitcher";
+  if (x < 42) return y >= 61 ? "Derde honk" : "Kortstop";
+  if (x > 58) return y >= 61 ? "Eerste honk" : "Tweede honk";
+  return x < 50 ? "Kortstop" : "Tweede honk";
+}
+
 function getBattedBallZone(x, y) {
-  // These zones match the SVG layout exactly enough for scouting labels.
-  if (y >= 88) return "Catcher / fout achter";
+  const point = { x: Number(x), y: Number(y) };
 
-  // outfield zones
-  if (y <= 45) {
-    if (x < 36) return "Linksveld";
-    if (x > 64) return "Rechtsveld";
-    return "Centerfield";
+  if (isPointInPolygon(point, BATTED_FIELD_GEOMETRY.dirt)) {
+    return getInfieldSprayZone(point.x, point.y);
   }
 
-  // shallow outfield / gaps
-  if (y <= 57) {
-    if (x < 34) return "Left-center";
-    if (x > 66) return "Right-center";
-    return "Middenveld";
+  if (point.y <= BATTED_FIELD_GEOMETRY.outfieldStartY) {
+    return getOutfieldSprayZone(point.x, point.y);
   }
 
-  // infield
-  if (y >= 64 && y <= 77 && Math.abs(x - 50) <= 8) return "Pitcher";
-  if (x < 40) return y >= 66 ? "Derde honk" : "Shortstop";
-  if (x > 60) return y >= 66 ? "Eerste honk" : "Tweede honk";
-
-  return "Middenveld";
+  // Groen binnenveld buiten het gravel: registreer naar dichtstbijzijnde infielder.
+  return getInfieldSprayZone(point.x, point.y);
 }
 
 function getSvgPointFromEvent(svg, event) {
-  const point = svg.createSVGPoint();
-  point.x = event.clientX;
-  point.y = event.clientY;
-
-  const ctm = svg.getScreenCTM();
-  if (!ctm) return null;
-
-  const svgPoint = point.matrixTransform(ctm.inverse());
+  const rect = svg.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
 
   return {
-    x: Math.max(0, Math.min(100, svgPoint.x)),
-    y: Math.max(0, Math.min(100, svgPoint.y))
+    x: Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100)),
+    y: Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100))
   };
 }
 

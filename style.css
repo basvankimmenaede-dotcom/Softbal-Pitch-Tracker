@@ -5761,3 +5761,43 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     min-height: 300px !important;
   }
 }
+
+/* Softbalveld registratiekaart voor HIT / Veld uit
+   De originele afbeelding wordt ongewijzigd getoond; alleen de transparante kliklaag en marker liggen erboven. */
+.svg-spray-chart {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  border: 1px solid var(--line) !important;
+  cursor: crosshair !important;
+}
+
+.batted-field-image {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+  user-select: none !important;
+  pointer-events: none !important;
+}
+
+.batted-field-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+
+.batted-field-overlay .spray-marker {
+  fill: #ef4444 !important;
+  stroke: #ffffff !important;
+  stroke-width: 1.2 !important;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.45));
+}
