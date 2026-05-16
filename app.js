@@ -3580,7 +3580,7 @@ function openBattedBallModal(result) {
   const modal = document.getElementById("battedBallModal");
   const title = document.getElementById("battedBallTitle");
   const help = document.getElementById("battedBallHelp");
-  const marker = document.getElementById("battedBallMarker");
+  const marker = document.getElementById("battedBallMarkerSvg");
   const chosen = document.getElementById("battedBallChosen");
 
   if (title) {
@@ -3626,109 +3626,65 @@ function setBattedBallSelectedButtons() {
   });
 }
 
-const BATTED_BALL_HOME = { x: 50, y: 84 };
-const BATTED_BALL_LEFT_FOUL_ANGLE = 133;
-const BATTED_BALL_RIGHT_FOUL_ANGLE = 47;
-const BATTED_BALL_DIRT_POLYGON = [
-  { x: 50, y: 92 },
-  { x: 42, y: 80 },
-  { x: 22, y: 62 },
-  { x: 30, y: 50 },
-  { x: 41, y: 43 },
-  { x: 50, y: 41 },
-  { x: 59, y: 43 },
-  { x: 70, y: 50 },
-  { x: 78, y: 62 },
-  { x: 58, y: 80 }
-];
-
-function isPointInPolygon(point, polygon) {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x;
-    const yi = polygon[i].y;
-    const xj = polygon[j].x;
-    const yj = polygon[j].y;
-    const intersect = ((yi > point.y) !== (yj > point.y)) &&
-      (point.x < ((xj - xi) * (point.y - yi)) / ((yj - yi) || 0.00001) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-
-function getBattedBallAngle(x, y) {
-  return Math.atan2(BATTED_BALL_HOME.y - y, x - BATTED_BALL_HOME.x) * 180 / Math.PI;
-}
-
-function getOutfieldSprayZone(x, y) {
-  const angle = getBattedBallAngle(x, y);
-  const span = BATTED_BALL_LEFT_FOUL_ANGLE - BATTED_BALL_RIGHT_FOUL_ANGLE;
-  const pct = Math.max(0, Math.min(100, ((BATTED_BALL_LEFT_FOUL_ANGLE - angle) / span) * 100));
-
-  if (pct <= 25) return "Linksveld";
-  if (pct <= 35) return "Links-center";
-  if (pct <= 65) return "Centerfield";
-  if (pct <= 75) return "Rechts-center";
-  return "Rechtsveld";
-}
-
-function getInfieldSprayZone(x, y) {
-  if (y >= 82) return "Catcher";
-
-  // Pitcher-bereik bewust klein: alleen ballen heel dicht rond de cirkel.
-  if (y >= 67 && y <= 77 && Math.abs(x - 50) <= 5) return "Pitcher";
-
-  if (x < 36) return "Derde honk";
-  if (x < 50) return "Kortstop";
-  if (x < 64) return "Tweede honk";
-  return "Eerste honk";
-}
-
 function getBattedBallZone(x, y) {
-  const point = { x: Number(x), y: Number(y) };
-  const angle = getBattedBallAngle(point.x, point.y);
+  // These zones match the SVG layout exactly enough for scouting labels.
+  if (y >= 88) return "Catcher / fout achter";
 
-  // Buiten de foullijnen ter hoogte van het infield hoort bij de corner-infielders.
-  if (point.y >= 42 && point.y <= 82) {
-    if (angle > BATTED_BALL_LEFT_FOUL_ANGLE) return "Derde honk";
-    if (angle < BATTED_BALL_RIGHT_FOUL_ANGLE) return "Eerste honk";
+  // outfield zones
+  if (y <= 45) {
+    if (x < 36) return "Linksveld";
+    if (x > 64) return "Rechtsveld";
+    return "Centerfield";
   }
 
-  // Alles op het gravel = infielder.
-  if (isPointInPolygon(point, BATTED_BALL_DIRT_POLYGON)) {
-    return getInfieldSprayZone(point.x, point.y);
+  // shallow outfield / gaps
+  if (y <= 57) {
+    if (x < 34) return "Left-center";
+    if (x > 66) return "Right-center";
+    return "Middenveld";
   }
 
-  return getOutfieldSprayZone(point.x, point.y);
+  // infield
+  if (y >= 64 && y <= 77 && Math.abs(x - 50) <= 8) return "Pitcher";
+  if (x < 40) return y >= 66 ? "Derde honk" : "Shortstop";
+  if (x > 60) return y >= 66 ? "Eerste honk" : "Tweede honk";
+
+  return "Middenveld";
 }
 
-function getBattedBallPointFromEvent(field, event) {
-  const rect = field.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
+function getSvgPointFromEvent(svg, event) {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+
+  const svgPoint = point.matrixTransform(ctm.inverse());
 
   return {
-    x: Math.max(0, Math.min(100, x)),
-    y: Math.max(0, Math.min(100, y))
+    x: Math.max(0, Math.min(100, svgPoint.x)),
+    y: Math.max(0, Math.min(100, svgPoint.y))
   };
 }
 
 function setBattedBallLocation(event) {
   if (!pendingBattedBall) return;
 
-  const field = document.getElementById("battedBallField");
-  const marker = document.getElementById("battedBallMarker");
+  const svg = document.getElementById("battedBallSvg");
+  const marker = document.getElementById("battedBallMarkerSvg");
   const chosen = document.getElementById("battedBallChosen");
-  if (!field || !marker) return;
+  if (!svg || !marker) return;
 
-  const point = getBattedBallPointFromEvent(field, event);
+  const point = getSvgPointFromEvent(svg, event);
+  if (!point) return;
 
   pendingBattedBall.x = Math.round(point.x);
   pendingBattedBall.y = Math.round(point.y);
   pendingBattedBall.zone = getBattedBallZone(pendingBattedBall.x, pendingBattedBall.y);
 
-  marker.style.left = `${pendingBattedBall.x}%`;
-  marker.style.top = `${pendingBattedBall.y}%`;
+  marker.setAttribute("cx", pendingBattedBall.x);
+  marker.setAttribute("cy", pendingBattedBall.y);
   marker.classList.remove("hidden");
 
   if (chosen) chosen.textContent = `Gekozen: ${pendingBattedBall.zone}`;

@@ -496,8 +496,10 @@
       <div class="card previous-batted-card">
         <label>Vorige geslagen bal</label>
         <div class="previous-batted-layout">
-          <div id="previousBattedPhotoField" class="previous-batted-photo-field">
-            <img src="softbalveld.png" alt="Softbalveld" />
+          <div id="previousBattedMiniField" class="previous-batted-mini-field">
+            <div class="mini-spray-outfield"></div>
+            <div class="mini-spray-infield"></div>
+            <div class="mini-spray-home"></div>
             <div id="previousBattedMarker" class="previous-batted-marker hidden"></div>
           </div>
           <div>
@@ -710,15 +712,73 @@
 
         <div class="batted-ball-content-clean">
           <div class="spray-chart-panel">
-            <div id="battedBallField" class="real-softball-field" onclick="setBattedBallLocation(event)">
-              <img src="softbalveld.png" alt="Softbalveld" class="real-softball-image" />
-              <div id="battedBallMarker" class="real-softball-marker hidden"></div>
+            <div id="battedBallField" class="softball-spray-chart svg-spray-chart">
+              <svg id="battedBallSvg" viewBox="0 0 100 100" class="spray-svg" aria-label="Softbalveld spray chart">
+                <defs>
+                  <radialGradient id="grassGlow" cx="50%" cy="72%" r="70%">
+                    <stop offset="0%" stop-color="#3f8d3e"/>
+                    <stop offset="58%" stop-color="#2f7d39"/>
+                    <stop offset="100%" stop-color="#1f5f2c"/>
+                  </radialGradient>
+                  <linearGradient id="dirtFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#d49a5b"/>
+                    <stop offset="100%" stop-color="#b7743f"/>
+                  </linearGradient>
+                  <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity=".25"/>
+                  </filter>
+                </defs>
+
+                <!-- dark card background -->
+                <rect x="0" y="0" width="100" height="100" rx="4" class="spray-bg"></rect>
+
+                <!-- fair territory -->
+                <path class="spray-fair" d="M50 94 L12 26 Q50 2 88 26 Z"></path>
+
+                <!-- grass guide lanes -->
+                <path class="spray-lane" d="M50 94 L30 18"></path>
+                <path class="spray-lane" d="M50 94 L50 7"></path>
+                <path class="spray-lane" d="M50 94 L70 18"></path>
+
+                <!-- foul lines -->
+                <path class="spray-foul" d="M50 94 L12 26"></path>
+                <path class="spray-foul" d="M50 94 L88 26"></path>
+
+                <!-- depth arcs -->
+                <path class="spray-depth" d="M23 43 Q50 27 77 43"></path>
+                <path class="spray-depth" d="M31 57 Q50 47 69 57"></path>
+
+                <!-- infield dirt / diamond -->
+                <path class="spray-infield-dirt" d="M50 91 L29 66 L50 46 L71 66 Z"></path>
+                <path class="spray-diamond-line" d="M50 91 L29 66 L50 46 L71 66 Z"></path>
+
+                <!-- bases + mound + home -->
+                <rect class="spray-base" x="27.8" y="64.8" width="3.2" height="3.2"></rect>
+                <rect class="spray-base" x="48.4" y="44.4" width="3.2" height="3.2"></rect>
+                <rect class="spray-base" x="69" y="64.8" width="3.2" height="3.2"></rect>
+                <circle class="spray-mound" cx="50" cy="70.5" r="3.1"></circle>
+                <path class="spray-home" d="M48.1 90.4 L51.9 90.4 L51.9 93.4 L50 95 L48.1 93.4 Z"></path>
+
+                <!-- labels are part of the same coordinate system -->
+                <text class="spray-label" x="23" y="34">LF</text>
+                <text class="spray-label" x="50" y="22">CF</text>
+                <text class="spray-label" x="77" y="34">RF</text>
+                <text class="spray-label" x="38" y="58">SS</text>
+                <text class="spray-label" x="62" y="58">2B</text>
+                <text class="spray-label" x="29" y="73">3B</text>
+                <text class="spray-label" x="71" y="73">1B</text>
+                <text class="spray-label" x="50" y="72">P</text>
+                <text class="spray-label" x="50" y="88">C</text>
+
+                <!-- click marker in SVG coordinates -->
+                <circle id="battedBallMarkerSvg" class="spray-marker hidden" cx="50" cy="50" r="2.7"></circle>
+              </svg>
             </div>
             <p id="battedBallChosen" class="batted-ball-chosen-clean">Nog geen plek gekozen.</p>
           </div>
 
           <div class="batted-ball-controls-clean">
-            <label>Snelheid</label>
+            <label>Hardheid</label>
             <div id="battedBallHardness" class="batted-button-stack-clean">
               <button type="button" data-bb-key="hardness" data-bb-value="Hard" class="selected">Hard</button>
               <button type="button" data-bb-key="hardness" data-bb-value="Normaal">Normaal</button>
