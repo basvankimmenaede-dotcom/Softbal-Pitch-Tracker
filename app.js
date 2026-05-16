@@ -3475,10 +3475,10 @@ function setPitchLocation(event) {
 
 
 function bindBattedBallModalEvents() {
-  const field = document.getElementById("battedBallField");
-  if (field && !field.dataset.bound) {
-    field.dataset.bound = "true";
-    field.addEventListener("click", setBattedBallLocation);
+  const svg = document.getElementById("battedBallSvg");
+  if (svg && !svg.dataset.bound) {
+    svg.dataset.bound = "true";
+    svg.addEventListener("click", setBattedBallLocation);
   }
 
   document.querySelectorAll("[data-bb-key][data-bb-value]").forEach(button => {
@@ -3580,7 +3580,7 @@ function openBattedBallModal(result) {
   const modal = document.getElementById("battedBallModal");
   const title = document.getElementById("battedBallTitle");
   const help = document.getElementById("battedBallHelp");
-  const marker = document.getElementById("battedBallMarker");
+  const marker = document.getElementById("battedBallMarkerSvg");
   const chosen = document.getElementById("battedBallChosen");
 
   if (title) {
@@ -3627,65 +3627,64 @@ function setBattedBallSelectedButtons() {
 }
 
 function getBattedBallZone(x, y) {
-  // Catcher / behind plate
+  // These zones match the SVG layout exactly enough for scouting labels.
   if (y >= 88) return "Catcher / fout achter";
 
-  // Outfield
-  if (y <= 38) {
-    if (x < 38) return "Linksveld";
-    if (x > 62) return "Rechtsveld";
+  // outfield zones
+  if (y <= 45) {
+    if (x < 36) return "Linksveld";
+    if (x > 64) return "Rechtsveld";
     return "Centerfield";
   }
 
-  // Deep gaps
-  if (y <= 52) {
+  // shallow outfield / gaps
+  if (y <= 57) {
     if (x < 34) return "Left-center";
     if (x > 66) return "Right-center";
     return "Middenveld";
   }
 
-  // Infield aligned to drawn diamond
-  const dx = Math.abs(x - 50);
+  // infield
+  if (y >= 64 && y <= 77 && Math.abs(x - 50) <= 8) return "Pitcher";
+  if (x < 40) return y >= 66 ? "Derde honk" : "Shortstop";
+  if (x > 60) return y >= 66 ? "Eerste honk" : "Tweede honk";
 
-  // Pitcher circle
-  if (y >= 64 && y <= 76 && dx <= 7) {
-    return "Pitcher";
-  }
-
-  // Left side infield
-  if (x < 43) {
-    if (y >= 64) return "Derde honk";
-    return "Shortstop";
-  }
-
-  // Right side infield
-  if (x > 57) {
-    if (y >= 64) return "Eerste honk";
-    return "Tweede honk";
-  }
-
-  // Middle lane
   return "Middenveld";
+}
+
+function getSvgPointFromEvent(svg, event) {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+
+  const svgPoint = point.matrixTransform(ctm.inverse());
+
+  return {
+    x: Math.max(0, Math.min(100, svgPoint.x)),
+    y: Math.max(0, Math.min(100, svgPoint.y))
+  };
 }
 
 function setBattedBallLocation(event) {
   if (!pendingBattedBall) return;
 
-  const field = document.getElementById("battedBallField");
-  const marker = document.getElementById("battedBallMarker");
+  const svg = document.getElementById("battedBallSvg");
+  const marker = document.getElementById("battedBallMarkerSvg");
   const chosen = document.getElementById("battedBallChosen");
-  if (!field || !marker) return;
+  if (!svg || !marker) return;
 
-  const rect = field.getBoundingClientRect();
-  const x = Math.round(((event.clientX - rect.left) / rect.width) * 100);
-  const y = Math.round(((event.clientY - rect.top) / rect.height) * 100);
+  const point = getSvgPointFromEvent(svg, event);
+  if (!point) return;
 
-  pendingBattedBall.x = Math.max(0, Math.min(100, x));
-  pendingBattedBall.y = Math.max(0, Math.min(100, y));
+  pendingBattedBall.x = Math.round(point.x);
+  pendingBattedBall.y = Math.round(point.y);
   pendingBattedBall.zone = getBattedBallZone(pendingBattedBall.x, pendingBattedBall.y);
 
-  marker.style.left = `${pendingBattedBall.x}%`;
-  marker.style.top = `${pendingBattedBall.y}%`;
+  marker.setAttribute("cx", pendingBattedBall.x);
+  marker.setAttribute("cy", pendingBattedBall.y);
   marker.classList.remove("hidden");
 
   if (chosen) chosen.textContent = `Gekozen: ${pendingBattedBall.zone}`;
