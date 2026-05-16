@@ -4430,3 +4430,15 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   font-weight: 1000 !important;
   line-height: 1 !important;
 }
+
+
+/* Titel boven pitch-locatie veld */
+.field-perspective-title {
+  display: block;
+  margin: 14px 0 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
