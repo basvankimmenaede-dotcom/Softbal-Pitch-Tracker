@@ -4739,3 +4739,92 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   margin-top: 0 !important;
   z-index: 6 !important;
 }
+
+
+/* === Zoek op slagvrouw: statistieken-blokken vast en responsive ===
+   Dit raakt NIET de pitch-heatmap met 9 strikezone-vakjes. */
+#batterSearchScreen .batter-search-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 16px 0 !important;
+  align-items: stretch !important;
+}
+
+#batterSearchScreen .batter-search-stats-grid .stat {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 10px 6px !important;
+  overflow: hidden !important;
+}
+
+#batterSearchScreen .batter-search-stats-grid .stat small,
+#batterSearchScreen .batter-search-stats-grid .stat strong {
+  overflow-wrap: anywhere !important;
+}
+
+/* Op heel smalle telefoons blijven het 3 kolommen, maar compacter */
+@media (max-width: 380px) {
+  #batterSearchScreen .batter-search-stats-grid {
+    gap: 7px !important;
+  }
+
+  #batterSearchScreen .batter-search-stats-grid .stat {
+    padding: 9px 4px !important;
+  }
+
+  #batterSearchScreen .batter-search-stats-grid .stat strong {
+    font-size: 22px !important;
+  }
+
+  #batterSearchScreen .batter-search-stats-grid .stat small {
+    font-size: 9px !important;
+  }
+}
+
+/* === Zoek op slagvrouw: geslagen ballen exact op de softbalveld-afbeelding ===
+   Zelfde 0-100% coördinatenruimte als de registratie-popup. */
+#batterSearchBattedBallField.batter-search-batted-field {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--line) !important;
+  background: #ffffff !important;
+  margin-bottom: 10px !important;
+}
+
+#batterSearchBattedBallField.batter-search-batted-field > img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  display: block !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  z-index: 1 !important;
+}
+
+#batterSearchBattedBallLayer.batter-search-batted-layer {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 5 !important;
+}
+
+#batterSearchBattedBallLayer .batter-search-batted-marker,
+#batterSearchBattedBallField .batter-search-batted-marker {
+  position: absolute !important;
+  transform: translate(-50%, -50%) !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  z-index: 6 !important;
+}
