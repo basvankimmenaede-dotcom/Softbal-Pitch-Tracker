@@ -2432,15 +2432,18 @@ function populateBatterSearchExtraFilters() {
 }
 
 
+
+function normalizeResultValue(result) {
+  return String(result || "").trim().toLowerCase();
+}
+
+function isBattedBallResult(result) {
+  const clean = normalizeResultValue(result);
+  return clean === "hit" || clean === "veld uit" || clean === "velduit";
+}
+
 function getBatterSearchBattedBalls(matches) {
-  return (matches || []).filter(p => {
-    return ["HIT", "Veld uit"].includes(p.result) &&
-      (
-        p.battedBallZone ||
-        p.battedBallX !== "" ||
-        p.battedBallY !== ""
-      );
-  });
+  return (matches || []).filter(p => isBattedBallResult(p.result));
 }
 
 function renderBatterSearchBattedBalls(matches) {
@@ -2465,7 +2468,7 @@ function renderBatterSearchBattedBalls(matches) {
     if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 100 || y < 0 || y > 100) return;
 
     const marker = document.createElement("div");
-    marker.className = `batter-search-batted-marker ${p.result === "HIT" ? "hit" : "out"}`;
+    marker.className = `batter-search-batted-marker ${normalizeResultValue(p.result) === "hit" ? "hit" : "out"}`;
     marker.style.left = `${Math.max(0, Math.min(100, x))}%`;
     marker.style.top = `${Math.max(0, Math.min(100, y))}%`;
     marker.textContent = index + 1;
@@ -2480,8 +2483,8 @@ function renderBatterSearchBattedBalls(matches) {
       const index = battedBalls.length - reverseIndex;
       return `
         <div class="batter-search-batted-row">
-          <strong>${index}. ${p.result} · ${p.battedBallZone || "Zone onbekend"}</strong>
-          <span>${formatDateTimeCompact(p.gameDate, p.startTime)} · ${[p.battedBallHardness, p.battedBallHeight, p.pitchType].filter(Boolean).join(" · ")}</span>
+          <strong>${index}. ${p.result || "Geslagen bal"} · ${p.battedBallZone || "Locatie niet gevonden"}</strong>
+          <span>${formatDateTimeCompact(p.gameDate, p.startTime)} · ${[p.battedBallHardness, p.battedBallHeight, p.pitchType].filter(Boolean).join(" · ") || "Geen extra info"}</span>
         </div>
       `;
     })
@@ -2530,7 +2533,7 @@ function renderBatterSearch() {
     return true;
   });
 
-  const hits = matches.filter(p => p.result === "HIT").length;
+  const hits = matches.filter(p => normalizeResultValue(p.result) === "hit").length;
   const outs = matches.filter(p => isOutResult(p.result)).length;
   const balls = matches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
   const strikes = matches.filter(p => isStrikeResult(p.result)).length;
@@ -4707,6 +4710,88 @@ function convertSheetRowsToGames(payload) {
     return "";
   };
 
+  const normalizeCell = value =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const normalizeLoose = value =>
+    normalizeHeaderKey(value);
+
+  const isNumberInPercentRange = value => {
+    if (value === "" || value === null || value === undefined) return false;
+    const n = Number(String(value).replace(",", "."));
+    return Number.isFinite(n) && n >= 0 && n <= 100;
+  };
+
+  const battedZoneValues = [
+    "Links", "Links - Center", "Center", "Rechts - Center", "Rechts",
+    "Derde honk", "Kortstop", "Pitcher", "Tweede honk", "Eerste honk", "Catcher",
+    "3e honk", "1e honk"
+  ];
+
+  const battedSpeedValues = ["Hard", "Normaal", "Zacht", "Snel", "Zeer zacht", "Gemiddeld", "Zeer hard", "Keihard"];
+  const battedHeightValues = ["Hoog", "Line Drive", "Laag", "Grondbal", "Middel", "Heel hoog", "Ongrijpbaar"];
+
+  const findKnownValue = (values, allowed) => {
+    const allowedNorm = allowed.map(normalizeLoose);
+    for (let i = 0; i < values.length; i += 1) {
+      if (allowedNorm.includes(normalizeLoose(values[i]))) {
+        return { index: i, value: values[i] };
+      }
+    }
+    return { index: -1, value: "" };
+  };
+
+  const inferBattedBallFromRecord = record => {
+    const indexed = Object.keys(record)
+      .filter(key => /^_\d+$/.test(key))
+      .map(key => ({
+        index: Number(key.slice(1)),
+        value: record[key]
+      }))
+      .sort((a, b) => a.index - b.index);
+
+    const values = indexed.map(item => item.value);
+    const tailStart = Math.max(0, values.length - 12);
+    const tail = values.slice(tailStart);
+
+    const zoneMatch = findKnownValue(tail, battedZoneValues);
+    const speedMatch = findKnownValue(tail, battedSpeedValues);
+    const heightMatch = findKnownValue(tail, battedHeightValues);
+
+    let x = "";
+    let y = "";
+
+    if (zoneMatch.index >= 2) {
+      const possibleX = tail[zoneMatch.index - 2];
+      const possibleY = tail[zoneMatch.index - 1];
+
+      if (isNumberInPercentRange(possibleX) && isNumberInPercentRange(possibleY)) {
+        x = possibleX;
+        y = possibleY;
+      }
+    }
+
+    if ((!x || !y) && speedMatch.index >= 3) {
+      const possibleX = tail[speedMatch.index - 3];
+      const possibleY = tail[speedMatch.index - 2];
+
+      if (isNumberInPercentRange(possibleX) && isNumberInPercentRange(possibleY)) {
+        x = possibleX;
+        y = possibleY;
+      }
+    }
+
+    return {
+      x,
+      y,
+      zone: zoneMatch.value || "",
+      hardness: speedMatch.value || "",
+      height: heightMatch.value || ""
+    };
+  };
+
   const records = rows.map(row => {
     const record = {};
     headers.forEach((header, index) => {
@@ -4791,27 +4876,42 @@ function convertSheetRowsToGames(payload) {
       totalOuts: Number(get(record, ["Total Outs", "totalOuts"], rowType ? 24 : 23) || 0),
       inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
       walk: parseBool(get(record, ["Walk", "walk"], 25)),
-      battedBallX: getLoose(record, [
-        "Batted Ball X", "battedBallX", "BattedBallX", "Batted X", "Hit X",
-        "Spray X", "Geslagen Bal X", "GeslagenBalX", "Bal X", "Locatie X"
-      ]),
-      battedBallY: getLoose(record, [
-        "Batted Ball Y", "battedBallY", "BattedBallY", "Batted Y", "Hit Y",
-        "Spray Y", "Geslagen Bal Y", "GeslagenBalY", "Bal Y", "Locatie Y"
-      ]),
-      battedBallZone: getLoose(record, [
-        "Batted Ball Zone", "battedBallZone", "BattedBallZone", "Batted Zone",
-        "Hit Zone", "Spray Zone", "Geslagen Bal Zone", "GeslagenBalZone",
-        "Bal Zone", "Veld Zone", "Locatie", "Zone Geslagen Bal"
-      ]),
-      battedBallHardness: getLoose(record, [
-        "Batted Ball Hardness", "battedBallHardness", "BattedBallHardness",
-        "Hardheid", "Snelheid", "Contact Snelheid", "Bal Snelheid"
-      ]),
-      battedBallHeight: getLoose(record, [
-        "Batted Ball Height", "battedBallHeight", "BattedBallHeight",
-        "Hoogte", "Bal Hoogte", "Contact Hoogte"
-      ])
+      battedBallX: (() => {
+        const inferred = inferBattedBallFromRecord(record);
+        return getLoose(record, [
+          "Batted Ball X", "battedBallX", "BattedBallX", "Batted X", "Hit X",
+          "Spray X", "Geslagen Bal X", "GeslagenBalX", "Bal X", "Locatie X"
+        ]) || inferred.x;
+      })(),
+      battedBallY: (() => {
+        const inferred = inferBattedBallFromRecord(record);
+        return getLoose(record, [
+          "Batted Ball Y", "battedBallY", "BattedBallY", "Batted Y", "Hit Y",
+          "Spray Y", "Geslagen Bal Y", "GeslagenBalY", "Bal Y", "Locatie Y"
+        ]) || inferred.y;
+      })(),
+      battedBallZone: (() => {
+        const inferred = inferBattedBallFromRecord(record);
+        return getLoose(record, [
+          "Batted Ball Zone", "battedBallZone", "BattedBallZone", "Batted Zone",
+          "Hit Zone", "Spray Zone", "Geslagen Bal Zone", "GeslagenBalZone",
+          "Bal Zone", "Veld Zone", "Locatie", "Zone Geslagen Bal"
+        ]) || inferred.zone;
+      })(),
+      battedBallHardness: (() => {
+        const inferred = inferBattedBallFromRecord(record);
+        return getLoose(record, [
+          "Batted Ball Hardness", "battedBallHardness", "BattedBallHardness",
+          "Hardheid", "Snelheid", "Contact Snelheid", "Bal Snelheid"
+        ]) || inferred.hardness;
+      })(),
+      battedBallHeight: (() => {
+        const inferred = inferBattedBallFromRecord(record);
+        return getLoose(record, [
+          "Batted Ball Height", "battedBallHeight", "BattedBallHeight",
+          "Hoogte", "Bal Hoogte", "Contact Hoogte"
+        ]) || inferred.height;
+      })()
     };
 
     if (!games.has(gameId)) {
