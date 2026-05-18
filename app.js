@@ -4689,6 +4689,24 @@ function convertSheetRowsToGames(payload) {
     return "";
   };
 
+  const normalizeHeaderKey = value =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  const getLoose = (record, names) => {
+    const wanted = names.map(normalizeHeaderKey);
+
+    for (const key of Object.keys(record)) {
+      if (key.startsWith("_")) continue;
+      if (wanted.includes(normalizeHeaderKey(key)) && record[key] !== undefined && record[key] !== "") {
+        return record[key];
+      }
+    }
+
+    return "";
+  };
+
   const records = rows.map(row => {
     const record = {};
     headers.forEach((header, index) => {
