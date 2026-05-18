@@ -4545,3 +4545,27 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   font-weight: 800;
   line-height: 1.25;
 }
+
+
+/* Zoek op slagvrouw: filterrij pitcher/wedstrijd */
+.batter-search-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.batter-search-filter-row > div {
+  min-width: 0;
+}
+
+.batter-search-filter-row select {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 420px) {
+  .batter-search-filter-row {
+    grid-template-columns: 1fr;
+  }
+}

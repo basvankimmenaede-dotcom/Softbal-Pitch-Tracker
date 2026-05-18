@@ -2281,6 +2281,7 @@ function showBatterSearch() {
   syncFromGoogleSheet().then(() => {
     populateBatterOpponentFilter();
     populateBatterPlayerFilter();
+    populateBatterSearchExtraFilters();
     renderBatterSearch();
   });
 }
@@ -2362,6 +2363,57 @@ function getAllPitchesFromStoredGames() {
 }
 
 
+
+function getBatterSearchBaseMatches() {
+  const opponentSelect = document.getElementById("batterSearchOpponent");
+  const playerSelect = document.getElementById("batterSearchPlayer");
+
+  const selectedOpponent = opponentSelect ? opponentSelect.value : "";
+  const selectedPlayer = playerSelect ? playerSelect.value : "";
+
+  if (!selectedOpponent || !selectedPlayer) return [];
+
+  const [selectedName, selectedNumber] = selectedPlayer.split("|");
+
+  return getAllPitchesFromStoredGames().filter(p => {
+    return p.gameOpponent === selectedOpponent &&
+      String(p.batterName || "") === selectedName &&
+      String(p.batterNumber || "") === selectedNumber;
+  });
+}
+
+function populateBatterSearchExtraFilters() {
+  const pitcherSelect = document.getElementById("batterSearchPitcherFilter");
+  const gameSelect = document.getElementById("batterSearchGameFilter");
+  if (!pitcherSelect || !gameSelect) return;
+
+  const currentPitcher = pitcherSelect.value;
+  const currentGame = gameSelect.value;
+  const matches = getBatterSearchBaseMatches();
+
+  const pitchers = [...new Set(matches.map(p => String(p.pitcherName || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+
+  const games = [...new Map(matches.map(p => {
+    const key = p.gameId || `${p.gameDate || p.date || ""}-${p.gameOpponent || ""}-${p.startTime || ""}`;
+    const label = `${formatDateTimeCompact(p.gameDate || p.date, p.startTime)} · ${p.gameOpponent || "-"}`;
+    return [key, { key, label }];
+  })).values()]
+    .sort((a, b) => b.label.localeCompare(a.label));
+
+  pitcherSelect.innerHTML =
+    `<option value="">Alle pitchers</option>` +
+    pitchers.map(pitcher => `<option value="${pitcher}">${pitcher}</option>`).join("");
+
+  gameSelect.innerHTML =
+    `<option value="">Alle wedstrijden</option>` +
+    games.map(game => `<option value="${game.key}">${game.label}</option>`).join("");
+
+  if (pitchers.includes(currentPitcher)) pitcherSelect.value = currentPitcher;
+  if (games.some(game => game.key === currentGame)) gameSelect.value = currentGame;
+}
+
+
 function getBatterSearchBattedBalls(matches) {
   return (matches || []).filter(p => {
     return ["HIT", "Veld uit"].includes(p.result) &&
@@ -2424,6 +2476,8 @@ function renderBatterSearch() {
 
   const selectedOpponent = opponentSelect ? opponentSelect.value : "";
   const selectedPlayer = playerSelect ? playerSelect.value : "";
+  const selectedPitcher = document.getElementById("batterSearchPitcherFilter")?.value || "";
+  const selectedGame = document.getElementById("batterSearchGameFilter")?.value || "";
   const heatmap = document.getElementById("batterSearchHeatmap");
   const battedBallField = document.getElementById("batterSearchBattedBallField");
   const battedBallList = document.getElementById("batterSearchBattedBallList");
@@ -2445,12 +2499,13 @@ function renderBatterSearch() {
     return;
   }
 
-  const [selectedName, selectedNumber] = selectedPlayer.split("|");
+  const matches = getBatterSearchBaseMatches().filter(p => {
+    const gameKey = p.gameId || `${p.gameDate || p.date || ""}-${p.gameOpponent || ""}-${p.startTime || ""}`;
 
-  const matches = getAllPitchesFromStoredGames().filter(p => {
-    return p.gameOpponent === selectedOpponent &&
-      String(p.batterName || "") === selectedName &&
-      String(p.batterNumber || "") === selectedNumber;
+    if (selectedPitcher && String(p.pitcherName || "") !== selectedPitcher) return false;
+    if (selectedGame && gameKey !== selectedGame) return false;
+
+    return true;
   });
 
   const hits = matches.filter(p => p.result === "HIT").length;

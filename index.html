@@ -213,14 +213,29 @@
     <section id="batterSearchScreen" class="screen">
       <div class="card">
         <label for="batterSearchOpponent">Tegenstander</label>
-        <select id="batterSearchOpponent" onchange="populateBatterPlayerFilter(); renderBatterSearch()">
+        <select id="batterSearchOpponent" onchange="populateBatterPlayerFilter(); populateBatterSearchExtraFilters(); renderBatterSearch()">
           <option value="">Kies tegenstander</option>
         </select>
 
         <label for="batterSearchPlayer">Slagvrouw</label>
-        <select id="batterSearchPlayer" onchange="renderBatterSearch()">
+        <select id="batterSearchPlayer" onchange="populateBatterSearchExtraFilters(); renderBatterSearch()">
           <option value="">Kies eerst een tegenstander</option>
         </select>
+
+        <div class="batter-search-filter-row">
+          <div>
+            <label for="batterSearchPitcherFilter">Filter op pitcher</label>
+            <select id="batterSearchPitcherFilter" onchange="renderBatterSearch()">
+              <option value="">Alle pitchers</option>
+            </select>
+          </div>
+          <div>
+            <label for="batterSearchGameFilter">Filter op wedstrijd</label>
+            <select id="batterSearchGameFilter" onchange="renderBatterSearch()">
+              <option value="">Alle wedstrijden</option>
+            </select>
+          </div>
+        </div>
 
         <div class="stats-grid">
           <div class="stat"><small>Pitches</small><strong id="batterSearchPitches">0</strong></div>
