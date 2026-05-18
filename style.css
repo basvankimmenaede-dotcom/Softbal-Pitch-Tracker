@@ -4442,15 +4442,3 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   text-transform: uppercase;
   letter-spacing: .08em;
 }
-
-
-/* Game Recap popup scroll fix */
-.game-recap-modal-card {
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-.game-recap-modal-card .game-recap-output {
-  padding-bottom: 24px;
-}

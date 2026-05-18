@@ -1772,14 +1772,7 @@ function getPitcherGames(pitcherName) {
 function getPitcherOutsFromPitches(pitches) {
   if (!Array.isArray(pitches) || !pitches.length) return 0;
 
-  const totals = pitches
-    .map(p => Number(p.totalOuts || 0))
-    .filter(n => Number.isFinite(n));
-
-  if (totals.length && Math.max(...totals) > 0) {
-    return Math.max(...totals);
-  }
-
+  // Alleen outs tellen tijdens deze pitching session
   return pitches.filter(p => isOutResult(p.result)).length;
 }
 
