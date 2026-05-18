@@ -1966,7 +1966,6 @@ function renderPitcherStats() {
         <td>${s.totalPitches}</td>
         <td>${s.strikes}</td>
         <td>${s.balls}</td>
-        <td>${s.outs}</td>
         <td>${s.ip}</td>
         <td>${s.fps}</td>
         <td class="${getGoodStatClass(Number(s.sbRatio) > 1)}">${s.sbRatio}</td>
@@ -2362,6 +2361,63 @@ function getAllPitchesFromStoredGames() {
   });
 }
 
+
+function getBatterSearchBattedBalls(matches) {
+  return (matches || []).filter(p => {
+    return ["HIT", "Veld uit"].includes(p.result) &&
+      (
+        p.battedBallZone ||
+        p.battedBallX !== "" ||
+        p.battedBallY !== ""
+      );
+  });
+}
+
+function renderBatterSearchBattedBalls(matches) {
+  const field = document.getElementById("batterSearchBattedBallField");
+  const list = document.getElementById("batterSearchBattedBallList");
+  if (!field || !list) return;
+
+  field.querySelectorAll(".batter-search-batted-marker").forEach(marker => marker.remove());
+
+  const battedBalls = getBatterSearchBattedBalls(matches);
+
+  if (!battedBalls.length) {
+    list.innerHTML = `<p class="small-note">Geen geslagen ballen met HIT of Veld uit gevonden voor deze slagvrouw.</p>`;
+    return;
+  }
+
+  battedBalls.forEach((p, index) => {
+    const x = Number(p.battedBallX);
+    const y = Number(p.battedBallY);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+    const marker = document.createElement("div");
+    marker.className = `batter-search-batted-marker ${p.result === "HIT" ? "hit" : "out"}`;
+    marker.style.left = `${Math.max(0, Math.min(100, x))}%`;
+    marker.style.top = `${Math.max(0, Math.min(100, y))}%`;
+    marker.textContent = index + 1;
+    marker.title = `${p.result} · ${p.battedBallZone || "Zone onbekend"}`;
+    field.appendChild(marker);
+  });
+
+  list.innerHTML = battedBalls
+    .slice()
+    .reverse()
+    .map((p, reverseIndex) => {
+      const index = battedBalls.length - reverseIndex;
+      return `
+        <div class="batter-search-batted-row">
+          <strong>${index}. ${p.result} · ${p.battedBallZone || "Zone onbekend"}</strong>
+          <span>${formatDateTimeCompact(p.gameDate, p.startTime)} · ${[p.battedBallHardness, p.battedBallHeight, p.pitchType].filter(Boolean).join(" · ")}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+
 function renderBatterSearch() {
   const opponentSelect = document.getElementById("batterSearchOpponent");
   const playerSelect = document.getElementById("batterSearchPlayer");
@@ -2369,9 +2425,12 @@ function renderBatterSearch() {
   const selectedOpponent = opponentSelect ? opponentSelect.value : "";
   const selectedPlayer = playerSelect ? playerSelect.value : "";
   const heatmap = document.getElementById("batterSearchHeatmap");
+  const battedBallField = document.getElementById("batterSearchBattedBallField");
+  const battedBallList = document.getElementById("batterSearchBattedBallList");
   const body = document.getElementById("batterSearchTableBody");
 
   if (heatmap) heatmap.querySelectorAll(".heat-dot").forEach(dot => dot.remove());
+  if (battedBallField) battedBallField.querySelectorAll(".batter-search-batted-marker").forEach(marker => marker.remove());
 
   if (!selectedOpponent || !selectedPlayer) {
     document.getElementById("batterSearchPitches").textContent = "0";
@@ -2381,6 +2440,7 @@ function renderBatterSearch() {
     document.getElementById("batterSearchStrikes").textContent = "0";
     document.getElementById("batterSearchGames").textContent = "0";
     document.getElementById("batterSearchAverage").textContent = ".000";
+    if (battedBallList) battedBallList.innerHTML = `<p class="small-note">Kies een tegenstander en slagvrouw.</p>`;
     body.innerHTML = `<tr><td colspan="7">Kies een tegenstander en slagvrouw.</td></tr>`;
     return;
   }
@@ -2409,6 +2469,8 @@ function renderBatterSearch() {
   document.getElementById("batterSearchBalls").textContent = balls;
   document.getElementById("batterSearchStrikes").textContent = strikes;
   document.getElementById("batterSearchGames").textContent = matches.length ? games : 0;
+
+  renderBatterSearchBattedBalls(matches);
 
   matches.forEach((p, index) => {
     if (!heatmap || p.x == null || p.y == null) return;
@@ -4633,7 +4695,12 @@ function convertSheetRowsToGames(payload) {
       totalStrikes: Number(get(record, ["Total Strikes", "totalStrikes"], 22) || 0),
       totalOuts: Number(get(record, ["Total Outs", "totalOuts"], rowType ? 24 : 23) || 0),
       inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
-      walk: parseBool(get(record, ["Walk", "walk"], 25))
+      walk: parseBool(get(record, ["Walk", "walk"], 25)),
+      battedBallX: get(record, ["Batted Ball X", "battedBallX", "Geslagen Bal X"], 30),
+      battedBallY: get(record, ["Batted Ball Y", "battedBallY", "Geslagen Bal Y"], 31),
+      battedBallZone: get(record, ["Batted Ball Zone", "battedBallZone", "Geslagen Bal Zone"], 32),
+      battedBallHardness: get(record, ["Batted Ball Hardness", "battedBallHardness", "Snelheid", "Hardheid"], 33),
+      battedBallHeight: get(record, ["Batted Ball Height", "battedBallHeight", "Hoogte"], 34)
     };
 
     if (!games.has(gameId)) {
