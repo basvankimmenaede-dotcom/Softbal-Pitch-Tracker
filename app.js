@@ -2518,7 +2518,7 @@ function renderBatterSearch() {
     document.getElementById("batterSearchBalls").textContent = "0";
     document.getElementById("batterSearchStrikes").textContent = "0";
     document.getElementById("batterSearchGames").textContent = "0";
-    document.getElementById("batterSearchAverage").textContent = ".000";
+    document.getElementById("batterSearchAverage").textContent = atBats > 0 ? (hits / atBats).toFixed(3).replace(/^0/, "") : ".000";
     if (battedBallList) battedBallList.innerHTML = `<p class="small-note">Kies een tegenstander en slagvrouw.</p>`;
     body.innerHTML = `<tr><td colspan="7">Kies een tegenstander en slagvrouw.</td></tr>`;
     return;
