@@ -4595,3 +4595,57 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
     padding-right: 6px !important;
   }
 }
+
+
+/* Zoek op slagvrouw: heatmap 9 vakjes weer responsive */
+#batterSearchHeatmap {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 300px !important;
+  overflow: hidden !important;
+}
+
+#batterSearchHeatmap .heatmap-zone {
+  position: absolute !important;
+  left: 54% !important;
+  top: 18% !important;
+  width: 38% !important;
+  height: 54% !important;
+  right: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  z-index: 3 !important;
+  box-sizing: border-box !important;
+}
+
+/* Zoek op slagvrouw: geslagen ballen exact op dezelfde percent-posities als gekozen */
+.batter-search-batted-field {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--line) !important;
+  background: #f3f4f6 !important;
+  margin-bottom: 10px !important;
+}
+
+.batter-search-batted-field img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important;
+  display: block !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.batter-search-batted-marker {
+  position: absolute !important;
+  transform: translate(-50%, -50%) !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  z-index: 5 !important;
+}
