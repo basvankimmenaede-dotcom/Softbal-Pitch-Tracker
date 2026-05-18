@@ -2427,10 +2427,11 @@ function getBatterSearchBattedBalls(matches) {
 
 function renderBatterSearchBattedBalls(matches) {
   const field = document.getElementById("batterSearchBattedBallField");
+  const layer = document.getElementById("batterSearchBattedBallLayer") || field;
   const list = document.getElementById("batterSearchBattedBallList");
-  if (!field || !list) return;
+  if (!field || !list || !layer) return;
 
-  field.querySelectorAll(".batter-search-batted-marker").forEach(marker => marker.remove());
+  layer.querySelectorAll(".batter-search-batted-marker").forEach(marker => marker.remove());
 
   const battedBalls = getBatterSearchBattedBalls(matches);
 
@@ -2451,7 +2452,7 @@ function renderBatterSearchBattedBalls(matches) {
     marker.style.top = `${Math.max(0, Math.min(100, y))}%`;
     marker.textContent = index + 1;
     marker.title = `${p.result} · ${p.battedBallZone || "Zone onbekend"}`;
-    field.appendChild(marker);
+    layer.appendChild(marker);
   });
 
   list.innerHTML = battedBalls
@@ -2484,7 +2485,10 @@ function renderBatterSearch() {
   const body = document.getElementById("batterSearchTableBody");
 
   if (heatmap) heatmap.querySelectorAll(".heat-dot").forEach(dot => dot.remove());
-  if (battedBallField) battedBallField.querySelectorAll(".batter-search-batted-marker").forEach(marker => marker.remove());
+  if (battedBallField) {
+    const battedLayer = document.getElementById("batterSearchBattedBallLayer") || battedBallField;
+    battedLayer.querySelectorAll(".batter-search-batted-marker").forEach(marker => marker.remove());
+  }
 
   if (!selectedOpponent || !selectedPlayer) {
     document.getElementById("batterSearchPitches").textContent = "0";
