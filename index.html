@@ -267,9 +267,9 @@
         </div>
 
         <label>Geslagen ballen HIT / Veld uit</label>
-        <div id="batterSearchBattedBallField" class="batter-search-batted-field">
-          <img src="softbalveld.png" alt="Softbalveld" />
-          <div id="batterSearchBattedBallLayer" class="batter-search-batted-layer"></div>
+        <div id="batterSearchBattedBallField" class="batter-search-batted-field real-softball-field-sync">
+          <img src="softbalveld.png" alt="Softbalveld" class="real-softball-image-sync" />
+          <div id="batterSearchBattedBallLayer" class="real-softball-marker-layer"></div>
         </div>
         <div id="batterSearchBattedBallList" class="batter-search-batted-list">
           <p class="small-note">Kies een tegenstander en slagvrouw.</p>
@@ -734,8 +734,8 @@
 
         <div class="batted-ball-content-clean">
           <div class="spray-chart-panel">
-            <div id="battedBallField" class="real-softball-field" onclick="setBattedBallLocation(event)">
-              <img src="softbalveld.png" alt="Softbalveld" class="real-softball-image" />
+            <div id="battedBallField" class="real-softball-field real-softball-field-sync" onclick="setBattedBallLocation(event)">
+              <img src="softbalveld.png" alt="Softbalveld" class="real-softball-image real-softball-image-sync" />
               <div id="battedBallMarker" class="real-softball-marker hidden"></div>
             </div>
             <p id="battedBallChosen" class="batted-ball-chosen-clean">Nog geen plek gekozen.</p>

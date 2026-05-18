@@ -4828,3 +4828,70 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   margin-top: 0 !important;
   z-index: 6 !important;
 }
+
+
+/* === Softbalveld coordinaten sync ===
+   Registratie-popup en Zoek op slagvrouw gebruiken nu exact dezelfde 1:1 container.
+   Hierdoor blijven opgeslagen battedBallX/Y-percentages op dezelfde plek vallen. */
+.real-softball-field-sync,
+#battedBallField.real-softball-field,
+#batterSearchBattedBallField.batter-search-batted-field {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  border: 1px solid var(--line) !important;
+}
+
+.real-softball-field-sync > img,
+#battedBallField.real-softball-field > img,
+#batterSearchBattedBallField.batter-search-batted-field > img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important;
+  object-position: center center !important;
+  display: block !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  z-index: 1 !important;
+}
+
+.real-softball-marker-layer,
+#batterSearchBattedBallLayer {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 5 !important;
+}
+
+#battedBallMarker,
+#batterSearchBattedBallLayer .batter-search-batted-marker,
+#batterSearchBattedBallField .batter-search-batted-marker {
+  position: absolute !important;
+  transform: translate(-50%, -50%) !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  z-index: 6 !important;
+}
+
+/* Zoek op slagvrouw statistiekblokken blijven netjes responsive */
+#batterSearchScreen .batter-search-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+#batterSearchScreen .batter-search-stats-grid .stat {
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
