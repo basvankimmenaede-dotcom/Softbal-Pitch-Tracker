@@ -1281,6 +1281,24 @@ function convertSheetRowsToSpeedTrainings(payload) {
     return "";
   };
 
+  const normalizeHeaderKey = value =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  const getLoose = (record, names) => {
+    const wanted = names.map(normalizeHeaderKey);
+
+    for (const key of Object.keys(record)) {
+      if (key.startsWith("_")) continue;
+      if (wanted.includes(normalizeHeaderKey(key)) && record[key] !== undefined && record[key] !== "") {
+        return record[key];
+      }
+    }
+
+    return "";
+  };
+
   return records.map(record => {
     const rowType = String(get(record, ["Row Type", "type"], 0) || "").trim();
     if (rowType && rowType !== "speed_training") return null;
@@ -2444,7 +2462,7 @@ function renderBatterSearchBattedBalls(matches) {
     const x = Number(p.battedBallX);
     const y = Number(p.battedBallY);
 
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 100 || y < 0 || y > 100) return;
 
     const marker = document.createElement("div");
     marker.className = `batter-search-batted-marker ${p.result === "HIT" ? "hit" : "out"}`;
@@ -4755,11 +4773,27 @@ function convertSheetRowsToGames(payload) {
       totalOuts: Number(get(record, ["Total Outs", "totalOuts"], rowType ? 24 : 23) || 0),
       inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
       walk: parseBool(get(record, ["Walk", "walk"], 25)),
-      battedBallX: get(record, ["Batted Ball X", "battedBallX", "Geslagen Bal X"], 30),
-      battedBallY: get(record, ["Batted Ball Y", "battedBallY", "Geslagen Bal Y"], 31),
-      battedBallZone: get(record, ["Batted Ball Zone", "battedBallZone", "Geslagen Bal Zone"], 32),
-      battedBallHardness: get(record, ["Batted Ball Hardness", "battedBallHardness", "Snelheid", "Hardheid"], 33),
-      battedBallHeight: get(record, ["Batted Ball Height", "battedBallHeight", "Hoogte"], 34)
+      battedBallX: getLoose(record, [
+        "Batted Ball X", "battedBallX", "BattedBallX", "Batted X", "Hit X",
+        "Spray X", "Geslagen Bal X", "GeslagenBalX", "Bal X", "Locatie X"
+      ]),
+      battedBallY: getLoose(record, [
+        "Batted Ball Y", "battedBallY", "BattedBallY", "Batted Y", "Hit Y",
+        "Spray Y", "Geslagen Bal Y", "GeslagenBalY", "Bal Y", "Locatie Y"
+      ]),
+      battedBallZone: getLoose(record, [
+        "Batted Ball Zone", "battedBallZone", "BattedBallZone", "Batted Zone",
+        "Hit Zone", "Spray Zone", "Geslagen Bal Zone", "GeslagenBalZone",
+        "Bal Zone", "Veld Zone", "Locatie", "Zone Geslagen Bal"
+      ]),
+      battedBallHardness: getLoose(record, [
+        "Batted Ball Hardness", "battedBallHardness", "BattedBallHardness",
+        "Hardheid", "Snelheid", "Contact Snelheid", "Bal Snelheid"
+      ]),
+      battedBallHeight: getLoose(record, [
+        "Batted Ball Height", "battedBallHeight", "BattedBallHeight",
+        "Hoogte", "Bal Hoogte", "Contact Hoogte"
+      ])
     };
 
     if (!games.has(gameId)) {
