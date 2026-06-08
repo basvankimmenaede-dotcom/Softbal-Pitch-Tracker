@@ -374,7 +374,16 @@ function isStrikeResult(result) {
 }
 
 function isOutResult(result) {
-  return ["Out", "Veld uit", "Strike out"].includes(result);
+  const clean = String(result || "").trim().toLowerCase();
+  return [
+    "out",
+    "veld uit",
+    "velduit",
+    "field out",
+    "strike out",
+    "strikeout",
+    "strike-out"
+  ].includes(clean);
 }
 
 
@@ -1854,7 +1863,7 @@ function countWalks(g) {
       strikes = 0;
     }
 
-    if (["HIT", "Out"].includes(p.result) || strikes >= 3) {
+    if (["HIT", "Out", "Veld uit"].includes(p.result) || strikes >= 3) {
       balls = 0;
       strikes = 0;
     }
@@ -4519,11 +4528,11 @@ function renderBatterHeatmap() {
 
   document.getElementById("batterPitchCount").textContent = batterPitches.length;
   document.getElementById("batterHitCount").textContent = batterPitches.filter(p => p.result === "HIT").length;
-  document.getElementById("batterOutCount").textContent = batterPitches.filter(p => p.result === "Out").length;
+  document.getElementById("batterOutCount").textContent = batterPitches.filter(p => isOutResult(p.result)).length;
 }
 
 function formatInningsPitched(totalOuts) {
-  return (Number(totalOuts || 0) / 3).toFixed(3).replace(/^0/, '');
+  return (Number(totalOuts || 0) / 3).toFixed(3);
 }
 
 function getPitchZone(x, y) {
