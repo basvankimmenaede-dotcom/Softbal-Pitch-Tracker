@@ -1878,37 +1878,23 @@ function countTotalBatters(g) {
 }
 
 function countWalks(g) {
-  const pitches = (g.pitches || []).slice().reverse();
-  let balls = 0;
-  let strikes = 0;
-  let walks = 0;
+  const pitches = g.pitches || [];
 
-  pitches.forEach(p => {
-    const result = String(p.result || "").trim();
+  // Walks komen vanaf nu rechtstreeks uit de datasheet-kolom "Walk".
+  // Dus geen herberekening meer op basis van 4 balls in de app.
+  return pitches.filter(p => {
+    const value = p.walk;
+    return value === true ||
+      value === "TRUE" ||
+      value === "true" ||
+      value === "Ja" ||
+      value === "1" ||
+      value === 1;
+  }).length;
+}
 
-    if (p.firstPitch) {
-      balls = 0;
-      strikes = 0;
-    }
-
-    if (result === "Ball") balls += 1;
-    if (["Strike", "Swing"].includes(result)) strikes += 1;
-    if (result === "Foul" && strikes < 2) strikes += 1;
-
-    if (p.walk || balls >= 4) {
-      walks += 1;
-      balls = 0;
-      strikes = 0;
-      return;
-    }
-
-    if (["HBP", "HIT"].includes(result) || isOutResult(result) || strikes >= 3) {
-      balls = 0;
-      strikes = 0;
-    }
-  });
-
-  return walks;
+function countWalksFromPitches(pitches) {
+  return countWalks({ pitches: pitches || [] });
 }
 
 
@@ -3403,43 +3389,24 @@ function renderPreviousGames() {
 
 
 function countStrikeoutsFromPitches(pitches) {
-  let balls = 0;
-  let strikes = 0;
-  let strikeouts = 0;
+  const rows = pitches || [];
 
-  (pitches || []).slice().reverse().forEach(p => {
-    const result = String(p.result || "").trim();
+  // Strikeouts komen vanaf nu rechtstreeks uit de datasheet.
+  // Je kunt corrigeren met een kolom "Strikeout", "Strike Out", "K" of "SO".
+  // Als die kolom ontbreekt, gebruiken we alleen het expliciete Resultaat "Strike out".
+  return rows.filter(p => {
+    const explicit = p.strikeout === true ||
+      p.strikeout === "TRUE" ||
+      p.strikeout === "true" ||
+      p.strikeout === "Ja" ||
+      p.strikeout === "1" ||
+      p.strikeout === 1;
 
-    if (p.firstPitch) {
-      balls = 0;
-      strikes = 0;
-    }
+    const result = String(p.result || "").trim().toLowerCase();
+    const resultIsStrikeout = ["strike out", "strikeout", "strike-out"].includes(result);
 
-    if (result === "Strike out" || result === "Strikeout" || result === "Strike-out") {
-      strikeouts += 1;
-      balls = 0;
-      strikes = 0;
-      return;
-    }
-
-    if (["Ball", "HBP"].includes(result)) balls += 1;
-    if (["Strike", "Swing"].includes(result)) strikes += 1;
-    if (result === "Foul" && strikes < 2) strikes += 1;
-
-    if (strikes >= 3) {
-      strikeouts += 1;
-      balls = 0;
-      strikes = 0;
-      return;
-    }
-
-    if (p.walk || balls >= 4 || ["HBP", "HIT", "Out", "Veld uit"].includes(result)) {
-      balls = 0;
-      strikes = 0;
-    }
-  });
-
-  return strikeouts;
+    return explicit || resultIsStrikeout;
+  }).length;
 }
 
 function getGameSortValue(g) {
@@ -3721,6 +3688,7 @@ function savePitchFinal(extra = {}) {
     outsBefore: game.totalOuts,
     firstPitch: isFirstPitch,
     walk: game.balls === 3 && game.result === "Ball",
+    strikeout: game.result === "Strike out" || (["Strike", "Swing"].includes(game.result) && game.strikes >= 2) || (game.result === "Foul" && game.strikes >= 2),
     battedBallX: extra.battedBallX || "",
     battedBallY: extra.battedBallY || "",
     battedBallZone: extra.battedBallZone || "",
@@ -4931,6 +4899,7 @@ function convertSheetRowsToGames(payload) {
       totalOuts: Number(get(record, ["Total Outs", "totalOuts"], rowType ? 24 : 23) || 0),
       inningsPitched: get(record, ["Innings Pitched", "inningsPitched"], 24),
       walk: parseBool(get(record, ["Walk", "walk"], 25)),
+      strikeout: parseBool(get(record, ["Strikeout", "Strike Out", "K", "SO", "strikeout", "strikeOut"], null)),
       battedBallX: (() => {
         const inferred = inferBattedBallFromRecord(record);
         return getLoose(record, [
