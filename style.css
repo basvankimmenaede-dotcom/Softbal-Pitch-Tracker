@@ -4895,3 +4895,31 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
   width: 100% !important;
   overflow: hidden !important;
 }
+
+
+/* === FIX: Game Recap popup volledig scrollbaar === */
+#gameRecapModal.modal:not(.hidden) {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 18px !important;
+}
+
+#gameRecapModal .game-recap-modal-card {
+  width: min(440px, 100%) !important;
+  max-height: none !important;
+  min-height: auto !important;
+  margin: 0 auto 24px !important;
+  overflow: visible !important;
+}
+
+#gameRecapModal .game-recap-output {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#gameRecapModal .game-recap-close-full {
+  width: 100% !important;
+}
