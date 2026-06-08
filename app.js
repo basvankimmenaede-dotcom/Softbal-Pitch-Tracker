@@ -3088,6 +3088,202 @@ function getPhaseStats(pitches) {
   };
 }
 
+
+function isContactResult(result) {
+  const clean = String(result || "").trim();
+  return clean === "Foul" || clean === "HIT" || clean === "Veld uit";
+}
+
+function getInningLabel(stats) {
+  const strikePct = stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
+  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+
+  if (stats.walks >= 2 || stats.hits >= 3 || stats.totalPitches >= 24) return "Werk";
+  if (strikePct >= 68 && fpsPct >= 60 && stats.walks === 0) return "Sterk";
+  if (strikePct >= 62 && stats.walks === 0) return "Solide";
+  if (stats.strikeouts >= 2 && stats.walks === 0) return "Dominant";
+  return "Aandacht";
+}
+
+function getInningRowClass(stats) {
+  const label = getInningLabel(stats);
+  if (["Sterk", "Solide", "Dominant"].includes(label)) return "row-good";
+  if (label === "Werk") return "row-warning";
+  return "";
+}
+
+function getInningStrikeClass(stats) {
+  const strikePct = stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
+  if (strikePct >= 65) return "stat-good";
+  if (strikePct < 55) return "stat-danger";
+  return "";
+}
+
+function getInningFpsClass(stats) {
+  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+  if (fpsPct >= 60) return "stat-good";
+  if (fpsPct < 45) return "stat-warning";
+  return "";
+}
+
+function getPitchesByInning(pitches) {
+  const ordered = getPitchesChronological(pitches || []);
+  const innings = [];
+  let current = [];
+  let inningOuts = 0;
+  let balls = 0;
+  let strikes = 0;
+
+  ordered.forEach(p => {
+    const result = String(p.result || "").trim();
+
+    if (p.firstPitch) {
+      balls = 0;
+      strikes = 0;
+    }
+
+    current.push(p);
+
+    if (["Ball", "HBP"].includes(result)) balls += 1;
+    if (["Strike", "Swing"].includes(result)) strikes += 1;
+    if (result === "Foul" && strikes < 2) strikes += 1;
+
+    let pitchMadeOut = false;
+
+    if (isOutResult(result)) {
+      pitchMadeOut = true;
+    } else if (strikes >= 3) {
+      pitchMadeOut = true;
+    }
+
+    if (pitchMadeOut) {
+      inningOuts += 1;
+      balls = 0;
+      strikes = 0;
+    }
+
+    if (p.walk || balls >= 4 || ["HBP", "HIT"].includes(result)) {
+      balls = 0;
+      strikes = 0;
+    }
+
+    if (inningOuts >= 3) {
+      innings.push(current);
+      current = [];
+      inningOuts = 0;
+      balls = 0;
+      strikes = 0;
+    }
+  });
+
+  if (current.length) innings.push(current);
+  return innings;
+}
+
+function getInningStats(pitches) {
+  const inningPitches = pitches || [];
+  const baseStats = calculateGameStats({ pitches: inningPitches });
+  const hits = inningPitches.filter(p => p.result === "HIT").length;
+  const fieldOuts = inningPitches.filter(p => String(p.result || "").trim() === "Veld uit").length;
+  const contact = inningPitches.filter(p => isContactResult(p.result)).length;
+  const strikePct = baseStats.totalPitches ? Math.round((baseStats.strikes / baseStats.totalPitches) * 100) : 0;
+  const fpsPct = getFpsPercentValue(baseStats.fps, baseStats.totalBatters);
+
+  return {
+    ...baseStats,
+    hits,
+    fieldOuts,
+    contact,
+    strikePct,
+    fpsPct
+  };
+}
+
+function renderInningOverviewTable(pitcherPitches) {
+  const innings = getPitchesByInning(pitcherPitches);
+
+  if (!innings.length) {
+    return `<p class="small-note">Geen inningdata gevonden.</p>`;
+  }
+
+  const rows = innings.map((inningPitches, index) => {
+    const stats = getInningStats(inningPitches);
+    const label = getInningLabel(stats);
+    const rowClass = getInningRowClass(stats);
+    const strikeClass = getInningStrikeClass(stats);
+    const fpsClass = getInningFpsClass(stats);
+    const pitchClass = stats.totalPitches >= 24 ? "stat-warning" : "";
+
+    return `
+      <tr class="${rowClass}">
+        <td><span class="inning-badge">${index + 1}</span></td>
+        <td class="${pitchClass}">${stats.totalPitches}</td>
+        <td class="${strikeClass}">${stats.strikePct}%</td>
+        <td class="${fpsClass}">${stats.fpsPct}%</td>
+        <td>${stats.strikeouts || 0}</td>
+        <td class="${stats.walks ? "stat-danger" : ""}">${stats.walks || 0}</td>
+        <td class="${stats.hits >= 2 ? "stat-danger" : ""}">${stats.hits || 0}</td>
+        <td class="${stats.contact >= 6 ? "stat-warning" : ""}">${stats.contact || 0}</td>
+        <td>${stats.fieldOuts || 0}</td>
+        <td class="${rowClass === "row-good" ? "stat-good" : rowClass === "row-warning" ? "stat-warning" : ""}">${label}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const inningStats = innings.map(getInningStats);
+  const bestIndex = inningStats.reduce((best, stats, index) => {
+    const score = (stats.strikePct * 1.2) + stats.fpsPct + (stats.strikeouts * 12) - (stats.walks * 18) - (stats.hits * 8) - Math.max(0, stats.totalPitches - 18);
+    const bestScore = best.score;
+    return score > bestScore ? { index, score } : best;
+  }, { index: 0, score: -Infinity }).index;
+
+  const attentionIndex = inningStats.reduce((worst, stats, index) => {
+    const score = (stats.walks * 25) + (stats.hits * 12) + (stats.contact * 4) + Math.max(0, stats.totalPitches - 18) - stats.strikePct;
+    return score > worst.score ? { index, score } : worst;
+  }, { index: 0, score: -Infinity }).index;
+
+  const best = inningStats[bestIndex];
+  const attention = inningStats[attentionIndex];
+
+  return `
+    <div class="inning-table-wrap">
+      <div class="inning-table-title">
+        <strong>INNING OVERZICHT</strong>
+        <span>Contact = Foul + Hit + Veld uit</span>
+      </div>
+
+      <table class="inning-table">
+        <thead>
+          <tr>
+            <th>Inn</th>
+            <th>P</th>
+            <th>STR%</th>
+            <th>FPS</th>
+            <th>K</th>
+            <th>BB</th>
+            <th>Hits</th>
+            <th>Contact</th>
+            <th>Veld uit</th>
+            <th>Label</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="inning-note">
+      <div class="inning-note-box good">
+        <strong>STERKSTE INNING</strong>
+        Inning ${bestIndex + 1}: ${best.strikePct}% strikes, ${best.fpsPct}% FPS, ${best.strikeouts || 0} K en ${best.walks || 0} BB.
+      </div>
+      <div class="inning-note-box attention">
+        <strong>PUNT VAN AANDACHT</strong>
+        Inning ${attentionIndex + 1}: ${attention.totalPitches} pitches, ${attention.walks || 0} BB, ${attention.hits || 0} hits en ${attention.contact || 0} contact.
+      </div>
+    </div>
+  `;
+}
+
 function buildGameRecap(game) {
   const orderedGame = {
     ...game,
