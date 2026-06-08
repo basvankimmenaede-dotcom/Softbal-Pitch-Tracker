@@ -2911,6 +2911,43 @@ function getPitcherInitials(name) {
   return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
+
+function getPitcherRecapData(gameData, pitcherName) {
+  const pitches = (gameData.pitches || []).filter(p =>
+    String(p.pitcherName || gameData.pitcherName || "") === String(pitcherName || "")
+  );
+
+  const stats = calculateGameStats({
+    ...gameData,
+    pitcherName,
+    pitches
+  });
+
+  const strikePct = pitches.length
+    ? Math.round((stats.strikes / pitches.length) * 100)
+    : 0;
+
+  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+
+  return {
+    pitcherName,
+    pitches,
+    stats,
+    strikePct,
+    fpsPct
+  };
+}
+
+function getGameRecapData(gameData) {
+  const pitchers = getPitcherNamesForGame(gameData);
+
+  return {
+    game: gameData,
+    title: `${formatDateTimeCompact(gameData.date, gameData.startTime)} · ${gameData.opponent || "Onbekende tegenstander"}`,
+    pitchers: pitchers.map(pitcherName => getPitcherRecapData(gameData, pitcherName))
+  };
+}
+
 function renderGameRecapCards() {
   const list = document.getElementById("gameRecapsList");
   if (!list) return;
@@ -2923,39 +2960,26 @@ function renderGameRecapCards() {
   }
 
   list.innerHTML = games.map(g => {
-    const title = `${formatDateTimeCompact(g.date, g.startTime)} · ${g.opponent || "Onbekende tegenstander"}`;
-    const pitchers = getPitcherNamesForGame(g);
+    const recapData = getGameRecapData(g);
 
-    const pitcherBlocks = pitchers.map(pitcherName => {
-      const pitcherPitches = (g.pitches || []).filter(p =>
-        String(p.pitcherName || g.pitcherName || "") === pitcherName
-      );
-
-      const stats = calculateGameStats({
-        ...g,
-        pitcherName,
-        pitches: pitcherPitches
-      });
-
-      const strikePct = pitcherPitches.length
-        ? Math.round((stats.strikes / pitcherPitches.length) * 100)
-        : 0;
+    const pitcherBlocks = recapData.pitchers.map(item => {
+      const stats = item.stats;
 
       return `
         <div class="game-recap-card-pitcher">
-          <div class="pitcher-initials">${getPitcherInitials(pitcherName)}</div>
+          <div class="pitcher-initials">${getPitcherInitials(item.pitcherName)}</div>
           <div>
-            <strong>${pitcherName}</strong>
-            <span>${stats.totalPitches}P · ${strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB</span>
+            <strong>${item.pitcherName}</strong>
+            <span>${stats.totalPitches}P · ${item.strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB · ${stats.ip} IP</span>
           </div>
         </div>
       `;
     }).join("");
 
     return `
-      <button type="button" class="game-recap-list-card" onclick="openGameRecapModal('${g.gameId}')">
+      <button type="button" class="game-recap-list-card" onclick="openGameRecapModal('${String(g.gameId || "").replace(/'/g, "\\'")}')">
         <div class="game-recap-card-title">
-          <strong>${title}</strong>
+          <strong>${recapData.title}</strong>
           <span>→</span>
         </div>
         <div class="game-recap-card-pitchers">
@@ -3072,29 +3096,24 @@ function getPhaseStats(pitches) {
 }
 
 function buildGameRecap(game) {
-  const pitches = [...(game.pitches || [])].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-  const pitchers = getPitcherNamesForGame(game);
+  const orderedGame = {
+    ...game,
+    pitches: [...(game.pitches || [])].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0))
+  };
 
-  const title = `${formatDateTimeCompact(game.date, game.startTime)} · ${game.opponent || "Onbekende tegenstander"}`;
+  const recapData = getGameRecapData(orderedGame);
+  const title = recapData.title;
 
-  const pitcherSections = pitchers.map(pitcherName => {
-    const pitcherPitches = pitches.filter(p => String(p.pitcherName || game.pitcherName || "") === pitcherName);
-
-    const stats = calculateGameStats({
-      ...game,
-      pitcherName,
-      pitches: pitcherPitches
-    });
-
-    const strikePct = pitcherPitches.length
-      ? Math.round((stats.strikes / pitcherPitches.length) * 100)
-      : 0;
+  const pitcherSections = recapData.pitchers.map(item => {
+    const pitcherName = item.pitcherName;
+    const pitcherPitches = item.pitches;
+    const stats = item.stats;
+    const strikePct = item.strikePct;
+    const fpsPct = item.fpsPct;
 
     const ballPct = pitcherPitches.length
       ? Math.round((stats.balls / pitcherPitches.length) * 100)
       : 0;
-
-    const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
 
     const strikeZones = pitcherPitches
       .filter(p => isStrikeResult(p.result))
@@ -3134,15 +3153,11 @@ function buildGameRecap(game) {
     }
 
     if (bestZone && bestZone !== "-") {
-      summaryLines.push(
-        `De meeste strikes kwamen rond ${bestZone}.`
-      );
+      summaryLines.push(`De meeste strikes kwamen rond ${bestZone}.`);
     }
 
     if (wideZone && wideZone !== "-") {
-      summaryLines.push(
-        `De meeste balls zaten rond ${wideZone}.`
-      );
+      summaryLines.push(`De meeste balls zaten rond ${wideZone}.`);
     }
 
     const strengths = [];
@@ -3153,14 +3168,8 @@ function buildGameRecap(game) {
     if (bestZone && bestZone !== "-" && bestZoneCount >= 2) strengths.push(`veel strikes rond ${bestZone}`);
 
     const focus = [];
-
-    if (ballPct >= 40) {
-      focus.push(`hoog aantal balls (${ballPct}%)`);
-    }
-
-    if (lateStats.ballPct > earlyStats.ballPct + 10) {
-      focus.push(`meer balls in het tweede deel van haar pitches`);
-    }
+    if (ballPct >= 40) focus.push(`hoog aantal balls (${ballPct}%)`);
+    if (lateStats.ballPct > earlyStats.ballPct + 10) focus.push(`meer balls in het tweede deel van haar pitches`);
 
     if (wideZone && wideZone.includes("outside")) {
       focus.push(`meerdere misses outside buiten de zone`);
@@ -3172,16 +3181,16 @@ function buildGameRecap(game) {
       focus.push(`meerdere pitches laag buiten de zone`);
     }
 
-    if (stats.walks >= 1) {
-      focus.push(`${stats.walks} walk${stats.walks === 1 ? "" : "s"} toegestaan`);
-    }
+    if (stats.walks >= 1) focus.push(`${stats.walks} walk${stats.walks === 1 ? "" : "s"} toegestaan`);
 
     const uniqueStrengths = [...new Set(strengths)].slice(0, 4);
     const uniqueFocus = [...new Set(focus)].slice(0, 4);
 
+    const statLine = `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB • ${stats.ip} IP`;
+
     const textBlock = [
       `${pitcherName}`,
-      `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB`,
+      statLine,
       ``,
       ...summaryLines,
       ``,
@@ -3200,7 +3209,7 @@ function buildGameRecap(game) {
           <div>
             <h4>${pitcherName}</h4>
             <div class="recap-pitcher-stats">
-              ${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB
+              ${statLine}
             </div>
           </div>
         </div>
@@ -3225,10 +3234,7 @@ function buildGameRecap(game) {
       </div>
     `;
 
-    return {
-      textBlock,
-      htmlBlock
-    };
+    return { textBlock, htmlBlock };
   });
 
   const text = [
