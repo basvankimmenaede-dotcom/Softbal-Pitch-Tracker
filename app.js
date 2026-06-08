@@ -1772,12 +1772,12 @@ function showPitcherStats() {
   setActiveScreen("pitcherStatsScreen");
   syncFromGoogleSheet().finally(() => {
     renderPitcherStats();
-    renderPitcherSpeedOverview();
+    if (typeof renderPitcherSpeedOverview === "function") renderPitcherSpeedOverview();
   });
 }
 
 function getPitcherGames(pitcherName) {
-  return getStoredGames()
+  return getSheetGamesOnly()
     .map(g => {
       const pitcherPitches = (g.pitches || []).filter(p => p.pitcherName === pitcherName);
       if (!pitcherPitches.length) return null;
@@ -2028,7 +2028,7 @@ function showPitcherHeatmaps() {
 
   const status = document.getElementById("pitcherHeatmapUpdated");
   if (status) {
-    status.textContent = "Pitcher heatmap wordt geladen...";
+    status.textContent = "Pitcher heatmap wordt geladen uit de datasheet...";
     status.className = "sync-status loading";
   }
 
@@ -2041,7 +2041,7 @@ function showPitcherHeatmaps() {
 }
 
 function getAllPitcherHeatmapPitches() {
-  return getStoredGames().flatMap(g => {
+  return getSheetGamesOnly().flatMap(g => {
     const pitches = Array.isArray(g.pitches) ? g.pitches : [];
     return pitches.map(p => ({
       ...p,
@@ -2395,7 +2395,7 @@ function populateBatterOpponentFilter() {
 }
 
 function getAllPitchesFromStoredGames() {
-  return getStoredGames().flatMap(g => {
+  return getSheetGamesOnly().flatMap(g => {
     const pitches = g.pitches || [];
     return pitches.map(p => ({
       ...p,
@@ -2804,15 +2804,11 @@ function showGameRecaps() {
   setActiveScreen("gameRecapsScreen");
 
   const list = document.getElementById("gameRecapsList");
-  if (list) {
-    list.innerHTML = `<p class="small-note">Wedstrijden worden geladen...</p>`;
-  }
+  if (list) list.innerHTML = `<p class="small-note">Recaps worden geladen uit de datasheet...</p>`;
 
   syncFromGoogleSheet()
     .catch(() => [])
-    .finally(() => {
-      renderGameRecapCards();
-    });
+    .finally(() => renderGameRecapCards());
 }
 
 
@@ -2860,7 +2856,7 @@ function getGameRecapSortValue(g) {
 }
 
 function getGamesForRecaps() {
-  return getStoredGames()
+  return getClosedSheetGamesOnly()
     .filter(g => Array.isArray(g.pitches) && g.pitches.length)
     .sort((a, b) => getGameRecapSortValue(b) - getGameRecapSortValue(a));
 }
@@ -2973,19 +2969,25 @@ function openGameRecapModal(gameId) {
   const body = document.getElementById("gameRecapModalBody");
   if (!modal || !titleEl || !body) return;
 
-  const game = getGamesForRecaps().find(g => g.gameId === gameId);
-  if (!game) {
-    alert("Deze wedstrijd kon niet worden gevonden.");
-    return;
-  }
+  const selectedGameId = String(gameId || "");
 
-  const recap = buildGameRecap(game);
-  titleEl.textContent = recap.title || "Game Recap";
-  body.innerHTML = recap.html;
-  body.dataset.copyText = recap.text;
-  selectedGameRecapText = recap.text;
+  syncFromGoogleSheet()
+    .catch(() => [])
+    .finally(() => {
+      const game = getGamesForRecaps().find(g => String(g.gameId || "") === selectedGameId);
+      if (!game) {
+        alert("Deze wedstrijd kon niet worden gevonden in de datasheet.");
+        return;
+      }
 
-  modal.classList.remove("hidden");
+      const recap = buildGameRecap(game);
+      titleEl.textContent = recap.title || "Game Recap";
+      body.innerHTML = recap.html;
+      body.dataset.copyText = recap.text;
+      selectedGameRecapText = recap.text;
+
+      modal.classList.remove("hidden");
+    });
 }
 
 function closeGameRecapModal() {
@@ -3216,8 +3218,7 @@ function renderUnfinishedGames() {
   const list = document.getElementById("unfinishedGamesList");
   if (!list) return;
 
-  const games = getStoredGames()
-    .filter(g => !Boolean(g.closed))
+  const games = getUnfinishedSheetGamesOnly()
     .sort((a, b) => String(b.startedAt || b.date || "").localeCompare(String(a.startedAt || a.date || "")));
 
   if (!games.length) {
@@ -3239,7 +3240,7 @@ function loadUnfinishedGame(gameId) {
     return;
   }
 
-  const selected = getStoredGames().find(g => g.gameId === gameId);
+  const selected = getSheetGamesOnly().find(g => g.gameId === gameId);
   if (!selected) {
     alert("Deze game kon niet worden geladen.");
     return;
@@ -3261,7 +3262,7 @@ function loadGameById(gameId) {
 function showPreviousGames() {
   setActiveScreen("previousGamesScreen");
   const list = document.getElementById("previousGamesList");
-  if (list) list.innerHTML = `<p class="small-note">Vorige games worden geladen...</p>`;
+  if (list) list.innerHTML = `<p class="small-note">Vorige games worden geladen uit de datasheet...</p>`;
 
   syncFromGoogleSheet()
     .catch(() => [])
@@ -3275,8 +3276,7 @@ function renderPreviousGames() {
 
   const query = (input?.value || "").trim().toLowerCase();
 
-  let games = getStoredGames()
-    .filter(g => Boolean(g.closed))
+  let games = getClosedSheetGamesOnly()
     .map(g => {
       const pitches = g.pitches || [];
       const stats = calculateGameStats({ ...g, pitches });
@@ -3425,7 +3425,7 @@ function getResultBreakdown(pitches) {
 
 function showPreviousGameOverview(gameId) {
   selectedOverviewGameId = gameId;
-  const selected = getStoredGames().find(g => g.gameId === gameId);
+  const selected = getSheetGamesOnly().find(g => g.gameId === gameId);
 
   if (!selected) {
     alert("Deze game kon niet worden geladen.");
@@ -3503,7 +3503,7 @@ function loadArchivedGame(gameId) {
     return;
   }
 
-  const selected = getStoredGames().find(g => g.gameId === gameId);
+  const selected = getSheetGamesOnly().find(g => g.gameId === gameId);
   if (!selected) {
     alert("Deze game kon niet worden geladen.");
     return;
@@ -4599,11 +4599,23 @@ function setSyncStatus(message, type = "") {
 }
 
 
+
+function getSheetGamesOnly() {
+  return Array.isArray(sheetGames) ? sheetGames : [];
+}
+
+function getClosedSheetGamesOnly() {
+  return getSheetGamesOnly().filter(g => Boolean(g.closed));
+}
+
+function getUnfinishedSheetGamesOnly() {
+  return getSheetGamesOnly().filter(g => !Boolean(g.closed));
+}
+
 function getStoredGames() {
-  const activeGame = (typeof game !== "undefined" && game && game.gameId && !game.closed) ? [game] : [];
-  const ids = new Set(activeGame.map(g => g.gameId));
-  const sheetList = Array.isArray(sheetGames) ? sheetGames : [];
-  return [...activeGame, ...sheetList.filter(g => !ids.has(g.gameId))];
+  // Historische data is vanaf nu uitsluitend Google Sheet-data.
+  // Geen lokale game-cache meer als bron voor Recap, Pitching Stats, Vorige games of Zoek op slagvrouw.
+  return getSheetGamesOnly();
 }
 
 function saveStoredGames(games) {
@@ -4611,16 +4623,15 @@ function saveStoredGames(games) {
 }
 
 function upsertStoredGame(gameToStore) {
-  if (!gameToStore || !gameToStore.gameId) return;
-
-  const index = sheetGames.findIndex(g => g.gameId === gameToStore.gameId);
-  if (index >= 0) sheetGames[index] = gameToStore;
-  else sheetGames.unshift(gameToStore);
+  // Niet meer lokaal als historische bron opslaan.
+  // De Google Sheet is leidend; na sync wordt sheetGames opnieuw opgebouwd vanuit de datasheet.
+  return;
 }
 
 function saveLocalGame() {
-  // Geen browseropslag meer. Actieve wedstrijd leeft alleen tijdelijk in geheugen.
-  upsertStoredGame(game);
+  // Geen lokale historische opslag meer. De actieve wedstrijd leeft alleen in geheugen;
+  // historische schermen laden altijd opnieuw uit Google Sheets.
+  return;
 }
 
 function syncFromGoogleSheet() {
@@ -4629,23 +4640,33 @@ function syncFromGoogleSheet() {
   return loadSheetDataJsonp()
     .then(payload => {
       const games = convertSheetRowsToGames(payload);
-      const merged = mergeGames([], games);
-      saveStoredGames(merged);
-
-      const speedItems = convertSheetRowsToSpeedTrainings(payload);
-      saveStoredSpeedTrainings(speedItems);
+      saveStoredGames(games);
 
       sheetSyncLoaded = true;
-      setSyncStatus(`Google Sheets geladen: ${games.length} games · ${speedItems.length} speed-metingen uit datasheet.`, "ok");
+      setSyncStatus(`Google Sheets geladen: ${games.length} games.`, "ok");
 
-      if (document.getElementById("pitcherStatsScreen")?.classList.contains("active")) renderPitcherStats();
+      if (document.getElementById("pitcherStatsScreen")?.classList.contains("active")) {
+        renderPitcherStats();
+        if (typeof renderPitcherSpeedOverview === "function") renderPitcherSpeedOverview();
+      }
+
       if (document.getElementById("batterSearchScreen")?.classList.contains("active")) {
         populateBatterOpponentFilter();
         populateBatterPlayerFilter();
+        populateBatterSearchExtraFilters();
         renderBatterSearch();
       }
+
       if (document.getElementById("previousGamesScreen")?.classList.contains("active")) renderPreviousGames();
+      if (document.getElementById("previousGameOverviewScreen")?.classList.contains("active") && selectedOverviewGameId) {
+        showPreviousGameOverview(selectedOverviewGameId);
+      }
+      if (document.getElementById("gameRecapsScreen")?.classList.contains("active")) renderGameRecapCards();
       if (document.getElementById("unfinishedGamesScreen")?.classList.contains("active")) renderUnfinishedGames();
+      if (document.getElementById("pitcherHeatmapScreen")?.classList.contains("active")) {
+        populatePitcherHeatmapSelect();
+        renderPitcherHeatmap();
+      }
 
       return games;
     })
