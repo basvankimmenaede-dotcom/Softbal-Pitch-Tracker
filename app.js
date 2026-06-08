@@ -1842,17 +1842,10 @@ function calculateGameStats(g) {
   const pitches = g.pitches || [];
   const totalPitches = pitches.length;
 
-  const strikes = pitches.filter(p =>
-    isStrikeResult(p.result)
-  ).length;
-
+  const strikes = pitches.filter(p => isStrikeResult(p.result)).length;
   const balls = pitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
   const outs = getPitcherOutsFromPitches(pitches);
-
-  const fps = pitches.filter(p =>
-    p.firstPitch && isStrikeResult(p.result)
-  ).length;
-
+  const fps = pitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length;
   const totalBatters = countTotalBatters(g);
   const walks = countWalks(g);
   const strikeouts = countStrikeoutsFromPitches(pitches);
@@ -1880,8 +1873,7 @@ function countTotalBatters(g) {
 function countWalks(g) {
   const pitches = g.pitches || [];
 
-  // Walks komen vanaf nu rechtstreeks uit de datasheet-kolom "Walk".
-  // Dus geen herberekening meer op basis van 4 balls in de app.
+  // Walks zijn leidend vanuit de datasheet-kolom "Walk".
   return pitches.filter(p => {
     const value = p.walk;
     return value === true ||
@@ -2950,7 +2942,6 @@ function renderGameRecapCards() {
 
     const pitcherBlocks = recapData.pitchers.map(item => {
       const stats = item.stats;
-
       return `
         <div class="game-recap-card-pitcher">
           <div class="pitcher-initials">${getPitcherInitials(item.pitcherName)}</div>
@@ -3097,54 +3088,35 @@ function buildGameRecap(game) {
     const strikePct = item.strikePct;
     const fpsPct = item.fpsPct;
 
-    const ballPct = pitcherPitches.length
-      ? Math.round((stats.balls / pitcherPitches.length) * 100)
-      : 0;
+    const ballPct = pitcherPitches.length ? Math.round((stats.balls / pitcherPitches.length) * 100) : 0;
 
-    const strikeZones = pitcherPitches
-      .filter(p => isStrikeResult(p.result))
-      .map(getZoneBucketForRecap);
-
-    const ballZones = pitcherPitches
-      .filter(p => ["Ball", "HBP"].includes(p.result))
-      .map(getZoneBucketForRecap);
+    const strikeZones = pitcherPitches.filter(p => isStrikeResult(p.result)).map(getZoneBucketForRecap);
+    const ballZones = pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).map(getZoneBucketForRecap);
 
     const [bestZone, bestZoneCount] = getMostCommon(strikeZones);
-    const [wideZone, wideZoneCount] = getMostCommon(ballZones);
+    const [wideZone] = getMostCommon(ballZones);
 
     const { early, late } = splitPitchesIntoPhases(pitcherPitches);
     const earlyStats = getPhaseStats(early);
     const lateStats = getPhaseStats(late);
 
     const summaryLines = [];
-
     summaryLines.push(
       `${pitcherName} gooide ${stats.totalPitches} pitches: ${stats.strikes} strikes en ${stats.balls} balls. Het strikepercentage was ${strikePct}% en het FPS% was ${fpsPct}%.`
     );
 
     if (early.length && late.length) {
       if (lateStats.ballPct > earlyStats.ballPct + 10) {
-        summaryLines.push(
-          `In het tweede deel van haar pitches nam het aantal balls toe: van ${earlyStats.ballPct}% naar ${lateStats.ballPct}%.`
-        );
+        summaryLines.push(`In het tweede deel van haar pitches nam het aantal balls toe: van ${earlyStats.ballPct}% naar ${lateStats.ballPct}%.`);
       } else if (lateStats.strikePct > earlyStats.strikePct + 10) {
-        summaryLines.push(
-          `In het tweede deel van haar pitches werd ze sterker met meer strikes: van ${earlyStats.strikePct}% naar ${lateStats.strikePct}%.`
-        );
+        summaryLines.push(`In het tweede deel van haar pitches werd ze sterker met meer strikes: van ${earlyStats.strikePct}% naar ${lateStats.strikePct}%.`);
       } else {
-        summaryLines.push(
-          `Het verschil tussen het eerste en tweede deel van haar pitches bleef klein.`
-        );
+        summaryLines.push(`Het verschil tussen het eerste en tweede deel van haar pitches bleef klein.`);
       }
     }
 
-    if (bestZone && bestZone !== "-") {
-      summaryLines.push(`De meeste strikes kwamen rond ${bestZone}.`);
-    }
-
-    if (wideZone && wideZone !== "-") {
-      summaryLines.push(`De meeste balls zaten rond ${wideZone}.`);
-    }
+    if (bestZone && bestZone !== "-") summaryLines.push(`De meeste strikes kwamen rond ${bestZone}.`);
+    if (wideZone && wideZone !== "-") summaryLines.push(`De meeste balls zaten rond ${wideZone}.`);
 
     const strengths = [];
     if (strikePct >= 60) strengths.push(`goed strikepercentage (${strikePct}%)`);
@@ -3156,22 +3128,14 @@ function buildGameRecap(game) {
     const focus = [];
     if (ballPct >= 40) focus.push(`hoog aantal balls (${ballPct}%)`);
     if (lateStats.ballPct > earlyStats.ballPct + 10) focus.push(`meer balls in het tweede deel van haar pitches`);
-
-    if (wideZone && wideZone.includes("outside")) {
-      focus.push(`meerdere misses outside buiten de zone`);
-    } else if (wideZone && wideZone.includes("inside")) {
-      focus.push(`meerdere misses inside buiten de zone`);
-    } else if (wideZone && wideZone.includes("hoog")) {
-      focus.push(`meerdere pitches hoog buiten de zone`);
-    } else if (wideZone && wideZone.includes("laag")) {
-      focus.push(`meerdere pitches laag buiten de zone`);
-    }
-
+    if (wideZone && wideZone.includes("outside")) focus.push(`meerdere misses outside buiten de zone`);
+    else if (wideZone && wideZone.includes("inside")) focus.push(`meerdere misses inside buiten de zone`);
+    else if (wideZone && wideZone.includes("hoog")) focus.push(`meerdere pitches hoog buiten de zone`);
+    else if (wideZone && wideZone.includes("laag")) focus.push(`meerdere pitches laag buiten de zone`);
     if (stats.walks >= 1) focus.push(`${stats.walks} walk${stats.walks === 1 ? "" : "s"} toegestaan`);
 
     const uniqueStrengths = [...new Set(strengths)].slice(0, 4);
     const uniqueFocus = [...new Set(focus)].slice(0, 4);
-
     const statLine = `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB • ${stats.ip} IP`;
 
     const textBlock = [
@@ -3194,9 +3158,7 @@ function buildGameRecap(game) {
           <div class="pitcher-initials">${getPitcherInitials(pitcherName)}</div>
           <div>
             <h4>${pitcherName}</h4>
-            <div class="recap-pitcher-stats">
-              ${statLine}
-            </div>
+            <div class="recap-pitcher-stats">${statLine}</div>
           </div>
         </div>
 
@@ -3205,35 +3167,20 @@ function buildGameRecap(game) {
         <div class="recap-two-columns">
           <div class="recap-insight good">
             <strong>Sterk</strong>
-            <ul>
-              ${(uniqueStrengths.length ? uniqueStrengths : ["stabiel genoeg om door te bouwen"]).map(s => `<li>${s}</li>`).join("")}
-            </ul>
+            <ul>${(uniqueStrengths.length ? uniqueStrengths : ["stabiel genoeg om door te bouwen"]).map(s => `<li>${s}</li>`).join("")}</ul>
           </div>
-
           <div class="recap-insight attention">
             <strong>Punt van aandacht</strong>
-            <ul>
-              ${(uniqueFocus.length ? uniqueFocus : ["geen duidelijk groot aandachtspunt uit deze data"]).map(f => `<li>${f}</li>`).join("")}
-            </ul>
+            <ul>${(uniqueFocus.length ? uniqueFocus : ["geen duidelijk groot aandachtspunt uit deze data"]).map(f => `<li>${f}</li>`).join("")}</ul>
           </div>
         </div>
       </div>
     `;
-
     return { textBlock, htmlBlock };
   });
 
-  const text = [
-    `Game Recap — ${title}`,
-    ``,
-    ...pitcherSections.map(p => p.textBlock)
-  ].join("\\n");
-
-  const html = `
-    <div class="game-recap-card">
-      ${pitcherSections.map(p => p.htmlBlock).join("")}
-    </div>
-  `;
+  const text = [`Game Recap — ${title}`, ``, ...pitcherSections.map(p => p.textBlock)].join("\\n");
+  const html = `<div class="game-recap-card">${pitcherSections.map(p => p.htmlBlock).join("")}</div>`;
 
   return { title, html, text };
 }
@@ -3401,7 +3348,6 @@ function countStrikeoutsFromPitches(pitches) {
       strikes = 0;
     }
 
-    // Historische data blijft werken: expliciet Resultaat = Strike out telt als K.
     if (["Strike out", "Strikeout", "Strike-out"].includes(result)) {
       strikeouts += 1;
       balls = 0;
@@ -3413,7 +3359,6 @@ function countStrikeoutsFromPitches(pitches) {
     if (["Strike", "Swing"].includes(result)) strikes += 1;
     if (result === "Foul" && strikes < 2) strikes += 1;
 
-    // Automatische strikeout na derde strike/swing.
     if (strikes >= 3) {
       strikeouts += 1;
       balls = 0;
