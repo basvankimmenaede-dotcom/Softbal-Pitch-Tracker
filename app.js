@@ -1799,8 +1799,43 @@ function getPitcherGames(pitcherName) {
 function getPitcherOutsFromPitches(pitches) {
   if (!Array.isArray(pitches) || !pitches.length) return 0;
 
-  // Alleen outs tellen tijdens deze pitching session
-  return pitches.filter(p => isOutResult(p.result)).length;
+  let balls = 0;
+  let strikes = 0;
+  let outs = 0;
+
+  (pitches || []).slice().reverse().forEach(p => {
+    const result = String(p.result || "").trim();
+
+    if (p.firstPitch) {
+      balls = 0;
+      strikes = 0;
+    }
+
+    if (["Ball", "HBP"].includes(result)) balls += 1;
+    if (["Strike", "Swing"].includes(result)) strikes += 1;
+    if (result === "Foul" && strikes < 2) strikes += 1;
+
+    if (isOutResult(result)) {
+      outs += 1;
+      balls = 0;
+      strikes = 0;
+      return;
+    }
+
+    if (strikes >= 3) {
+      outs += 1;
+      balls = 0;
+      strikes = 0;
+      return;
+    }
+
+    if (p.walk || balls >= 4 || ["HBP", "HIT"].includes(result)) {
+      balls = 0;
+      strikes = 0;
+    }
+  });
+
+  return outs;
 }
 
 function calculateGameStats(g) {
@@ -1820,6 +1855,7 @@ function calculateGameStats(g) {
 
   const totalBatters = countTotalBatters(g);
   const walks = countWalks(g);
+  const strikeouts = countStrikeoutsFromPitches(pitches);
   const sbRatio = balls === 0 ? strikes.toFixed(2) : (strikes / balls).toFixed(2);
 
   return {
@@ -1831,7 +1867,7 @@ function calculateGameStats(g) {
     fps,
     totalBatters,
     walks,
-    strikeouts: countStrikeoutsFromPitches(pitches),
+    strikeouts,
     sbRatio
   };
 }
@@ -1848,22 +1884,25 @@ function countWalks(g) {
   let walks = 0;
 
   pitches.forEach(p => {
+    const result = String(p.result || "").trim();
+
     if (p.firstPitch) {
       balls = 0;
       strikes = 0;
     }
 
-    if (p.result === "Ball") balls += 1;
-    if (["Strike", "Swing"].includes(p.result)) strikes += 1;
-    if (p.result === "Foul" && strikes < 2) strikes += 1;
+    if (result === "Ball") balls += 1;
+    if (["Strike", "Swing"].includes(result)) strikes += 1;
+    if (result === "Foul" && strikes < 2) strikes += 1;
 
     if (p.walk || balls >= 4) {
       walks += 1;
       balls = 0;
       strikes = 0;
+      return;
     }
 
-    if (["HIT", "Out", "Veld uit"].includes(p.result) || strikes >= 3) {
+    if (["HBP", "HIT"].includes(result) || isOutResult(result) || strikes >= 3) {
       balls = 0;
       strikes = 0;
     }
@@ -3363,23 +3402,24 @@ function countStrikeoutsFromPitches(pitches) {
   let strikeouts = 0;
 
   (pitches || []).slice().reverse().forEach(p => {
+    const result = String(p.result || "").trim();
+
     if (p.firstPitch) {
       balls = 0;
       strikes = 0;
     }
 
-    if (p.result === "Strike out") {
+    if (result === "Strike out" || result === "Strikeout" || result === "Strike-out") {
       strikeouts += 1;
       balls = 0;
       strikes = 0;
       return;
     }
 
-    if (["Ball", "HBP"].includes(p.result)) balls += 1;
-    if (["Strike", "Swing"].includes(p.result)) strikes += 1;
-    if (p.result === "Foul" && strikes < 2) strikes += 1;
+    if (["Ball", "HBP"].includes(result)) balls += 1;
+    if (["Strike", "Swing"].includes(result)) strikes += 1;
+    if (result === "Foul" && strikes < 2) strikes += 1;
 
-    // Derde Strike of derde Swing telt als strikeout.
     if (strikes >= 3) {
       strikeouts += 1;
       balls = 0;
@@ -3387,7 +3427,7 @@ function countStrikeoutsFromPitches(pitches) {
       return;
     }
 
-    if (p.walk || balls >= 4 || ["HBP", "HIT", "Out", "Veld uit"].includes(p.result)) {
+    if (p.walk || balls >= 4 || ["HBP", "HIT", "Out", "Veld uit"].includes(result)) {
       balls = 0;
       strikes = 0;
     }
