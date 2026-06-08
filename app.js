@@ -3389,24 +3389,45 @@ function renderPreviousGames() {
 
 
 function countStrikeoutsFromPitches(pitches) {
-  const rows = pitches || [];
+  let balls = 0;
+  let strikes = 0;
+  let strikeouts = 0;
 
-  // Strikeouts komen vanaf nu rechtstreeks uit de datasheet.
-  // Je kunt corrigeren met een kolom "Strikeout", "Strike Out", "K" of "SO".
-  // Als die kolom ontbreekt, gebruiken we alleen het expliciete Resultaat "Strike out".
-  return rows.filter(p => {
-    const explicit = p.strikeout === true ||
-      p.strikeout === "TRUE" ||
-      p.strikeout === "true" ||
-      p.strikeout === "Ja" ||
-      p.strikeout === "1" ||
-      p.strikeout === 1;
+  (pitches || []).slice().reverse().forEach(p => {
+    const result = String(p.result || "").trim();
 
-    const result = String(p.result || "").trim().toLowerCase();
-    const resultIsStrikeout = ["strike out", "strikeout", "strike-out"].includes(result);
+    if (p.firstPitch) {
+      balls = 0;
+      strikes = 0;
+    }
 
-    return explicit || resultIsStrikeout;
-  }).length;
+    // Historische data blijft werken: expliciet Resultaat = Strike out telt als K.
+    if (["Strike out", "Strikeout", "Strike-out"].includes(result)) {
+      strikeouts += 1;
+      balls = 0;
+      strikes = 0;
+      return;
+    }
+
+    if (["Ball", "HBP"].includes(result)) balls += 1;
+    if (["Strike", "Swing"].includes(result)) strikes += 1;
+    if (result === "Foul" && strikes < 2) strikes += 1;
+
+    // Automatische strikeout na derde strike/swing.
+    if (strikes >= 3) {
+      strikeouts += 1;
+      balls = 0;
+      strikes = 0;
+      return;
+    }
+
+    if (p.walk || balls >= 4 || ["HBP", "HIT", "Out", "Veld uit"].includes(result)) {
+      balls = 0;
+      strikes = 0;
+    }
+  });
+
+  return strikeouts;
 }
 
 function getGameSortValue(g) {
