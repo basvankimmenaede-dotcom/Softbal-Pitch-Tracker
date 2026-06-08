@@ -1273,12 +1273,13 @@ function convertSheetRowsToSpeedTrainings(payload) {
   const headers = payload.speedTrainingHeaders || [];
   const rows = payload.speedTrainingRows;
 
-  const records = rows.map(row => {
+  const records = rows.map((row, rowIndex) => {
     const record = {};
     headers.forEach((header, index) => {
       record[String(header || "").trim()] = row[index];
       record[`_${index}`] = row[index];
     });
+    record._rowIndex = rowIndex + 2;
     return record;
   });
 
@@ -1796,6 +1797,19 @@ function getPitcherGames(pitcherName) {
 }
 
 
+function getPitchesChronological(pitches) {
+  return [...(pitches || [])].sort((a, b) => {
+    const at = new Date(a.timestamp || 0).getTime();
+    const bt = new Date(b.timestamp || 0).getTime();
+
+    if (!Number.isNaN(at) && !Number.isNaN(bt) && at !== bt) return at - bt;
+
+    const ai = Number(a._sheetRow || a.rowIndex || 0);
+    const bi = Number(b._sheetRow || b.rowIndex || 0);
+    return ai - bi;
+  });
+}
+
 function getPitcherOutsFromPitches(pitches) {
   if (!Array.isArray(pitches) || !pitches.length) return 0;
 
@@ -1803,7 +1817,7 @@ function getPitcherOutsFromPitches(pitches) {
   let strikes = 0;
   let outs = 0;
 
-  (pitches || []).slice().reverse().forEach(p => {
+  getPitchesChronological(pitches).forEach(p => {
     const result = String(p.result || "").trim();
 
     if (p.firstPitch) {
@@ -3041,7 +3055,7 @@ function getMostCommon(items) {
 }
 
 function splitPitchesIntoPhases(pitches) {
-  const ordered = [...pitches].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+  const ordered = getPitchesChronological(pitches);
   if (ordered.length < 6) {
     return { early: ordered, late: ordered };
   }
@@ -3077,7 +3091,7 @@ function getPhaseStats(pitches) {
 function buildGameRecap(game) {
   const orderedGame = {
     ...game,
-    pitches: [...(game.pitches || [])].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0))
+    pitches: getPitchesChronological(game.pitches || [])
   };
 
   const recapData = getGameRecapData(orderedGame);
@@ -3340,7 +3354,7 @@ function countStrikeoutsFromPitches(pitches) {
   let strikes = 0;
   let strikeouts = 0;
 
-  (pitches || []).slice().reverse().forEach(p => {
+  getPitchesChronological(pitches).forEach(p => {
     const result = String(p.result || "").trim();
 
     if (p.firstPitch) {
@@ -4861,6 +4875,7 @@ function convertSheetRowsToGames(payload) {
 
     const pitch = {
       timestamp: get(record, ["Timestamp", "timestamp"], 0),
+      _sheetRow: Number(record._rowIndex || 0),
       gameId,
       date,
       startTime,
