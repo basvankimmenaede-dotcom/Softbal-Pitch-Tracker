@@ -3094,38 +3094,6 @@ function isContactResult(result) {
   return clean === "Foul" || clean === "HIT" || clean === "Veld uit";
 }
 
-function getInningLabel(stats) {
-  const strikePct = stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
-  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
-
-  if (stats.walks >= 2 || stats.hits >= 3 || stats.totalPitches >= 24) return "Werk";
-  if (strikePct >= 68 && fpsPct >= 60 && stats.walks === 0) return "Sterk";
-  if (strikePct >= 62 && stats.walks === 0) return "Solide";
-  if (stats.strikeouts >= 2 && stats.walks === 0) return "Dominant";
-  return "Aandacht";
-}
-
-function getInningRowClass(stats) {
-  const label = getInningLabel(stats);
-  if (["Sterk", "Solide", "Dominant"].includes(label)) return "row-good";
-  if (label === "Werk") return "row-warning";
-  return "";
-}
-
-function getInningStrikeClass(stats) {
-  const strikePct = stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
-  if (strikePct >= 65) return "stat-good";
-  if (strikePct < 55) return "stat-danger";
-  return "";
-}
-
-function getInningFpsClass(stats) {
-  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
-  if (fpsPct >= 60) return "stat-good";
-  if (fpsPct < 45) return "stat-warning";
-  return "";
-}
-
 function getPitchesByInning(pitches) {
   const ordered = getPitchesChronological(pitches || []);
   const innings = [];
@@ -3148,15 +3116,9 @@ function getPitchesByInning(pitches) {
     if (["Strike", "Swing"].includes(result)) strikes += 1;
     if (result === "Foul" && strikes < 2) strikes += 1;
 
-    let pitchMadeOut = false;
+    const madeOut = isOutResult(result) || strikes >= 3;
 
-    if (isOutResult(result)) {
-      pitchMadeOut = true;
-    } else if (strikes >= 3) {
-      pitchMadeOut = true;
-    }
-
-    if (pitchMadeOut) {
+    if (madeOut) {
       inningOuts += 1;
       balls = 0;
       strikes = 0;
@@ -3182,21 +3144,36 @@ function getPitchesByInning(pitches) {
 
 function getInningStats(pitches) {
   const inningPitches = pitches || [];
-  const baseStats = calculateGameStats({ pitches: inningPitches });
+  const stats = calculateGameStats({ pitches: inningPitches });
   const hits = inningPitches.filter(p => p.result === "HIT").length;
   const fieldOuts = inningPitches.filter(p => String(p.result || "").trim() === "Veld uit").length;
   const contact = inningPitches.filter(p => isContactResult(p.result)).length;
-  const strikePct = baseStats.totalPitches ? Math.round((baseStats.strikes / baseStats.totalPitches) * 100) : 0;
-  const fpsPct = getFpsPercentValue(baseStats.fps, baseStats.totalBatters);
+  const strikePct = stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
+  const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
 
   return {
-    ...baseStats,
+    ...stats,
     hits,
     fieldOuts,
     contact,
     strikePct,
     fpsPct
   };
+}
+
+function getInningLabel(stats) {
+  if (stats.walks >= 2 || stats.hits >= 3 || stats.totalPitches >= 24) return "Werk";
+  if (stats.strikePct >= 68 && stats.fpsPct >= 60 && stats.walks === 0) return "Sterk";
+  if (stats.strikeouts >= 2 && stats.walks === 0) return "Dominant";
+  if (stats.strikePct >= 62 && stats.walks === 0) return "Solide";
+  return "Aandacht";
+}
+
+function getInningRowClass(stats) {
+  const label = getInningLabel(stats);
+  if (["Sterk", "Solide", "Dominant"].includes(label)) return "row-good";
+  if (label === "Werk") return "row-warning";
+  return "";
 }
 
 function renderInningOverviewTable(pitcherPitches) {
@@ -3206,12 +3183,13 @@ function renderInningOverviewTable(pitcherPitches) {
     return `<p class="small-note">Geen inningdata gevonden.</p>`;
   }
 
-  const rows = innings.map((inningPitches, index) => {
-    const stats = getInningStats(inningPitches);
+  const inningStats = innings.map(getInningStats);
+
+  const rows = inningStats.map((stats, index) => {
     const label = getInningLabel(stats);
     const rowClass = getInningRowClass(stats);
-    const strikeClass = getInningStrikeClass(stats);
-    const fpsClass = getInningFpsClass(stats);
+    const strikeClass = stats.strikePct >= 65 ? "stat-good" : stats.strikePct < 55 ? "stat-danger" : "";
+    const fpsClass = stats.fpsPct >= 60 ? "stat-good" : stats.fpsPct < 45 ? "stat-warning" : "";
     const pitchClass = stats.totalPitches >= 24 ? "stat-warning" : "";
 
     return `
@@ -3230,11 +3208,9 @@ function renderInningOverviewTable(pitcherPitches) {
     `;
   }).join("");
 
-  const inningStats = innings.map(getInningStats);
   const bestIndex = inningStats.reduce((best, stats, index) => {
     const score = (stats.strikePct * 1.2) + stats.fpsPct + (stats.strikeouts * 12) - (stats.walks * 18) - (stats.hits * 8) - Math.max(0, stats.totalPitches - 18);
-    const bestScore = best.score;
-    return score > bestScore ? { index, score } : best;
+    return score > best.score ? { index, score } : best;
   }, { index: 0, score: -Infinity }).index;
 
   const attentionIndex = inningStats.reduce((worst, stats, index) => {
@@ -3285,22 +3261,17 @@ function renderInningOverviewTable(pitcherPitches) {
 }
 
 function buildGameRecap(game) {
-  const orderedGame = {
-    ...game,
-    pitches: getPitchesChronological(game.pitches || [])
-  };
+  const pitches = getPitchesChronological(game.pitches || []);
+  const pitchers = getPitcherNamesForGame({ ...game, pitches });
+  const title = `${formatDateTimeCompact(game.date, game.startTime)} · ${game.opponent || "Onbekende tegenstander"}`;
 
-  const recapData = getGameRecapData(orderedGame);
-  const title = recapData.title;
+  const pitcherSections = pitchers.map(pitcherName => {
+    const pitcherPitches = pitches.filter(p => String(p.pitcherName || game.pitcherName || "") === pitcherName);
+    const stats = calculateGameStats({ ...game, pitcherName, pitches: pitcherPitches });
 
-  const pitcherSections = recapData.pitchers.map(item => {
-    const pitcherName = item.pitcherName;
-    const pitcherPitches = item.pitches;
-    const stats = item.stats;
-    const strikePct = item.strikePct;
-    const fpsPct = item.fpsPct;
-
+    const strikePct = pitcherPitches.length ? Math.round((stats.strikes / pitcherPitches.length) * 100) : 0;
     const ballPct = pitcherPitches.length ? Math.round((stats.balls / pitcherPitches.length) * 100) : 0;
+    const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
 
     const strikeZones = pitcherPitches.filter(p => isStrikeResult(p.result)).map(getZoneBucketForRecap);
     const ballZones = pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).map(getZoneBucketForRecap);
@@ -3312,10 +3283,9 @@ function buildGameRecap(game) {
     const earlyStats = getPhaseStats(early);
     const lateStats = getPhaseStats(late);
 
-    const summaryLines = [];
-    summaryLines.push(
+    const summaryLines = [
       `${pitcherName} gooide ${stats.totalPitches} pitches: ${stats.strikes} strikes en ${stats.balls} balls. Het strikepercentage was ${strikePct}% en het FPS% was ${fpsPct}%.`
-    );
+    ];
 
     if (early.length && late.length) {
       if (lateStats.ballPct > earlyStats.ballPct + 10) {
@@ -3348,7 +3318,10 @@ function buildGameRecap(game) {
 
     const uniqueStrengths = [...new Set(strengths)].slice(0, 4);
     const uniqueFocus = [...new Set(focus)].slice(0, 4);
+
     const statLine = `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB • ${stats.ip} IP`;
+
+    const inningTableHtml = renderInningOverviewTable(pitcherPitches);
 
     const textBlock = [
       `${pitcherName}`,
@@ -3376,23 +3349,36 @@ function buildGameRecap(game) {
 
         ${summaryLines.map(line => `<p>${line}</p>`).join("")}
 
+        ${inningTableHtml}
+
         <div class="recap-two-columns">
           <div class="recap-insight good">
             <strong>Sterk</strong>
-            <ul>${(uniqueStrengths.length ? uniqueStrengths : ["stabiel genoeg om door te bouwen"]).map(s => `<li>${s}</li>`).join("")}</ul>
+            <ul>
+              ${(uniqueStrengths.length ? uniqueStrengths : ["stabiel genoeg om door te bouwen"]).map(s => `<li>${s}</li>`).join("")}
+            </ul>
           </div>
+
           <div class="recap-insight attention">
             <strong>Punt van aandacht</strong>
-            <ul>${(uniqueFocus.length ? uniqueFocus : ["geen duidelijk groot aandachtspunt uit deze data"]).map(f => `<li>${f}</li>`).join("")}</ul>
+            <ul>
+              ${(uniqueFocus.length ? uniqueFocus : ["geen duidelijk groot aandachtspunt uit deze data"]).map(f => `<li>${f}</li>`).join("")}
+            </ul>
           </div>
         </div>
       </div>
     `;
+
     return { textBlock, htmlBlock };
   });
 
   const text = [`Game Recap — ${title}`, ``, ...pitcherSections.map(p => p.textBlock)].join("\\n");
-  const html = `<div class="game-recap-card">${pitcherSections.map(p => p.htmlBlock).join("")}</div>`;
+
+  const html = `
+    <div class="game-recap-card">
+      ${pitcherSections.map(p => p.htmlBlock).join("")}
+    </div>
+  `;
 
   return { title, html, text };
 }
