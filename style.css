@@ -4956,6 +4956,7 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
 }
 
 .inning-table {
+  min-width: 950px;
   width: 100%;
   border-collapse: collapse;
   font-weight: 800;
