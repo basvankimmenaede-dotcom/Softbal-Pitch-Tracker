@@ -10,12 +10,13 @@
 <body class="gameday-theme">
 
   <header class="app-top-nav hidden" id="appTopNav">
-    <div class="app-nav-brand">
-      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileNav()" aria-label="Menu openen">☰</button>
+    <div class="app-nav-logo-row">
+      <img src="logo.png" alt="OG Logo" class="app-nav-logo">
       <div>
         <strong>OG Pitching</strong>
         <span>Dashboard</span>
       </div>
+      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileNav()" aria-label="Menu openen">☰</button>
     </div>
 
     <nav id="mainNavLinks" class="app-nav-links">
@@ -30,6 +31,7 @@
       <button onclick="showTeams()">Teams</button>
     </nav>
   </header>
+
 
   <main class="app">
     <section class="hero app-old-hero" onclick="goHomeIfAuthenticated()"     role="button" tabindex="0" aria-label="Terug naar hoofdmenu">
@@ -111,7 +113,7 @@
 
         <div class="dashboard-section-title">
           <h2>Leaderboards</h2>
-          <span>Min. 20 pitches</span>
+          <span>K = totaal · FPS/SB/Contact = per wedstrijd</span>
         </div>
 
         <section class="leaderboard-grid">

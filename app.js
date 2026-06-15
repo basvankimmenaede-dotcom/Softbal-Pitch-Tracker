@@ -94,6 +94,79 @@ function getLatestClosedGameForDashboard() {
     .sort((a, b) => getGameSortValue(b) - getGameSortValue(a))[0] || null;
 }
 
+
+function getOpponentAbbrev(value) {
+  const clean = String(value || "TEG").trim();
+  if (!clean) return "TEG";
+
+  const letters = clean
+    .replace(/[^A-Za-zÀ-ÿ0-9\s-]/g, "")
+    .split(/\s+|-/)
+    .filter(Boolean);
+
+  if (letters.length >= 2) {
+    return letters.map(part => part[0]).join("").slice(0, 3).toUpperCase();
+  }
+
+  return clean.slice(0, 3).toUpperCase();
+}
+
+function getDashboardDateShort(dateValue) {
+  const raw = String(dateValue || "").trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}-${iso[2]}`;
+
+  const nl = raw.match(/^(\d{1,2})[-\/](\d{1,2})/);
+  if (nl) return `${String(nl[1]).padStart(2, "0")}-${String(nl[2]).padStart(2, "0")}`;
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  return "--";
+}
+
+function getDashboardGameLabel(gameData) {
+  return `${getDashboardDateShort(gameData.date)} | ${getOpponentAbbrev(gameData.opponent)}`;
+}
+
+function getDashboardPitcherGameEntries() {
+  const entries = [];
+
+  getClosedSheetGamesOnly().forEach(gameData => {
+    const pitcherNames = getPitcherNamesForGame(gameData);
+
+    pitcherNames.forEach(pitcherName => {
+      const pitches = (gameData.pitches || []).filter(p =>
+        String(p.pitcherName || gameData.pitcherName || "") === String(pitcherName || "")
+      );
+
+      if (!pitches.length) return;
+
+      const stats = calculateGameStats({ ...gameData, pitcherName, pitches });
+      const contact = pitches.filter(p => isContactResult(p.result)).length;
+      const contactPct = stats.totalPitches ? Math.round((contact / stats.totalPitches) * 100) : 0;
+      const strikePct = stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
+      const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
+
+      entries.push({
+        pitcherName,
+        game: gameData,
+        pitches,
+        stats,
+        contact,
+        contactPct,
+        strikePct,
+        fpsPct,
+        label: getDashboardGameLabel(gameData)
+      });
+    });
+  });
+
+  return entries;
+}
+
 function renderDashboard() {
   const games = getSheetGamesOnly();
   const allPitches = games.flatMap(g => g.pitches || []);
@@ -131,20 +204,33 @@ function renderDashboard() {
   }
 
   const pitcherStats = getDashboardPitcherStats().filter(item => item.stats.totalPitches >= 20);
+  const gameEntries = getDashboardPitcherGameEntries().filter(item => item.stats.totalPitches >= 10);
+
+  // K blijft seizoen/totalen per pitcher.
   const strikeoutBoard = [...pitcherStats].sort((a, b) => b.stats.strikeouts - a.stats.strikeouts);
-  const fpsBoard = [...pitcherStats].sort((a, b) => getFpsPercentValue(b.stats.fps, b.stats.totalBatters) - getFpsPercentValue(a.stats.fps, a.stats.totalBatters));
-  const sbBoard = [...pitcherStats].sort((a, b) => Number(b.stats.sbRatio || 0) - Number(a.stats.sbRatio || 0));
-  const contactBoard = [...pitcherStats].sort((a, b) => a.contactPct - b.contactPct);
+
+  // FPS, S/B en contact zijn nu beste wedstrijden, zodat sterke losse wedstrijden ook zichtbaar zijn.
+  const fpsBoard = [...gameEntries]
+    .filter(item => item.stats.totalBatters >= 3)
+    .sort((a, b) => b.fpsPct - a.fpsPct || b.stats.totalBatters - a.stats.totalBatters);
+
+  const sbBoard = [...gameEntries]
+    .filter(item => item.stats.balls > 0)
+    .sort((a, b) => Number(b.stats.sbRatio || 0) - Number(a.stats.sbRatio || 0) || b.stats.totalPitches - a.stats.totalPitches);
+
+  const contactBoard = [...gameEntries]
+    .filter(item => item.stats.totalPitches >= 10)
+    .sort((a, b) => a.contactPct - b.contactPct || b.stats.totalPitches - a.stats.totalPitches);
 
   const kEl = document.getElementById("leaderboardStrikeouts");
   const fpsEl = document.getElementById("leaderboardFps");
   const sbEl = document.getElementById("leaderboardSbRatio");
   const contactEl = document.getElementById("leaderboardContact");
 
-  if (kEl) kEl.innerHTML = renderLeaderboardRows(strikeoutBoard, item => item.stats.strikeouts || 0, item => `${item.stats.totalPitches} pitches`);
-  if (fpsEl) fpsEl.innerHTML = renderLeaderboardRows(fpsBoard, item => `${getFpsPercentValue(item.stats.fps, item.stats.totalBatters)}%`, item => `${item.stats.fps}/${item.stats.totalBatters} FPS`);
-  if (sbEl) sbEl.innerHTML = renderLeaderboardRows(sbBoard, item => Number(item.stats.sbRatio || 0).toFixed(2), item => `${item.stats.strikes} S · ${item.stats.balls} B`);
-  if (contactEl) contactEl.innerHTML = renderLeaderboardRows(contactBoard, item => `${item.contactPct}%`, item => `${item.contact} contact`);
+  if (kEl) kEl.innerHTML = renderLeaderboardRows(strikeoutBoard, item => item.stats.strikeouts || 0, item => `${item.stats.totalPitches} pitches totaal`);
+  if (fpsEl) fpsEl.innerHTML = renderLeaderboardRows(fpsBoard, item => `${item.fpsPct}%`, item => `${item.label} · ${item.stats.fps}/${item.stats.totalBatters} FPS`);
+  if (sbEl) sbEl.innerHTML = renderLeaderboardRows(sbBoard, item => Number(item.stats.sbRatio || 0).toFixed(2), item => `${item.label} · ${item.stats.strikes} S · ${item.stats.balls} B`);
+  if (contactEl) contactEl.innerHTML = renderLeaderboardRows(contactBoard, item => `${item.contactPct}%`, item => `${item.label} · ${item.contact} contact`);
 
   renderDashboardHotStreak(pitcherStats);
   renderDashboardScouting(closedGames);
@@ -157,17 +243,21 @@ function renderDashboardHotStreak(pitcherStats) {
       .sort((a, b) => getGameSortValue(b) - getGameSortValue(a))
       .slice(0, 3);
 
-    const percentages = recentGames.map(g => {
+    const gamePercentages = recentGames.map(g => {
       const stats = calculateGameStats({ pitches: g.pitches || [] });
-      return stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0;
-    }).filter(value => value > 0);
+      return {
+        game: g,
+        value: stats.totalPitches ? Math.round((stats.strikes / stats.totalPitches) * 100) : 0,
+        label: getDashboardGameLabel(g)
+      };
+    }).filter(item => item.value > 0);
 
-    const average = percentages.length
-      ? Math.round(percentages.reduce((sum, value) => sum + value, 0) / percentages.length)
+    const average = gamePercentages.length
+      ? Math.round(gamePercentages.reduce((sum, item) => sum + item.value, 0) / gamePercentages.length)
       : 0;
 
-    return { ...item, recentGames, percentages, average };
-  }).filter(item => item.percentages.length >= 2)
+    return { ...item, recentGames, gamePercentages, average };
+  }).filter(item => item.gamePercentages.length >= 2)
     .sort((a, b) => b.average - a.average);
 
   const hot = candidates[0];
@@ -180,14 +270,14 @@ function renderDashboardHotStreak(pitcherStats) {
 
   setTextIfExists("dashboardHotAvatar", getDashboardPitcherInitials(hot.pitcherName));
   setTextIfExists("dashboardHotName", hot.pitcherName);
-  setTextIfExists("dashboardHotText", `Laatste ${hot.percentages.length} wedstrijden gemiddeld ${hot.average}% strikes`);
+  setTextIfExists("dashboardHotText", `Laatste ${hot.gamePercentages.length} wedstrijden gemiddeld ${hot.average}% strikes`);
 
   if (bars) {
-    bars.innerHTML = hot.percentages.map((value, index) => `
+    bars.innerHTML = hot.gamePercentages.map(item => `
       <div class="trend-bar">
-        <span>W${index + 1}</span>
-        <div class="trend-track"><div class="trend-fill" style="width:${Math.max(0, Math.min(100, value))}%"></div></div>
-        <b>${value}%</b>
+        <span>${item.label}</span>
+        <div class="trend-track"><div class="trend-fill" style="width:${Math.max(0, Math.min(100, item.value))}%"></div></div>
+        <b>${item.value}%</b>
       </div>
     `).join("");
   }
