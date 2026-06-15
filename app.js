@@ -254,13 +254,15 @@ function renderDashboard() {
 
   if (latestGame) {
     const pitcherNames = getPitcherNamesForGame(latestGame);
-    const mainPitcher = pitcherNames[0] || latestGame.pitcherName || "-";
-    const pitcherPitches = (latestGame.pitches || []).filter(p => String(p.pitcherName || latestGame.pitcherName || "") === String(mainPitcher));
-    const lastStats = calculateGameStats({ pitches: pitcherPitches });
+    const allPitchersLabel = pitcherNames.length
+      ? pitcherNames.map(name => String(name).split(" ")[0]).join(" · ")
+      : (latestGame.pitcherName || "-");
+
+    const lastStats = calculateGameStats({ pitches: latestGame.pitches || [] });
     const lastStrikePct = lastStats.totalPitches ? Math.round((lastStats.strikes / lastStats.totalPitches) * 100) : 0;
 
     setTextIfExists("dashboardLastGameSubtitle", `Laatste wedstrijd: ${latestGame.opponent || "-"} · ${formatDateTimeCompact(latestGame.date, latestGame.startTime)}`);
-    setTextIfExists("dashboardLastPitcher", mainPitcher.split(" ")[0] || mainPitcher);
+    setTextIfExists("dashboardLastPitcher", allPitchersLabel);
     setTextIfExists("dashboardLastPitches", lastStats.totalPitches);
     setTextIfExists("dashboardLastStrikePct", `${lastStrikePct}%`);
     setTextIfExists("dashboardLastKbb", `${lastStats.strikeouts || 0} / ${lastStats.walks || 0}`);
