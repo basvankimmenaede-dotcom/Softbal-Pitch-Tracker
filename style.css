@@ -6316,3 +6316,44 @@ main { max-width: none !important; width: 100% !important; }
     padding: 0 !important;
   }
 }
+
+
+/* === Fix: login overlay full-screen + recap opens with one click === */
+.login-overlay-screen.active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  min-width: 100vw !important;
+  max-width: none !important;
+  min-height: 100vh !important;
+  z-index: 6000 !important;
+  margin: 0 !important;
+}
+
+#loginScreen.login-overlay-screen.active {
+  display: grid !important;
+  place-items: center !important;
+}
+
+body:not(.dashboard-active) .app {
+  max-width: 480px !important;
+  width: min(480px, 100%) !important;
+  margin: 0 auto !important;
+  padding: 18px !important;
+}
+
+body.dashboard-active .app {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+body:has(#loginScreen.active) .app {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+#gameRecapModal {
+  z-index: 5000 !important;
+}
