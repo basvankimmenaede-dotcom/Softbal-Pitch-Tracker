@@ -276,7 +276,7 @@ function renderDashboard() {
     .sort((a, b) => b.fpsPct - a.fpsPct || b.stats.totalBatters - a.stats.totalBatters || b.sortValue - a.sortValue);
 
   const sbBoard = [...gameEntries]
-    .filter(item => item.stats.balls > 0)
+    .filter(item => item.stats.balls > 0 && item.stats.totalPitches >= 20)
     .sort((a, b) => Number(b.stats.sbRatio || 0) - Number(a.stats.sbRatio || 0) || b.stats.totalPitches - a.stats.totalPitches || b.sortValue - a.sortValue);
 
   const contactBoard = [...gameEntries]

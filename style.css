@@ -5330,6 +5330,9 @@ body.gameday-theme button:not(.secondary):not(.modal-close-button) {
 }
 
 .dashboard-button {
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 42px !important;
   margin-top: 22px;
   display: inline-flex;
   padding: 14px 22px;
