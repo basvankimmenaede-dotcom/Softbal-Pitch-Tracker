@@ -6232,3 +6232,28 @@ main { max-width: none !important; width: 100% !important; }
     display: none !important;
   }
 }
+
+
+/* === Final dashboard fixes: logo knop, geen dashboard menu-item, betere hot streak labels === */
+.app-nav-logo-row {
+  cursor: pointer;
+}
+
+.trend-bar {
+  grid-template-columns: 98px 1fr 48px !important;
+}
+
+.trend-bar span {
+  font-size: 12px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 560px) {
+  .trend-bar {
+    grid-template-columns: 86px 1fr 44px !important;
+  }
+
+  .trend-bar span {
+    font-size: 11px !important;
+  }
+}
