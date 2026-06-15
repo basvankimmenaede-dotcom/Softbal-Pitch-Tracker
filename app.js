@@ -223,16 +223,28 @@ function getDashboardPitcherGameEntries() {
 function renderLeaderboardRows(items, valueFormatter, noteFormatter) {
   if (!items.length) return `<p class="small-note">Nog geen data.</p>`;
 
-  return items.slice(0, 3).map((item, index) => `
-    <div class="leader-row">
-      <div class="leader-rank">${index + 1}</div>
-      <div>
-        <div class="leader-name">${item.pitcherName}</div>
-        <div class="leader-note">${noteFormatter ? noteFormatter(item) : ""}</div>
-      </div>
-      <div class="leader-value">${valueFormatter(item)}</div>
+  const rows = items.slice(0, 3);
+  const winner = rows[0];
+  const rest = rows.slice(1);
+
+  return `
+    <div class="dashboard-v2-winner">
+      <div class="dashboard-v2-medal">🥇</div>
+      <div class="dashboard-v2-winner-name">${winner.pitcherName}</div>
+      <div class="dashboard-v2-winner-value">${valueFormatter(winner)}</div>
+      <div class="dashboard-v2-winner-note">${noteFormatter ? noteFormatter(winner) : ""}</div>
     </div>
-  `).join("");
+    ${rest.map((item, index) => `
+      <div class="leader-row dashboard-v2-runner">
+        <div class="leader-rank dashboard-v2-runner-rank">${index + 2}</div>
+        <div>
+          <div class="leader-name">${item.pitcherName}</div>
+          <div class="leader-note">${noteFormatter ? noteFormatter(item) : ""}</div>
+        </div>
+        <div class="leader-value">${valueFormatter(item)}</div>
+      </div>
+    `).join("")}
+  `;
 }
 
 function getLatestClosedGameForDashboard() {
@@ -263,6 +275,11 @@ function renderDashboard() {
   setTextIfExists("dashboardTeamKbb", teamKbb);
   setTextIfExists("dashboardTotalPitches", formatDashboardNumber(teamStats.totalPitches));
 
+  const footer = document.getElementById("dashboardDataFooter");
+  if (footer) {
+    footer.innerHTML = `Gebaseerd op <span>${formatDashboardNumber(closedGames.length)} wedstrijden</span> · <span>${formatDashboardNumber(teamStats.totalPitches)} pitches</span>`;
+  }
+
   if (latestGame) {
     const pitcherNames = getPitcherNamesForGame(latestGame);
     const allPitchersLabel = pitcherNames.length
@@ -272,10 +289,13 @@ function renderDashboard() {
     const lastStats = calculateGameStats({ pitches: latestGame.pitches || [] });
     const lastStrikePct = lastStats.totalPitches ? Math.round((lastStats.strikes / lastStats.totalPitches) * 100) : 0;
 
-    setTextIfExists("dashboardLastGameSubtitle", `Laatste wedstrijd: ${latestGame.opponent || "-"} · ${formatDateTimeCompact(latestGame.date, latestGame.startTime)}`);
+    setTextIfExists("dashboardLastOpponent", latestGame.opponent || "-");
+    setTextIfExists("dashboardLastGameSubtitle", formatDateTimeCompact(latestGame.date, latestGame.startTime));
     setTextIfExists("dashboardLastPitcher", allPitchersLabel);
     setTextIfExists("dashboardLastPitches", lastStats.totalPitches);
     setTextIfExists("dashboardLastStrikePct", `${lastStrikePct}%`);
+    setTextIfExists("dashboardLastStrikeouts", lastStats.strikeouts || 0);
+    setTextIfExists("dashboardLastWalks", lastStats.walks || 0);
     setTextIfExists("dashboardLastKbb", `${lastStats.strikeouts || 0} / ${lastStats.walks || 0}`);
   }
 
@@ -336,9 +356,11 @@ function renderDashboardHotStreak(pitcherStats) {
 
   const hot = candidates[0];
   const bars = document.getElementById("dashboardHotBars");
+  const delta = document.getElementById("dashboardHotDelta");
 
   if (!hot) {
     if (bars) bars.innerHTML = `<div class="small-note">Nog niet genoeg wedstrijden voor een hot streak.</div>`;
+    if (delta) delta.classList.add("hidden");
     return;
   }
 
@@ -348,12 +370,20 @@ function renderDashboardHotStreak(pitcherStats) {
 
   if (bars) {
     bars.innerHTML = hot.gamePercentages.map(item => `
-      <div class="trend-bar">
+      <div class="trend-bar dashboard-v2-trend-row">
         <span>${item.label}</span>
-        <div class="trend-track"><div class="trend-fill" style="width:${Math.max(0, Math.min(100, item.value))}%"></div></div>
+        <div class="trend-track dashboard-v2-track"><div class="trend-fill dashboard-v2-fill" style="width:${Math.max(0, Math.min(100, item.value))}%"></div></div>
         <b>${item.value}%</b>
       </div>
     `).join("");
+  }
+
+  if (delta) {
+    const first = hot.gamePercentages[hot.gamePercentages.length - 1]?.value || 0;
+    const last = hot.gamePercentages[0]?.value || 0;
+    const diff = last - first;
+    delta.textContent = `${diff >= 0 ? "▲" : "▼"} ${diff >= 0 ? "+" : ""}${diff}% over de laatste ${hot.gamePercentages.length} wedstrijden`;
+    delta.classList.remove("hidden");
   }
 }
 
