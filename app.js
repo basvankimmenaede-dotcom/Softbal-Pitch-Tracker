@@ -49,6 +49,17 @@ function closeMobileNav() {
   if (nav) nav.classList.remove("open");
 }
 
+
+function hideNavForModal() {
+  const nav = document.getElementById("appTopNav");
+  if (nav) nav.classList.add("nav-hidden-for-modal");
+}
+
+function restoreNavAfterModal() {
+  const nav = document.getElementById("appTopNav");
+  if (nav) nav.classList.remove("nav-hidden-for-modal");
+}
+
 function showAppNav() {
   const nav = document.getElementById("appTopNav");
   if (nav) nav.classList.remove("hidden");
@@ -1290,6 +1301,7 @@ function openEditTeamPlayerModal(index) {
 
   const modal = document.getElementById("editTeamPlayerModal");
   bindBattedBallModalEvents();
+  installRecapModalNavObserver();
   if (modal) modal.classList.remove("hidden");
 }
 
@@ -1511,6 +1523,24 @@ let game = {
 
 
 
+
+function installRecapModalNavObserver() {
+  const recapModals = Array.from(document.querySelectorAll('[id*="Recap"][class*="modal"], [id*="recap"][class*="modal"], .game-recap-modal, #gameRecapModal, #gameRecapDetailModal'));
+  if (!recapModals.length) return;
+
+  const update = () => {
+    const hasOpenRecapModal = recapModals.some(modal => !modal.classList.contains("hidden"));
+    if (hasOpenRecapModal) hideNavForModal();
+    else restoreNavAfterModal();
+  };
+
+  recapModals.forEach(modal => {
+    new MutationObserver(update).observe(modal, { attributes: true, attributeFilter: ["class"] });
+  });
+
+  update();
+}
+
 function init() {
   const dateInput = document.getElementById("gameDate");
   const timeInput = document.getElementById("gameTime");
@@ -1530,6 +1560,9 @@ function setActiveScreen(screenId) {
   document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
   const target = document.getElementById(screenId);
   if (target) target.classList.add("active");
+
+  document.body.classList.toggle("dashboard-active", screenId === "homeScreen");
+
   if (screenId !== "loginScreen") showAppNav();
   closeMobileNav();
 }
@@ -3451,6 +3484,7 @@ function renderGameRecapCards() {
 }
 
 function openGameRecapModal(gameId) {
+  hideNavForModal();
   const modal = document.getElementById("gameRecapModal");
   const titleEl = document.getElementById("gameRecapModalTitle");
   const body = document.getElementById("gameRecapModalBody");
@@ -3478,6 +3512,7 @@ function openGameRecapModal(gameId) {
 }
 
 function closeGameRecapModal() {
+  restoreNavAfterModal();
   const modal = document.getElementById("gameRecapModal");
   if (modal) modal.classList.add("hidden");
 }

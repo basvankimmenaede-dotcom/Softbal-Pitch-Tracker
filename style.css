@@ -6260,3 +6260,59 @@ main { max-width: none !important; width: 100% !important; }
     font-size: 11px !important;
   }
 }
+
+
+/* === Fix: dashboard breed, overige pagina's smal + recap popup boven nav === */
+.app {
+  max-width: 480px !important;
+  width: min(480px, 100%) !important;
+  margin: 0 auto !important;
+  padding: 18px !important;
+}
+
+.app:has(#homeScreen.active) {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+.dashboard-screen.active {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.dashboard-screen .dashboard-shell {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.app-top-nav.nav-hidden-for-modal {
+  display: none !important;
+}
+
+.modal,
+#gameRecapModal,
+#gameRecapDetailModal,
+[id*="Recap"][class*="modal"],
+[id*="recap"][class*="modal"] {
+  z-index: 5000 !important;
+}
+
+.game-recap-modal-card {
+  z-index: 5001 !important;
+}
+
+@supports not selector(:has(*)) {
+  .app {
+    max-width: 480px !important;
+    width: min(480px, 100%) !important;
+    margin: 0 auto !important;
+    padding: 18px !important;
+  }
+
+  body.dashboard-active .app {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+}
