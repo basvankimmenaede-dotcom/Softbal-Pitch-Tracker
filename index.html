@@ -8,18 +8,47 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="gameday-theme">
+
+  <header class="app-top-nav hidden" id="appTopNav">
+    <div class="app-nav-logo-row" onclick="showHome()" role="button" tabindex="0" aria-label="Naar dashboard">
+      <img src="logo.png" alt="OG Logo" class="app-nav-logo">
+      <div>
+        <strong>OG Pitching</strong>
+        <span>Dashboard</span>
+      </div>
+      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileNav()" aria-label="Menu openen">☰</button>
+    </div>
+
+    <nav id="mainNavLinks" class="app-nav-links">
+      <button onclick="showSetup()">Nieuwe game</button>
+      <button onclick="showUnfinishedGames()">Niet afgesloten</button>
+      <button onclick="showPreviousGames()">Vorige games</button>
+      <button onclick="showGameRecaps()">Game recaps</button>
+      <button onclick="showPitcherStats()">Pitching stats</button>
+      <button onclick="showPitcherHeatmaps()">Heatmaps</button>
+      <button onclick="showBatterSearch()">Zoek slagvrouw</button>
+      <button onclick="showTeams()">Teams</button>
+    </nav>
+  </header>
+
+
   <main class="app">
-    <section class="hero" onclick="goHomeIfAuthenticated()"     role="button" tabindex="0" aria-label="Terug naar hoofdmenu">
+    <section class="hero app-old-hero" onclick="goHomeIfAuthenticated()"     role="button" tabindex="0" aria-label="Terug naar hoofdmenu">
       <div class="eyebrow">Onze Gezellen U21</div>
       <h1>Pitching Tracker</h1>
       
     </section>
 
-    
-    <section id="loginScreen" class="screen active">
-      <div class="card">
+    <section id="loginScreen" class="screen active login-overlay-screen">
+      <div class="login-modal-card">
         <div class="hero-logo-wrap">
           <img src="logo.png" alt="OG Logo" class="hero-logo">
+        </div>
+
+        <div class="login-modal-text">
+          <div class="eyebrow">Onze Gezellen U21</div>
+          <h2>Pitching Tracker</h2>
+          <p>Voer het wachtwoord in om het dashboard te openen.</p>
         </div>
 
         <label for="sitePasswordInput">Wachtwoord</label>
@@ -33,25 +62,118 @@
       </div>
     </section>
 
+    <section id="homeScreen" class="screen dashboard-screen">
+      <div class="dashboard-shell dashboard-v2-shell">
+        <header class="dashboard-v2-brand">
+          <div class="dashboard-v2-logo-orb">
+            <img src="logo.png" alt="OG Logo">
+          </div>
+          <h1>OG Pitching</h1>
+          <p>Analytics Dashboard</p>
+        </header>
 
-    <section id="homeScreen" class="screen">
-      <div class="card placeholder-card">
-        <img class="home-logo" src="logo.png" alt="Onze Gezellen logo" />
-        <h2 class="home-title">Onze Gezellen U21</h2>
-        <p class="home-subtitle">Pitching Tracker</p>
+        <section class="dashboard-v2-hero-grid">
+          <article class="dashboard-v2-card dashboard-v2-last-game">
+            <div class="dashboard-eyebrow">Laatste wedstrijd</div>
+            <h2 id="dashboardLastOpponent">-</h2>
+            <div id="dashboardLastGameSubtitle" class="dashboard-v2-game-meta">Laatste wedstrijd wordt geladen uit de datasheet...</div>
+            <div id="dashboardLastPitcher" class="dashboard-v2-pitcher-pill">-</div>
+
+            <div class="dashboard-v2-hero-stats">
+              <div class="dashboard-v2-hero-stat"><strong id="dashboardLastPitches">-</strong><small>Pitches</small></div>
+              <div class="dashboard-v2-hero-stat"><strong id="dashboardLastStrikePct">-</strong><small>Strike %</small></div>
+              <div class="dashboard-v2-hero-stat"><strong id="dashboardLastStrikeouts">-</strong><small>Strikeouts</small></div>
+              <div class="dashboard-v2-hero-stat"><strong id="dashboardLastWalks">-</strong><small>Walks</small></div>
+            </div>
+
+            <button class="dashboard-button dashboard-v2-recap-button" type="button" onclick="showGameRecaps()">Bekijk laatste recap</button>
+          </article>
+
+          <article class="dashboard-v2-card dashboard-v2-hot-card">
+            <div class="dashboard-eyebrow">🔥 In the zone</div>
+            <div class="dashboard-v2-hot-head">
+              <div id="dashboardHotAvatar" class="dashboard-v2-hot-avatar">-</div>
+              <div>
+                <h3 id="dashboardHotName">Nog geen data</h3>
+                <p id="dashboardHotText">Hot streak wordt berekend uit de laatste wedstrijden.</p>
+              </div>
+            </div>
+
+            <div id="dashboardHotBars" class="dashboard-v2-trend-list">
+              <div class="small-note">Google Sheets wordt geladen...</div>
+            </div>
+
+            <div id="dashboardHotDelta" class="dashboard-v2-trend-up hidden"></div>
+          </article>
+        </section>
+
         <div class="offline-sync-status sync-status hidden"></div>
-        <div class="home-menu">
-          <button onclick="showSetup()">Nieuwe game <span>→</span></button>
-          <button onclick="showUnfinishedGames()">Niet afgesloten games <span>→</span></button>
-          <button onclick="showPreviousGames()">Vorige games <span>→</span></button>
-          <button onclick="showGameRecaps()">Game Recaps <span>→</span></button>
-          <button onclick="showPitcherStats()">Pitching stats <span>→</span></button>
-          <button onclick="showPitcherHeatmaps()">Pitcher Heatmaps <span>→</span></button>
-          <button onclick="showBatterSearch()">Zoek op slagvrouw <span>→</span></button>
-          <button onclick="showTeams()">Teams <span>→</span></button>
+
+        <div class="dashboard-section-title dashboard-v2-section-title">
+          <h2>Team Snapshot</h2>
+          <span>Alle wedstrijden uit de datasheet</span>
+        </div>
+
+        <section class="snapshot-grid dashboard-v2-kpi-grid">
+          <div class="snapshot-card dashboard-v2-kpi"><strong id="dashboardTeamStrikePct">-</strong><small>Team Strike %</small></div>
+          <div class="snapshot-card dashboard-v2-kpi"><strong id="dashboardTeamFpsPct">-</strong><small>FPS %</small></div>
+          <div class="snapshot-card dashboard-v2-kpi dark"><strong id="dashboardTeamKbb">-</strong><small>Team S/B</small></div>
+          <div class="snapshot-card dashboard-v2-kpi"><strong id="dashboardTotalPitches">-</strong><small>Totaal pitches</small></div>
+        </section>
+
+        <div class="dashboard-section-title dashboard-v2-section-title">
+          <h2>Leaderboards</h2>
+          <span>K = totaal · FPS/SB/Contact = per wedstrijd</span>
+        </div>
+
+        <section class="leaderboard-grid dashboard-v2-leaderboards">
+          <div class="leaderboard-card dashboard-v2-podium-card">
+            <div class="leaderboard-head dashboard-v2-podium-title"><h3>Strikeouts</h3><span>K</span></div>
+            <div id="leaderboardStrikeouts"></div>
+          </div>
+
+          <div class="leaderboard-card dashboard-v2-podium-card">
+            <div class="leaderboard-head dashboard-v2-podium-title"><h3>FPS %</h3><span>First pitch</span></div>
+            <div id="leaderboardFps"></div>
+          </div>
+
+          <div class="leaderboard-card dashboard-v2-podium-card">
+            <div class="leaderboard-head dashboard-v2-podium-title"><h3>S/B Ratio</h3><span>Min. 20 P</span></div>
+            <div id="leaderboardSbRatio"></div>
+          </div>
+
+          <div class="leaderboard-card dashboard-v2-podium-card">
+            <div class="leaderboard-head dashboard-v2-podium-title"><h3>Minst contact</h3><span>%</span></div>
+            <div id="leaderboardContact"></div>
+          </div>
+        </section>
+
+        <div class="dashboard-section-title dashboard-v2-section-title">
+          <h2>Scouting Notes</h2>
+          <span>Automatisch uit pitchdata</span>
+        </div>
+
+        <section class="scouting-strip dashboard-v2-scouting-grid">
+          <div class="scouting-card dashboard-v2-scout">
+            <h3>⚔️ Meeste K's tegen</h3>
+            <p id="dashboardOpponentKs">Wordt geladen...</p>
+          </div>
+          <div class="scouting-card dashboard-v2-scout">
+            <h3>🥊 Slagvrouwen</h3>
+            <p id="dashboardBatterKs">Wordt geladen...</p>
+          </div>
+          <div class="scouting-card dashboard-v2-scout">
+            <h3>🏅 Team records</h3>
+            <p id="dashboardRecords">Wordt geladen...</p>
+          </div>
+        </section>
+
+        <div id="dashboardDataFooter" class="dashboard-v2-data-footer">
+          Gebaseerd op <span>- wedstrijden</span> · <span>- pitches</span>
         </div>
       </div>
     </section>
+
 
     <section id="placeholderScreen" class="screen">
       <div class="card placeholder-card">
