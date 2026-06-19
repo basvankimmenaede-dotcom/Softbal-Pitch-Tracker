@@ -376,6 +376,25 @@ function getDashboardPitcherGameEntries() {
 }
 
 
+
+function getPitcherNamesFromSheet() {
+  const names = new Set();
+
+  getSheetGamesOnly().forEach(gameData => {
+    if (gameData.pitcherName) names.add(String(gameData.pitcherName).trim());
+
+    (gameData.pitches || []).forEach(pitch => {
+      if (pitch.pitcherName) names.add(String(pitch.pitcherName).trim());
+    });
+
+    (gameData.runEvents || []).forEach(event => {
+      if (event.pitcherName) names.add(String(event.pitcherName).trim());
+    });
+  });
+
+  return [...names].filter(Boolean).sort((a, b) => a.localeCompare(b));
+}
+
 function renderEraLeaderboardRows(items) {
   if (!items.length) return `<p class="small-note">Nog geen ERA-data.</p>`;
 
@@ -500,16 +519,33 @@ function renderDashboard() {
     .filter(item => item.stats.totalPitches >= 10)
     .sort((a, b) => a.contactPct - b.contactPct || b.stats.totalPitches - a.stats.totalPitches || b.sortValue - a.sortValue);
 
-  const eraBoard = [...pitcherStats]
-    .map(item => ({
-      pitcherName: item.pitcherName,
-      outs: Number(item.stats.outs || 0),
-      earnedRuns: Number(item.stats.earnedRuns || 0),
-      unearnedRuns: Number(item.stats.unearnedRuns || 0),
-      runsAllowed: Number(item.stats.runsAllowed || 0),
-      era: formatEra(item.stats.earnedRuns, item.stats.outs)
-    }))
-    .filter(item => item.outs >= 18)
+  const eraBoard = getPitcherNamesFromSheet()
+    .map(pitcherName => {
+      const gamesForPitcher = getPitcherGames(pitcherName);
+      const totals = gamesForPitcher.reduce((acc, gameItem) => {
+        const stats = calculateGameStats(gameItem);
+        acc.outs += Number(stats.outs || 0);
+        acc.earnedRuns += Number(stats.earnedRuns || 0);
+        acc.unearnedRuns += Number(stats.unearnedRuns || 0);
+        acc.runsAllowed += Number(stats.runsAllowed || 0);
+        return acc;
+      }, {
+        outs: 0,
+        earnedRuns: 0,
+        unearnedRuns: 0,
+        runsAllowed: 0
+      });
+
+      return {
+        pitcherName,
+        outs: totals.outs,
+        earnedRuns: totals.earnedRuns,
+        unearnedRuns: totals.unearnedRuns,
+        runsAllowed: totals.runsAllowed,
+        era: formatEra(totals.earnedRuns, totals.outs)
+      };
+    })
+    .filter(item => item.outs >= 36)
     .sort((a, b) => Number(a.era) - Number(b.era) || b.outs - a.outs);
 
   const kEl = document.getElementById("leaderboardStrikeouts");
