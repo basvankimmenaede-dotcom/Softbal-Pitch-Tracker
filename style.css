@@ -7053,9 +7053,9 @@ body:has(#loginScreen.active) .app {
 }
 
 
-/* === UI tweaks: game events position, non-sticky menu, pitching stats ERA row === */
+/* === UI tweaks from working password version === */
 
-/* De topbalk zelf beweegt mee met de pagina; alleen het logo blijft sticky. */
+/* Menu-links scrollen normaal mee; alleen de logo-rij blijft bovenin zichtbaar. */
 .app-top-nav {
   position: static !important;
   top: auto !important;
@@ -7076,17 +7076,17 @@ body:has(#loginScreen.active) .app {
   top: auto !important;
 }
 
-/* Game Events staat nu boven de wedstrijd-bediening. */
+/* Game Events boven de wedstrijdbediening. */
 .game-controls-card > .game-events-card {
-  margin-top: 0;
-  margin-bottom: 16px;
-  padding-top: 0;
-  padding-bottom: 14px;
-  border-top: 0;
-  border-bottom: 1px solid var(--line);
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+  padding-top: 0 !important;
+  padding-bottom: 14px !important;
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
 }
 
-/* Runs Allowed + ERA delen samen dezelfde breedte als een normale 3-koloms rij. */
+/* Runs Allowed + ERA delen samen de breedte van de normale 3-koloms rij. */
 .pitcher-stats-grid .stats-era-row {
   grid-column: 1 / -1;
   display: grid;
