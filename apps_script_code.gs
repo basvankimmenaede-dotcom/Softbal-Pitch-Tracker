@@ -3,8 +3,88 @@ function doPost(e) {
   ensureHeaders_(sheet);
 
   const data = JSON.parse(e.postData.contents);
+  const rowType = data.type || "pitch";
+
+  if (rowType === "game_event") {
+    sheet.appendRow([
+      "game_event",
+      new Date(),
+      data.gameId || "",
+      data.date || "",
+      data.startTime || "",
+      data.opponent || "",
+      data.pitcherName || "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      data.eventType || "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      data.totalOuts || 0,
+      "",
+      "",
+      data.closed || false,
+      data.closedAt || "",
+      "",
+      "",
+      data.earnedRuns || 0,
+      data.unearnedRuns || 0,
+      data.runnerOuts || 0
+    ]);
+    return ContentService.createTextOutput("OK");
+  }
+
+  if (rowType === "game_status") {
+    sheet.appendRow([
+      "game_status",
+      new Date(),
+      data.gameId || "",
+      data.date || "",
+      data.startTime || "",
+      data.opponent || "",
+      data.pitcherName || "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      data.totalBalls || 0,
+      data.totalStrikes || 0,
+      data.totalOuts || 0,
+      data.inningsPitched || "",
+      "",
+      data.closed || true,
+      data.closedAt || "",
+      data.totalPitches || "",
+      data.firstPitchStrikes || "",
+      "",
+      "",
+      ""
+    ]);
+    return ContentService.createTextOutput("OK");
+  }
 
   sheet.appendRow([
+    "pitch",
     new Date(),
     data.gameId || "",
     data.date || "",
@@ -30,7 +110,19 @@ function doPost(e) {
     data.totalStrikes || 0,
     data.totalOuts || 0,
     data.inningsPitched || "",
-    data.walk || false
+    data.walk || false,
+    data.closed || false,
+    data.closedAt || "",
+    data.totalPitches || "",
+    data.firstPitchStrikes || "",
+    "",
+    "",
+    "",
+    data.battedBallX || "",
+    data.battedBallY || "",
+    data.battedBallZone || "",
+    data.battedBallHardness || "",
+    data.battedBallHeight || ""
   ]);
 
   return ContentService.createTextOutput("OK");
@@ -63,6 +155,7 @@ function doGet(e) {
 
 function ensureHeaders_(sheet) {
   const headers = [
+    "Row Type",
     "Timestamp",
     "Game ID",
     "Datum",
@@ -88,14 +181,34 @@ function ensureHeaders_(sheet) {
     "Total Strikes",
     "Total Outs",
     "Innings Pitched",
-    "Walk"
+    "Walk",
+    "Closed",
+    "Closed At",
+    "Total Pitches",
+    "First Pitch Strikes",
+    "Earned Runs",
+    "Unearned Runs",
+    "Runner Outs",
+    "Batted Ball X",
+    "Batted Ball Y",
+    "Batted Ball Zone",
+    "Batted Ball Hardness",
+    "Batted Ball Height"
   ];
 
-  const firstRow = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
-  const hasHeaders = firstRow[0] === "Timestamp" && firstRow[1] === "Game ID";
+  const existingLastCol = Math.max(sheet.getLastColumn(), headers.length);
+  const firstRow = sheet.getRange(1, 1, 1, existingLastCol).getValues()[0];
+  const hasHeaders = firstRow[0] === "Row Type" || (firstRow[0] === "Timestamp" && firstRow[1] === "Game ID");
 
   if (!hasHeaders) {
     sheet.insertRowBefore(1);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    return;
+  }
+
+  // Als de oude headerstructuur al bestaat, niet destructief overschrijven.
+  // Nieuwe rijen worden met Row Type op kolom A geschreven; de website kan beide formats lezen.
+  if (firstRow[0] === "Row Type") {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
 }

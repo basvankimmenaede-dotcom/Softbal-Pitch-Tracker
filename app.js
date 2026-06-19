@@ -70,6 +70,95 @@ function hideAppNav() {
   if (nav) nav.classList.add("hidden");
 }
 
+
+function normalizeRunEvents(gameData) {
+  gameData.runEvents = Array.isArray(gameData.runEvents) ? gameData.runEvents : [];
+  return gameData.runEvents;
+}
+
+function getActivePitcherRunTotals() {
+  const events = normalizeRunEvents(game);
+  const pitcherName = String(game.pitcherName || "");
+  return events
+    .filter(event => String(event.pitcherName || "") === pitcherName)
+    .reduce((acc, event) => {
+      acc.earnedRuns += Number(event.earnedRuns || 0);
+      acc.unearnedRuns += Number(event.unearnedRuns || 0);
+      acc.runnerOuts += Number(event.runnerOuts || 0);
+      return acc;
+    }, { earnedRuns: 0, unearnedRuns: 0, runnerOuts: 0 });
+}
+
+function getPitcherRunTotals(gameData, pitcherName = "") {
+  const events = normalizeRunEvents(gameData);
+  return events
+    .filter(event => !pitcherName || String(event.pitcherName || "") === String(pitcherName || ""))
+    .reduce((acc, event) => {
+      acc.earnedRuns += Number(event.earnedRuns || 0);
+      acc.unearnedRuns += Number(event.unearnedRuns || 0);
+      acc.runnerOuts += Number(event.runnerOuts || 0);
+      return acc;
+    }, { earnedRuns: 0, unearnedRuns: 0, runnerOuts: 0 });
+}
+
+function formatEra(earnedRuns, outs) {
+  const outCount = Number(outs || 0);
+  if (!outCount) return "0.00";
+  const innings = outCount / 3;
+  return ((Number(earnedRuns || 0) * 7) / innings).toFixed(2);
+}
+
+function addRunEvent(eventType, delta) {
+  const safeDelta = Number(delta || 0);
+  if (!safeDelta) return;
+
+  const totals = getActivePitcherRunTotals();
+
+  if (eventType === "earnedRuns" && safeDelta < 0 && totals.earnedRuns <= 0) return;
+  if (eventType === "unearnedRuns" && safeDelta < 0 && totals.unearnedRuns <= 0) return;
+
+  const event = {
+    type: "game_event",
+    eventType,
+    delta: safeDelta,
+    timestamp: new Date().toISOString(),
+    gameId: game.gameId,
+    date: game.date,
+    startTime: game.startTime,
+    opponent: game.opponent,
+    pitcherName: game.pitcherName,
+    earnedRuns: eventType === "earnedRuns" ? safeDelta : 0,
+    unearnedRuns: eventType === "unearnedRuns" ? safeDelta : 0,
+    runnerOuts: eventType === "runnerOut" ? safeDelta : 0,
+    totalOuts: game.totalOuts || 0
+  };
+
+  game.runEvents = normalizeRunEvents(game);
+  game.runEvents.push(event);
+
+  if (eventType === "runnerOut") {
+    addOut(false);
+  }
+
+  saveLocalGame();
+  updateUI();
+
+  setSyncStatus("Game event lokaal opgeslagen. Sync wordt gestart...", "loading");
+  queueGoogleSheetPayload("game_event", event, "Game event").catch(error => {
+    console.error("Game event sync fout", error);
+    setSyncStatus("Game event lokaal opgeslagen, maar sync kon nog niet starten.", "error");
+  });
+}
+
+function recordRunnerOut() {
+  addRunEvent("runnerOut", 1);
+}
+
+function changePitcherRun(type, delta) {
+  if (!["earnedRuns", "unearnedRuns"].includes(type)) return;
+  addRunEvent(type, delta);
+}
+
 function formatDashboardNumber(value) {
   return Number(value || 0).toLocaleString("nl-NL");
 }
@@ -1524,7 +1613,8 @@ let game = {
   appsScriptUrl: APPS_SCRIPT_URL,
   gameId: "",
   closed: false,
-  startedAt: ""
+  startedAt: "",
+  runEvents: []
 };
 
 
@@ -2301,13 +2391,15 @@ function getPitcherGames(pitcherName) {
   return getSheetGamesOnly()
     .map(g => {
       const pitcherPitches = (g.pitches || []).filter(p => p.pitcherName === pitcherName);
-      if (!pitcherPitches.length) return null;
+      const pitcherRunEvents = (g.runEvents || []).filter(event => String(event.pitcherName || "") === String(pitcherName || ""));
+      if (!pitcherPitches.length && !pitcherRunEvents.length) return null;
 
       return {
         ...g,
         pitcherName,
         pitches: pitcherPitches,
-        totalOuts: getPitcherOutsFromPitches(pitcherPitches),
+        runEvents: pitcherRunEvents,
+        totalOuts: getPitcherOutsFromPitches(pitcherPitches) + getPitcherRunTotals({ runEvents: pitcherRunEvents }, pitcherName).runnerOuts,
         totalBalls: pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).length,
         totalStrikes: pitcherPitches.filter(p => isStrikeResult(p.result)).length,
         firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length
@@ -2378,12 +2470,17 @@ function calculateGameStats(g) {
 
   const strikes = pitches.filter(p => isStrikeResult(p.result)).length;
   const balls = pitches.filter(p => ["Ball", "HBP"].includes(p.result)).length;
-  const outs = getPitcherOutsFromPitches(pitches);
+  const runTotals = getPitcherRunTotals(g, g.pitcherName || "");
+  const outs = getPitcherOutsFromPitches(pitches) + Number(runTotals.runnerOuts || 0);
   const fps = pitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length;
   const totalBatters = countTotalBatters(g);
   const walks = countWalks(g);
   const strikeouts = countStrikeoutsFromPitches(pitches);
   const sbRatio = balls === 0 ? strikes.toFixed(2) : (strikes / balls).toFixed(2);
+  const earnedRuns = Number(runTotals.earnedRuns || 0);
+  const unearnedRuns = Number(runTotals.unearnedRuns || 0);
+  const runsAllowed = earnedRuns + unearnedRuns;
+  const era = formatEra(earnedRuns, outs);
 
   return {
     totalPitches,
@@ -2395,7 +2492,11 @@ function calculateGameStats(g) {
     totalBatters,
     walks,
     strikeouts,
-    sbRatio
+    sbRatio,
+    earnedRuns,
+    unearnedRuns,
+    runsAllowed,
+    era
   };
 }
 
@@ -2453,6 +2554,10 @@ function resetPitcherStatsOverview() {
   setTextIfExists("statsFPSBatters", "0%");
   setTextIfExists("statsTotalStrikeouts", "0");
   setTextIfExists("statsWalks", "0");
+  setTextIfExists("statsEarnedRuns", "0");
+  setTextIfExists("statsUnearnedRuns", "0");
+  setTextIfExists("statsRunsAllowed", "0");
+  setTextIfExists("statsEra", "0.00");
   setStatHighlight("statsFPSBatters", false);
   setStatHighlight("statsSBRatio", false);
 }
@@ -2488,8 +2593,11 @@ function renderPitcherStats() {
     acc.walks += s.walks;
     acc.strikeouts += s.strikeouts;
     acc.totalBatters += s.totalBatters;
+    acc.earnedRuns += s.earnedRuns;
+    acc.unearnedRuns += s.unearnedRuns;
+    acc.runsAllowed += s.runsAllowed;
     return acc;
-  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, strikeouts: 0, totalBatters: 0 });
+  }, { totalPitches: 0, strikes: 0, balls: 0, outs: 0, fps: 0, walks: 0, strikeouts: 0, totalBatters: 0, earnedRuns: 0, unearnedRuns: 0, runsAllowed: 0 });
 
   const totalsFpsPercent = getFpsPercentValue(totals.fps, totals.totalBatters);
   const currentSBRatio = totals.balls === 0 ? Number(totals.strikes) : Number(totals.strikes / totals.balls);
@@ -2529,6 +2637,10 @@ function renderPitcherStats() {
   setTextIfExists("statsFPSBatters", formatStatWithTrend(`${totalsFpsPercent}%`, fpsTrendArrow));
   setTextIfExists("statsTotalStrikeouts", formatStatWithTrend(totals.strikeouts, strikeoutTrendArrow));
   setTextIfExists("statsWalks", formatStatWithTrend(totals.walks, walkTrendArrow));
+  setTextIfExists("statsEarnedRuns", totals.earnedRuns);
+  setTextIfExists("statsUnearnedRuns", totals.unearnedRuns);
+  setTextIfExists("statsRunsAllowed", totals.runsAllowed);
+  setTextIfExists("statsEra", formatEra(totals.earnedRuns, totals.outs));
 
   setStatHighlight("statsFPSBatters", totalsFpsPercent > 50);
   setStatHighlight("statsSBRatio", Number(currentSBRatio || 0) > 1);
@@ -2549,6 +2661,10 @@ function renderPitcherStats() {
         <td class="${getGoodStatClass(Number(s.sbRatio) > 1)}">${s.sbRatio}</td>
         <td>${s.walks}</td>
         <td>${s.strikeouts || 0}</td>
+        <td>${s.earnedRuns || 0}</td>
+        <td>${s.unearnedRuns || 0}</td>
+        <td>${s.runsAllowed || 0}</td>
+        <td>${s.era}</td>
         <td class="${getGoodStatClass(getFpsPercentValue(s.fps, s.totalBatters) > 50)}">${getFpsPercentValue(s.fps, s.totalBatters)}%</td>
       </tr>
     `;
@@ -3477,7 +3593,7 @@ function renderGameRecapCards() {
           <div class="pitcher-initials">${getPitcherInitials(item.pitcherName)}</div>
           <div>
             <strong>${item.pitcherName}</strong>
-            <span>${stats.totalPitches}P · ${item.strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB · ${stats.ip} IP</span>
+            <span>${stats.totalPitches}P · ${item.strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB · ${stats.ip} IP · ${stats.earnedRuns || 0}ER · ERA ${stats.era}</span>
           </div>
         </div>
       `;
@@ -4284,6 +4400,7 @@ function startGame() {
   game.outs = 0;
   game.totalOuts = 0;
   game.pitches = [];
+  game.runEvents = [];
   game.pitcherSessions = [];
   startPitcherSession(game.pitcherName);
   saveLocalGame();
@@ -5177,6 +5294,9 @@ function updateUI() {
   document.getElementById("totalPitches").textContent = getActivePitcherPitchCount();
   document.getElementById("fpsCount").textContent = game.firstPitchStrikes;
   document.getElementById("inningsPitched").textContent = formatInningsPitched(game.totalOuts);
+  const activeRunTotals = getActivePitcherRunTotals();
+  setTextIfExists("activePitcherEarnedRuns", activeRunTotals.earnedRuns);
+  setTextIfExists("activePitcherUnearnedRuns", activeRunTotals.unearnedRuns);
   const activePitcherLabel = document.getElementById("activePitcherLabel");
   if (activePitcherLabel) activePitcherLabel.textContent = game.pitcherName || "-";
   document.getElementById("currentBalls").textContent = game.balls;
@@ -5279,7 +5399,8 @@ async function sendGameStatusToGoogleSheet() {
     totalOuts: game.totalOuts,
     inningsPitched: formatInningsPitched(game.totalOuts),
     totalPitches: getActivePitcherPitchCount(),
-    firstPitchStrikes: game.firstPitchStrikes || 0
+    firstPitchStrikes: game.firstPitchStrikes || 0,
+    runEvents: game.runEvents || []
   };
 
   await queueGoogleSheetPayload("game_status", payload, "Game status");
@@ -5541,6 +5662,54 @@ function convertSheetRowsToGames(payload) {
     const opponent = get(record, ["Tegenstander", "opponent"], rowType ? 5 : 4);
     const pitcherName = get(record, ["Pitcher", "pitcherName"], rowType ? 6 : 5);
 
+
+    if (rowType === "game_event") {
+      if (!games.has(gameId)) {
+        games.set(gameId, {
+          gameId,
+          date,
+          startTime,
+          opponent,
+          pitcherName,
+          lineup: [],
+          activeLineupSize: 9,
+          substitutionHistory: [],
+          pitcherSessions: [],
+          batterIndex: 0,
+          balls: 0,
+          strikes: 0,
+          totalBalls: 0,
+          totalStrikes: 0,
+          firstPitchStrikes: 0,
+          outs: 0,
+          totalOuts: 0,
+          pitches: [],
+          runEvents: [],
+          closed: false,
+          appsScriptUrl: APPS_SCRIPT_URL
+        });
+      }
+
+      const g = games.get(gameId);
+      g.runEvents = g.runEvents || [];
+      g.runEvents.push({
+        type: "game_event",
+        eventType: get(record, ["Event Type", "eventType"], 15),
+        timestamp: get(record, ["Timestamp", "timestamp"], 1),
+        gameId,
+        date,
+        startTime,
+        opponent,
+        pitcherName,
+        earnedRuns: Number(get(record, ["Earned Runs", "earnedRuns"], 30) || 0),
+        unearnedRuns: Number(get(record, ["Unearned Runs", "unearnedRuns"], 31) || 0),
+        runnerOuts: Number(get(record, ["Runner Outs", "runnerOuts"], 32) || 0),
+        totalOuts: Number(get(record, ["Total Outs", "totalOuts"], 27) || 0)
+      });
+      g.totalOuts = Math.max(g.totalOuts || 0, Number(get(record, ["Total Outs", "totalOuts"], 27) || 0));
+      return;
+    }
+
     if (rowType === "game_status") {
       if (!games.has(gameId)) {
         games.set(gameId, {
@@ -5562,6 +5731,7 @@ function convertSheetRowsToGames(payload) {
           outs: 0,
           totalOuts: 0,
           pitches: [],
+          runEvents: [],
           closed: true,
           closedAt: get(record, ["Closed At", "closedAt"], 29),
           appsScriptUrl: APPS_SCRIPT_URL
@@ -5663,6 +5833,7 @@ function convertSheetRowsToGames(payload) {
         outs: 0,
         totalOuts: 0,
         pitches: [],
+        runEvents: [],
         closed: rowType === "game_status" ? true : parseBool(get(record, ["Closed", "closed"], 28)),
         appsScriptUrl: APPS_SCRIPT_URL
       });

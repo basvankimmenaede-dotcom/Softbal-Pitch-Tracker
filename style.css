@@ -6955,3 +6955,99 @@ body:has(#loginScreen.active) .app {
     letter-spacing: .06em;
   }
 }
+
+
+/* === Runs Against / Runner Out game events === */
+.game-events-card {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.game-events-card h3 {
+  margin: 0;
+}
+
+.game-event-block {
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: rgba(248,250,252,.95);
+  padding: 14px;
+}
+
+.game-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.game-event-head strong {
+  display: block;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.game-event-head small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.runner-out-button {
+  width: 100%;
+  background: linear-gradient(135deg, #111827, #1f2937);
+  box-shadow: 0 12px 24px rgba(17,24,39,.18);
+}
+
+.run-event-pill {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,122,24,.14);
+  color: var(--orange);
+  font-weight: 950;
+  font-size: 12px;
+}
+
+.run-counter {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  gap: 10px;
+  align-items: center;
+}
+
+.run-counter button {
+  min-height: 44px;
+  padding: 0;
+  border-radius: 16px;
+  font-size: 22px;
+  box-shadow: none;
+}
+
+.run-counter-value {
+  height: 48px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: white;
+  border: 1px solid var(--line);
+  font-size: 26px;
+  font-weight: 950;
+  color: var(--text);
+}
+
+@media (max-width: 420px) {
+  .run-counter {
+    grid-template-columns: 44px 1fr 44px;
+  }
+}

@@ -212,6 +212,10 @@
           <div class="stat"><small>FPS percentage</small><strong id="statsFPSBatters">0%</strong></div>
           <div class="stat"><small>Total strikeouts</small><strong id="statsTotalStrikeouts">0</strong></div>
           <div class="stat"><small>Total walks</small><strong id="statsWalks">0</strong></div>
+          <div class="stat"><small>Earned runs</small><strong id="statsEarnedRuns">0</strong></div>
+          <div class="stat"><small>Unearned runs</small><strong id="statsUnearnedRuns">0</strong></div>
+          <div class="stat"><small>Runs allowed</small><strong id="statsRunsAllowed">0</strong></div>
+          <div class="stat"><small>ERA</small><strong id="statsEra">0.00</strong></div>
         </div>
 <div class="speed-overview-card">
           <div class="speed-overview-head">
@@ -248,11 +252,15 @@
                 <th>S/B</th>
                 <th>BB</th>
                 <th>K</th>
+                <th>ER</th>
+                <th>UER</th>
+                <th>RA</th>
+                <th>ERA</th>
                 <th>FPS %</th>
               </tr>
             </thead>
             <tbody id="statsPerGameBody">
-              <tr><td colspan="11">Kies een pitcher.</td></tr>
+              <tr><td colspan="15">Kies een pitcher.</td></tr>
             </tbody>
           </table>
         </div>
@@ -683,6 +691,50 @@
           <button class="danger" onclick="resetGame()">Einde wedstrijd</button>
 
           <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+        </div>
+
+        <div class="game-events-card">
+          <h3>Game Events</h3>
+
+          <div class="game-event-block">
+            <div class="game-event-head">
+              <div>
+                <strong>Runner Out</strong>
+                <small>Voor een honkloper die uit gaat. Slagvrouw en count blijven hetzelfde.</small>
+              </div>
+            </div>
+            <button type="button" class="runner-out-button" onclick="recordRunnerOut()">+ Runner Out</button>
+          </div>
+
+          <div class="game-event-block">
+            <div class="game-event-head">
+              <div>
+                <strong>Earned Runs</strong>
+                <small>Verdiende punten tegen de actieve pitcher.</small>
+              </div>
+              <div class="run-event-pill">ER</div>
+            </div>
+            <div class="run-counter">
+              <button type="button" class="secondary" onclick="changePitcherRun('earnedRuns', -1)">−</button>
+              <div id="activePitcherEarnedRuns" class="run-counter-value">0</div>
+              <button type="button" onclick="changePitcherRun('earnedRuns', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="game-event-block">
+            <div class="game-event-head">
+              <div>
+                <strong>Unearned Runs</strong>
+                <small>Punten door fouten/verdediging. Tellen niet mee voor ERA.</small>
+              </div>
+              <div class="run-event-pill">UER</div>
+            </div>
+            <div class="run-counter">
+              <button type="button" class="secondary" onclick="changePitcherRun('unearnedRuns', -1)">−</button>
+              <div id="activePitcherUnearnedRuns" class="run-counter-value">0</div>
+              <button type="button" onclick="changePitcherRun('unearnedRuns', 1)">+</button>
+            </div>
+          </div>
         </div>
       </section>
 
