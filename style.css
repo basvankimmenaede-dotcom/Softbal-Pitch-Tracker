@@ -7128,3 +7128,9 @@ body:has(#loginScreen.active) .app {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* === Pitching stats BF column === */
+.gameday-pitching-stats .stats-table {
+  min-width: 720px;
+}

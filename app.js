@@ -2680,7 +2680,7 @@ function renderPitcherStats() {
 
   if (!pitcherName) {
     resetPitcherStatsOverview();
-    if (body) body.innerHTML = `<tr><td colspan="12">Kies een pitcher.</td></tr>`;
+    if (body) body.innerHTML = `<tr><td colspan="16">Kies een pitcher.</td></tr>`;
     return;
   }
 
@@ -2688,7 +2688,7 @@ function renderPitcherStats() {
 
   if (!games.length) {
     resetPitcherStatsOverview();
-    if (body) body.innerHTML = `<tr><td colspan="12">Geen games gevonden voor ${pitcherName}.</td></tr>`;
+    if (body) body.innerHTML = `<tr><td colspan="16">Geen games gevonden voor ${pitcherName}.</td></tr>`;
     return;
   }
 
@@ -2763,6 +2763,7 @@ function renderPitcherStats() {
         <td>${formatDateTimeCompact(g.date, g.startTime)}</td>
         <td>${g.opponent || "-"}</td>
         <td>${s.totalPitches}</td>
+        <td>${s.totalBatters}</td>
         <td>${s.strikes}</td>
         <td>${s.balls}</td>
         <td>${s.ip}</td>
