@@ -7053,9 +7053,7 @@ body:has(#loginScreen.active) .app {
 }
 
 
-/* === UI tweaks from working password version === */
-
-/* Menu-links scrollen normaal mee; alleen de logo-rij blijft bovenin zichtbaar. */
+/* === Recap ERA/runs + UI refinements === */
 .app-top-nav {
   position: static !important;
   top: auto !important;
@@ -7076,7 +7074,6 @@ body:has(#loginScreen.active) .app {
   top: auto !important;
 }
 
-/* Game Events boven de wedstrijdbediening. */
 .game-controls-card > .game-events-card {
   margin-top: 0 !important;
   margin-bottom: 16px !important;
@@ -7086,7 +7083,6 @@ body:has(#loginScreen.active) .app {
   border-bottom: 1px solid var(--line) !important;
 }
 
-/* Runs Allowed + ERA delen samen de breedte van de normale 3-koloms rij. */
 .pitcher-stats-grid .stats-era-row {
   grid-column: 1 / -1;
   display: grid;
@@ -7097,6 +7093,10 @@ body:has(#loginScreen.active) .app {
 .pitcher-stats-grid .stats-era-row .stat {
   margin: 0;
   min-width: 0;
+}
+
+.inning-table {
+  min-width: 940px;
 }
 
 @media (max-width: 380px) {

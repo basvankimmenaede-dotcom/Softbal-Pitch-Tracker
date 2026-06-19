@@ -159,6 +159,72 @@ function changePitcherRun(type, delta) {
   addRunEvent(type, delta);
 }
 
+
+function getRunEventInningNumber(event) {
+  const outs = Math.max(0, Number(event?.totalOuts || 0));
+  return Math.floor(outs / 3) + 1;
+}
+
+function getRunEventsForPitcherByInning(gameData, pitcherName) {
+  const map = new Map();
+
+  (gameData.runEvents || [])
+    .filter(event => String(event.pitcherName || "") === String(pitcherName || ""))
+    .forEach(event => {
+      const inningNumber = getRunEventInningNumber(event);
+      if (!map.has(inningNumber)) {
+        map.set(inningNumber, {
+          earnedRuns: 0,
+          unearnedRuns: 0,
+          runnerOuts: 0
+        });
+      }
+
+      const item = map.get(inningNumber);
+      item.earnedRuns += Number(event.earnedRuns || 0);
+      item.unearnedRuns += Number(event.unearnedRuns || 0);
+      item.runnerOuts += Number(event.runnerOuts || 0);
+    });
+
+  return map;
+}
+
+function getRunPreventionFeedback(stats) {
+  const lines = [];
+
+  if (Number(stats.earnedRuns || 0) === 0 && Number(stats.runsAllowed || 0) === 0) {
+    lines.push("geen runs toegestaan");
+  } else if (Number(stats.earnedRuns || 0) === 0 && Number(stats.unearnedRuns || 0) > 0) {
+    lines.push(`${stats.unearnedRuns} unearned run${stats.unearnedRuns === 1 ? "" : "s"} toegestaan, maar geen earned runs`);
+  } else if (Number(stats.era || 0) <= 2.50 && Number(stats.earnedRuns || 0) <= 1) {
+    lines.push(`sterke run prevention met ${stats.earnedRuns} ER en ERA ${stats.era}`);
+  }
+
+  return lines;
+}
+
+function getRunPreventionFocus(stats) {
+  const lines = [];
+
+  if (Number(stats.earnedRuns || 0) >= 3) {
+    lines.push(`${stats.earnedRuns} earned runs toegestaan; kijk waar de schade ontstaat`);
+  }
+
+  if (Number(stats.runsAllowed || 0) >= 4) {
+    lines.push(`${stats.runsAllowed} runs allowed totaal`);
+  }
+
+  if (Number(stats.unearnedRuns || 0) > Number(stats.earnedRuns || 0) && Number(stats.unearnedRuns || 0) >= 2) {
+    lines.push(`${stats.unearnedRuns} unearned runs; pitchinglijn is beter dan de scoreboard-lijn`);
+  }
+
+  if (Number(stats.era || 0) >= 5 && Number(stats.earnedRuns || 0) > 0) {
+    lines.push(`ERA ${stats.era}; beperk vooral de innings met meerdere baserunners`);
+  }
+
+  return lines;
+}
+
 function formatDashboardNumber(value) {
   return Number(value || 0).toLocaleString("nl-NL");
 }
@@ -3593,7 +3659,7 @@ function renderGameRecapCards() {
           <div class="pitcher-initials">${getPitcherInitials(item.pitcherName)}</div>
           <div>
             <strong>${item.pitcherName}</strong>
-            <span>${stats.totalPitches}P · ${item.strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB · ${stats.ip} IP · ${stats.earnedRuns || 0}ER · ERA ${stats.era}</span>
+            <span>${stats.totalPitches}P · ${item.strikePct}% strikes · ${stats.strikeouts || 0}K · ${stats.walks || 0}BB · ${stats.ip} IP · ${stats.runsAllowed || 0}RA · ${stats.earnedRuns || 0}ER · ERA ${stats.era}</span>
           </div>
         </div>
       `;
@@ -3780,9 +3846,20 @@ function getPitchesByInning(pitches) {
   return innings;
 }
 
-function getInningStats(pitches) {
-  const inningPitches = pitches || [];
-  const stats = calculateGameStats({ pitches: inningPitches });
+function getInningStats(inningData) {
+  const inningPitches = Array.isArray(inningData) ? inningData : (inningData.pitches || []);
+  const runTotals = Array.isArray(inningData) ? {} : (inningData.runTotals || {});
+  const runnerOuts = Number(runTotals.runnerOuts || 0);
+
+  const stats = calculateGameStats({
+    pitches: inningPitches,
+    runEvents: [{
+      earnedRuns: Number(runTotals.earnedRuns || 0),
+      unearnedRuns: Number(runTotals.unearnedRuns || 0),
+      runnerOuts
+    }]
+  });
+
   const hits = inningPitches.filter(p => p.result === "HIT").length;
   const fieldOuts = inningPitches.filter(p => String(p.result || "").trim() === "Veld uit").length;
   const contact = inningPitches.filter(p => isContactResult(p.result)).length;
@@ -3814,14 +3891,26 @@ function getInningRowClass(stats) {
   return "";
 }
 
-function renderInningOverviewTable(pitcherPitches) {
-  const innings = getPitchesByInning(pitcherPitches);
+function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = "") {
+  const pitchInnings = getPitchesByInning(pitcherPitches);
+  const runEventsByInning = getRunEventsForPitcherByInning(gameData, pitcherName);
+  const maxInnings = Math.max(
+    pitchInnings.length,
+    ...[...runEventsByInning.keys()],
+    0
+  );
 
-  if (!innings.length) {
+  if (!maxInnings) {
     return `<p class="small-note">Geen inningdata gevonden.</p>`;
   }
 
-  const inningStats = innings.map(getInningStats);
+  const inningStats = Array.from({ length: maxInnings }, (_, index) => {
+    const inningNumber = index + 1;
+    return getInningStats({
+      pitches: pitchInnings[index] || [],
+      runTotals: runEventsByInning.get(inningNumber) || {}
+    });
+  });
 
   const rows = inningStats.map((stats, index) => {
     const label = getInningLabel(stats);
@@ -3829,6 +3918,8 @@ function renderInningOverviewTable(pitcherPitches) {
     const strikeClass = stats.strikePct >= 65 ? "stat-good" : stats.strikePct < 55 ? "stat-danger" : "";
     const fpsClass = stats.fpsPct >= 60 ? "stat-good" : stats.fpsPct < 45 ? "stat-warning" : "";
     const pitchClass = stats.totalPitches >= 24 ? "stat-warning" : "";
+    const runsClass = stats.runsAllowed >= 2 ? "stat-danger" : stats.runsAllowed === 0 ? "stat-good" : "";
+    const eraClass = Number(stats.era || 0) <= 2.5 ? "stat-good" : Number(stats.era || 0) >= 5 ? "stat-danger" : "";
 
     return `
       <tr class="${rowClass}">
@@ -3838,6 +3929,10 @@ function renderInningOverviewTable(pitcherPitches) {
         <td class="${fpsClass}">${stats.fpsPct}%</td>
         <td>${stats.strikeouts || 0}</td>
         <td class="${stats.walks ? "stat-danger" : ""}">${stats.walks || 0}</td>
+        <td>${stats.earnedRuns || 0}</td>
+        <td>${stats.unearnedRuns || 0}</td>
+        <td class="${runsClass}">${stats.runsAllowed || 0}</td>
+        <td class="${eraClass}">${stats.era}</td>
         <td class="${stats.hits >= 2 ? "stat-danger" : ""}">${stats.hits || 0}</td>
         <td class="${stats.contact >= 6 ? "stat-warning" : ""}">${stats.contact || 0}</td>
         <td>${stats.fieldOuts || 0}</td>
@@ -3847,12 +3942,12 @@ function renderInningOverviewTable(pitcherPitches) {
   }).join("");
 
   const bestIndex = inningStats.reduce((best, stats, index) => {
-    const score = (stats.strikePct * 1.2) + stats.fpsPct + (stats.strikeouts * 12) - (stats.walks * 18) - (stats.hits * 8) - Math.max(0, stats.totalPitches - 18);
+    const score = (stats.strikePct * 1.2) + stats.fpsPct + (stats.strikeouts * 12) - (stats.walks * 18) - (stats.runsAllowed * 20) - (stats.hits * 8) - Math.max(0, stats.totalPitches - 18);
     return score > best.score ? { index, score } : best;
   }, { index: 0, score: -Infinity }).index;
 
   const attentionIndex = inningStats.reduce((worst, stats, index) => {
-    const score = (stats.walks * 25) + (stats.hits * 12) + (stats.contact * 4) + Math.max(0, stats.totalPitches - 18) - stats.strikePct;
+    const score = (stats.runsAllowed * 28) + (stats.earnedRuns * 22) + (stats.walks * 25) + (stats.hits * 12) + (stats.contact * 4) + Math.max(0, stats.totalPitches - 18) - stats.strikePct;
     return score > worst.score ? { index, score } : worst;
   }, { index: 0, score: -Infinity }).index;
 
@@ -3863,7 +3958,7 @@ function renderInningOverviewTable(pitcherPitches) {
     <div class="inning-table-wrap">
       <div class="inning-table-title">
         <strong>INNING OVERZICHT</strong>
-        <span>Contact = Foul + Hit + Veld uit</span>
+        <span>RA = ER + UER · Contact = Foul + Hit + Veld uit</span>
       </div>
 
       <table class="inning-table">
@@ -3875,6 +3970,10 @@ function renderInningOverviewTable(pitcherPitches) {
             <th>FPS</th>
             <th>K</th>
             <th>BB</th>
+            <th>ER</th>
+            <th>UER</th>
+            <th>RA</th>
+            <th>ERA</th>
             <th>Hits</th>
             <th>Contact</th>
             <th>Veld uit</th>
@@ -3888,11 +3987,11 @@ function renderInningOverviewTable(pitcherPitches) {
     <div class="inning-note">
       <div class="inning-note-box good">
         <strong>STERKSTE INNING</strong>
-        Inning ${bestIndex + 1}: ${best.strikePct}% strikes, ${best.fpsPct}% FPS, ${best.strikeouts || 0} K en ${best.walks || 0} BB.
+        Inning ${bestIndex + 1}: ${best.strikePct}% strikes, ${best.fpsPct}% FPS, ${best.strikeouts || 0} K, ${best.walks || 0} BB en ${best.runsAllowed || 0} RA.
       </div>
       <div class="inning-note-box attention">
         <strong>PUNT VAN AANDACHT</strong>
-        Inning ${attentionIndex + 1}: ${attention.totalPitches} pitches, ${attention.walks || 0} BB, ${attention.hits || 0} hits en ${attention.contact || 0} contact.
+        Inning ${attentionIndex + 1}: ${attention.totalPitches} pitches, ${attention.walks || 0} BB, ${attention.earnedRuns || 0} ER, ${attention.unearnedRuns || 0} UER en ${attention.runsAllowed || 0} RA.
       </div>
     </div>
   `;
@@ -3922,7 +4021,7 @@ function buildGameRecap(game) {
     const lateStats = getPhaseStats(late);
 
     const summaryLines = [
-      `${pitcherName} gooide ${stats.totalPitches} pitches: ${stats.strikes} strikes en ${stats.balls} balls. Het strikepercentage was ${strikePct}% en het FPS% was ${fpsPct}%.`
+      `${pitcherName} gooide ${stats.totalPitches} pitches: ${stats.strikes} strikes en ${stats.balls} balls. Het strikepercentage was ${strikePct}% en het FPS% was ${fpsPct}%. Ze stond ${stats.runsAllowed || 0} runs toe (${stats.earnedRuns || 0} ER, ${stats.unearnedRuns || 0} UER) met een ERA van ${stats.era}.`
     ];
 
     if (early.length && late.length) {
@@ -3943,6 +4042,7 @@ function buildGameRecap(game) {
     if (fpsPct >= 55) strengths.push(`veel first-pitch strikes (${fpsPct}% FPS)`);
     if (stats.walks === 0) strengths.push(`geen walks toegestaan`);
     if (stats.strikeouts >= 2) strengths.push(`${stats.strikeouts} strikeouts`);
+    strengths.push(...getRunPreventionFeedback(stats));
     if (bestZone && bestZone !== "-" && bestZoneCount >= 2) strengths.push(`veel strikes rond ${bestZone}`);
 
     const focus = [];
@@ -3953,13 +4053,14 @@ function buildGameRecap(game) {
     else if (wideZone && wideZone.includes("hoog")) focus.push(`meerdere pitches hoog buiten de zone`);
     else if (wideZone && wideZone.includes("laag")) focus.push(`meerdere pitches laag buiten de zone`);
     if (stats.walks >= 1) focus.push(`${stats.walks} walk${stats.walks === 1 ? "" : "s"} toegestaan`);
+    focus.push(...getRunPreventionFocus(stats));
 
     const uniqueStrengths = [...new Set(strengths)].slice(0, 4);
     const uniqueFocus = [...new Set(focus)].slice(0, 4);
 
-    const statLine = `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB • ${stats.ip} IP`;
+    const statLine = `${stats.totalPitches} pitches • ${stats.strikes} strikes • ${stats.balls} balls • ${strikePct}% strikes • ${fpsPct}% FPS • ${stats.strikeouts || 0} K • ${stats.walks || 0} BB • ${stats.ip} IP • ${stats.runsAllowed || 0} RA • ${stats.earnedRuns || 0} ER • ${stats.unearnedRuns || 0} UER • ERA ${stats.era}`;
 
-    const inningTableHtml = renderInningOverviewTable(pitcherPitches);
+    const inningTableHtml = renderInningOverviewTable(pitcherPitches, game, pitcherName);
 
     const textBlock = [
       `${pitcherName}`,
@@ -4210,29 +4311,9 @@ function countStrikeoutsFromPitches(pitches) {
 }
 
 function getGameSortValue(g) {
-  const date = String(g.date || "").trim();
-  const time = String(g.startTime || "00:00").trim() || "00:00";
-
-  const isIsoDateTime = /T\d{2}:\d{2}:\d{2}/.test(date);
-  if (isIsoDateTime) {
-    const parsed = new Date(date);
-    if (!Number.isNaN(parsed.getTime())) return parsed.getTime();
-  }
-
-  const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const timeMatch = time.match(/(\d{1,2}):(\d{2})/);
-
-  if (isoMatch) {
-    const year = Number(isoMatch[1]);
-    const month = Number(isoMatch[2]) - 1;
-    const day = Number(isoMatch[3]);
-    const hour = timeMatch ? Number(timeMatch[1]) : 0;
-    const minute = timeMatch ? Number(timeMatch[2]) : 0;
-    return new Date(year, month, day, hour, minute).getTime();
-  }
-
-  const value = Date.parse(`${date}T${time}`);
-  if (!Number.isNaN(value)) return value;
+  if (!g) return 0;
+  const recapSortValue = getGameRecapSortValue(g);
+  if (recapSortValue) return recapSortValue;
 
   const fallback = Date.parse(g.closedAt || g.startedAt || "");
   return Number.isNaN(fallback) ? 0 : fallback;
