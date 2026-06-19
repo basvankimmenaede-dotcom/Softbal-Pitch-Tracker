@@ -545,7 +545,7 @@ function renderDashboard() {
         era: formatEra(totals.earnedRuns, totals.outs)
       };
     })
-    .filter(item => item.outs >= 36)
+    .filter(item => item.outs >= 24)
     .sort((a, b) => Number(a.era) - Number(b.era) || b.outs - a.outs);
 
   const kEl = document.getElementById("leaderboardStrikeouts");
