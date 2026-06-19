@@ -7104,3 +7104,27 @@ body:has(#loginScreen.active) .app {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* === Dashboard ERA additions === */
+.dashboard-v2-leaderboards {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 1380px) {
+  .dashboard-v2-leaderboards {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-v2-leaderboards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .dashboard-v2-leaderboards {
+    grid-template-columns: 1fr !important;
+  }
+}

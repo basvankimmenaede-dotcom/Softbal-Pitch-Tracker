@@ -375,6 +375,34 @@ function getDashboardPitcherGameEntries() {
   return entries;
 }
 
+
+function renderEraLeaderboardRows(items) {
+  if (!items.length) return `<p class="small-note">Nog geen ERA-data.</p>`;
+
+  const rows = items.slice(0, 3);
+  const winner = rows[0];
+  const rest = rows.slice(1);
+
+  return `
+    <div class="dashboard-v2-winner">
+      <div class="dashboard-v2-medal">🥇</div>
+      <div class="dashboard-v2-winner-name">${winner.pitcherName}</div>
+      <div class="dashboard-v2-winner-value">${winner.era}</div>
+      <div class="dashboard-v2-winner-note">${formatInningsPitched(winner.outs)} IP · ${winner.earnedRuns} ER · ${winner.runsAllowed} RA</div>
+    </div>
+    ${rest.map((item, index) => `
+      <div class="leader-row dashboard-v2-runner">
+        <div class="leader-rank dashboard-v2-runner-rank">${index + 2}</div>
+        <div>
+          <div class="leader-name">${item.pitcherName}</div>
+          <div class="leader-note">${formatInningsPitched(item.outs)} IP · ${item.earnedRuns} ER · ${item.runsAllowed} RA</div>
+        </div>
+        <div class="leader-value">${item.era}</div>
+      </div>
+    `).join("")}
+  `;
+}
+
 function renderLeaderboardRows(items, valueFormatter, noteFormatter) {
   if (!items.length) return `<p class="small-note">Nog geen data.</p>`;
 
@@ -428,6 +456,7 @@ function renderDashboard() {
   setTextIfExists("dashboardTeamStrikePct", `${teamStrikePct}%`);
   setTextIfExists("dashboardTeamFpsPct", `${teamFpsPct}%`);
   setTextIfExists("dashboardTeamKbb", teamKbb);
+  setTextIfExists("dashboardTeamEra", teamStats.era);
   setTextIfExists("dashboardTotalPitches", formatDashboardNumber(teamStats.totalPitches));
 
   const footer = document.getElementById("dashboardDataFooter");
@@ -471,15 +500,29 @@ function renderDashboard() {
     .filter(item => item.stats.totalPitches >= 10)
     .sort((a, b) => a.contactPct - b.contactPct || b.stats.totalPitches - a.stats.totalPitches || b.sortValue - a.sortValue);
 
+  const eraBoard = [...pitcherStats]
+    .map(item => ({
+      pitcherName: item.pitcherName,
+      outs: Number(item.stats.outs || 0),
+      earnedRuns: Number(item.stats.earnedRuns || 0),
+      unearnedRuns: Number(item.stats.unearnedRuns || 0),
+      runsAllowed: Number(item.stats.runsAllowed || 0),
+      era: formatEra(item.stats.earnedRuns, item.stats.outs)
+    }))
+    .filter(item => item.outs >= 18)
+    .sort((a, b) => Number(a.era) - Number(b.era) || b.outs - a.outs);
+
   const kEl = document.getElementById("leaderboardStrikeouts");
   const fpsEl = document.getElementById("leaderboardFps");
   const sbEl = document.getElementById("leaderboardSbRatio");
   const contactEl = document.getElementById("leaderboardContact");
+  const eraEl = document.getElementById("leaderboardEra");
 
   if (kEl) kEl.innerHTML = renderLeaderboardRows(strikeoutBoard, item => item.stats.strikeouts || 0, item => `${item.stats.totalPitches} pitches totaal`);
   if (fpsEl) fpsEl.innerHTML = renderLeaderboardRows(fpsBoard, item => `${item.fpsPct}%`, item => `${item.label} · ${item.stats.fps}/${item.stats.totalBatters} FPS`);
   if (sbEl) sbEl.innerHTML = renderLeaderboardRows(sbBoard, item => Number(item.stats.sbRatio || 0).toFixed(2), item => `${item.label} · ${item.stats.strikes} S · ${item.stats.balls} B`);
   if (contactEl) contactEl.innerHTML = renderLeaderboardRows(contactBoard, item => `${item.contactPct}%`, item => `${item.label} · ${item.contact} contact`);
+  if (eraEl) eraEl.innerHTML = renderEraLeaderboardRows(eraBoard);
 
   renderDashboardHotStreak(pitcherStats);
   renderDashboardScouting(closedGames);
