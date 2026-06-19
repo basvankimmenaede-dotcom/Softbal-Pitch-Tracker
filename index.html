@@ -212,10 +212,10 @@
           <div class="stat"><small>FPS percentage</small><strong id="statsFPSBatters">0%</strong></div>
           <div class="stat"><small>Total strikeouts</small><strong id="statsTotalStrikeouts">0</strong></div>
           <div class="stat"><small>Total walks</small><strong id="statsWalks">0</strong></div>
-          <div class="stat"><small>Earned runs</small><strong id="statsEarnedRuns">0</strong></div>
-          <div class="stat"><small>Unearned runs</small><strong id="statsUnearnedRuns">0</strong></div>
-          <div class="stat"><small>Runs allowed</small><strong id="statsRunsAllowed">0</strong></div>
-          <div class="stat"><small>ERA</small><strong id="statsEra">0.00</strong></div>
+          <div class="stats-era-row">
+            <div class="stat"><small>Runs allowed</small><strong id="statsRunsAllowed">0</strong></div>
+            <div class="stat"><small>ERA</small><strong id="statsEra">0.00</strong></div>
+          </div>
         </div>
 <div class="speed-overview-card">
           <div class="speed-overview-head">
@@ -679,19 +679,6 @@
       </div>
 
       <section class="game-controls-card">
-        <h3>Wedstrijd bediening</h3>
-        <div class="actions game-controls-actions">
-          <button class="secondary" onclick="previousBatter()">Vorige slagvrouw</button>
-          <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
-
-          <button class="secondary" onclick="openSubModal()">Wissel slagvrouw</button>
-          <button class="secondary" onclick="openAddBatterModal()">Slagvrouw toevoegen</button>
-
-          <button class="secondary" onclick="openPitcherModal()">Wissel pitcher</button>
-          <button class="danger" onclick="resetGame()">Einde wedstrijd</button>
-
-          <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
-        </div>
 
         <div class="game-events-card">
           <h3>Game Events</h3>
@@ -736,7 +723,20 @@
             </div>
           </div>
         </div>
-      </section>
+      
+        <h3>Wedstrijd bediening</h3>
+        <div class="actions game-controls-actions">
+          <button class="secondary" onclick="previousBatter()">Vorige slagvrouw</button>
+          <button class="secondary" onclick="nextBatter()">Volgende slagvrouw</button>
+
+          <button class="secondary" onclick="openSubModal()">Wissel slagvrouw</button>
+          <button class="secondary" onclick="openAddBatterModal()">Slagvrouw toevoegen</button>
+
+          <button class="secondary" onclick="openPitcherModal()">Wissel pitcher</button>
+          <button class="danger" onclick="resetGame()">Einde wedstrijd</button>
+
+          <button class="secondary" onclick="showHome()">Terug naar hoofdmenu</button>
+        </div></section>
 
 
 

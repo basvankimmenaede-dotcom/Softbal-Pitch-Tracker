@@ -36,7 +36,7 @@
 
 
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWiUc3OPUK1pFNd-cCSwv5sYIxOunyZmvoJxQc4p-U3VkO3Xz7avBSghlPGAOmPpvySA/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxm6dUZUq0HJHrvphAoaSw_tp8ncfga7fRTA1flH22izAKdPQ2rcUUPOJh3H6uAtqcMoQ/exec";
 
 
 function toggleMobileNav() {
