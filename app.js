@@ -2003,9 +2003,16 @@ function convertSheetRowsToSpeedTrainings(payload) {
   });
 
   const get = (record, names, fallbackIndex = null) => {
+    const hasNamedHeader = names.some(name => Object.prototype.hasOwnProperty.call(record, name));
+
     for (const name of names) {
       if (record[name] !== undefined && record[name] !== "") return record[name];
     }
+
+    // Belangrijk: als de header bestaat maar de cel leeg is, mag er NIET worden teruggevallen
+    // op een index. Anders leest een lege Unearned Runs-cel per ongeluk Earned Runs.
+    if (hasNamedHeader) return "";
+
     if (fallbackIndex !== null) return record[`_${fallbackIndex}`];
     return "";
   };
@@ -5826,9 +5833,9 @@ function convertSheetRowsToGames(payload) {
         startTime,
         opponent,
         pitcherName,
-        earnedRuns: Number(get(record, ["Earned Runs", "earnedRuns"], 30) || 0),
-        unearnedRuns: Number(get(record, ["Unearned Runs", "unearnedRuns"], 31) || 0),
-        runnerOuts: Number(get(record, ["Runner Outs", "runnerOuts"], 32) || 0),
+        earnedRuns: Number(get(record, ["Earned Runs", "earnedRuns"], 31) || 0),
+        unearnedRuns: Number(get(record, ["Unearned Runs", "unearnedRuns"], 32) || 0),
+        runnerOuts: Number(get(record, ["Runner Outs", "runnerOuts"], 33) || 0),
         totalOuts: Number(get(record, ["Total Outs", "totalOuts"], 27) || 0)
       });
       g.totalOuts = Math.max(g.totalOuts || 0, Number(get(record, ["Total Outs", "totalOuts"], 27) || 0));
