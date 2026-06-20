@@ -455,6 +455,113 @@ function getLatestClosedGameForDashboard() {
     .sort((a, b) => getDashboardGameSortValue(b) - getDashboardGameSortValue(a))[0] || null;
 }
 
+
+
+const dashboardLeaderboardState = {
+  strikeouts: [],
+  fps: [],
+  sb: [],
+  contact: [],
+  era: []
+};
+
+function handleLeaderboardCardKey(event, type) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    openDashboardLeaderboardModal(type);
+  }
+}
+
+function getLeaderboardModalConfig(type) {
+  const configs = {
+    strikeouts: {
+      title: "Strikeout Leaders",
+      subtitle: "Total strikeouts · alle pitchers",
+      value: item => item.stats?.strikeouts || 0,
+      note: item => `${formatInningsPitched(item.stats?.outs || 0)} IP · ${item.stats?.totalPitches || 0} pitches`
+    },
+    fps: {
+      title: "Best FPS",
+      subtitle: "Beste First Pitch Strike % · min. 3 BF",
+      value: item => `${item.fpsPct}%`,
+      note: item => `${item.pitcherName} · ${item.label || ""} · ${item.stats?.fps || 0}/${item.stats?.totalBatters || 0} FPS`
+    },
+    sb: {
+      title: "Best S/B Ratio",
+      subtitle: "Strike/Ball ratio · min. 20 pitches",
+      value: item => Number(item.stats?.sbRatio || 0).toFixed(2),
+      note: item => `${item.pitcherName} · ${item.label || ""} · ${item.stats?.strikes || 0} S · ${item.stats?.balls || 0} B`
+    },
+    contact: {
+      title: "Minst Contact",
+      subtitle: "Laagste contact % · min. 10 pitches",
+      value: item => `${item.contactPct}%`,
+      note: item => `${item.pitcherName} · ${item.label || ""} · ${item.contact || 0} contact`
+    },
+    era: {
+      title: "Lowest ERA",
+      subtitle: "Total ERA overall · minimaal 8.0 IP",
+      value: item => item.era,
+      note: item => `${formatInningsPitched(item.outs || 0)} IP · ${item.earnedRuns || 0} ER · ${item.runsAllowed || 0} RA`
+    }
+  };
+
+  return configs[type] || configs.strikeouts;
+}
+
+function openDashboardLeaderboardModal(type) {
+  const modal = document.getElementById("leaderboardModal");
+  const title = document.getElementById("leaderboardModalTitle");
+  const subtitle = document.getElementById("leaderboardModalSubtitle");
+  const list = document.getElementById("leaderboardModalList");
+
+  if (!modal || !title || !subtitle || !list) return;
+
+  const config = getLeaderboardModalConfig(type);
+  const items = dashboardLeaderboardState[type] || [];
+
+  title.textContent = config.title;
+  subtitle.textContent = config.subtitle;
+
+  if (!items.length) {
+    list.innerHTML = `<p class="small-note">Nog geen data gevonden.</p>`;
+  } else {
+    list.innerHTML = items.map((item, index) => `
+      <div class="leaderboard-modal-row ${index === 0 ? "top" : ""}">
+        <span class="leaderboard-modal-rank">${index + 1}</span>
+        <div>
+          <strong>${item.pitcherName || "-"}</strong>
+          <small>${config.note(item)}</small>
+        </div>
+        <b>${config.value(item)}</b>
+      </div>
+    `).join("");
+  }
+
+  modal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+function closeLeaderboardModal(event) {
+  if (event && event.target && !event.target.classList.contains("leaderboard-modal") && !event.target.classList.contains("leaderboard-modal-close")) {
+    return;
+  }
+
+  const modal = document.getElementById("leaderboardModal");
+  if (modal) modal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    const modal = document.getElementById("leaderboardModal");
+    if (modal && !modal.classList.contains("hidden")) {
+      modal.classList.add("hidden");
+      document.body.classList.remove("modal-open");
+    }
+  }
+});
+
 function renderDashboard() {
   const games = getSheetGamesOnly();
   const allPitches = games.flatMap(g => g.pitches || []);
@@ -547,6 +654,12 @@ function renderDashboard() {
     })
     .filter(item => item.outs >= 24)
     .sort((a, b) => Number(a.era) - Number(b.era) || b.outs - a.outs);
+
+  dashboardLeaderboardState.strikeouts = strikeoutBoard;
+  dashboardLeaderboardState.fps = fpsBoard;
+  dashboardLeaderboardState.sb = sbBoard;
+  dashboardLeaderboardState.contact = contactBoard;
+  dashboardLeaderboardState.era = eraBoard;
 
   const kEl = document.getElementById("leaderboardStrikeouts");
   const fpsEl = document.getElementById("leaderboardFps");

@@ -16,7 +16,7 @@
         <strong>OG Pitching</strong>
         <span>Dashboard</span>
       </div>
-      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileNav()" aria-label="Menu openen">☰</button>
+      <button class="mobile-menu-toggle" type="button" onclick="event.stopPropagation(); toggleMobileNav()" aria-label="Menu openen">☰</button>
     </div>
 
     <nav id="mainNavLinks" class="app-nav-links">
@@ -127,28 +127,28 @@
         </div>
 
         <section class="leaderboard-grid dashboard-v2-leaderboards">
-          <div class="leaderboard-card dashboard-v2-podium-card">
+          <div class="leaderboard-card dashboard-v2-podium-card leaderboard-clickable" role="button" tabindex="0" onclick="openDashboardLeaderboardModal('strikeouts')" onkeydown="handleLeaderboardCardKey(event, 'strikeouts')">
             <div class="leaderboard-head dashboard-v2-podium-title"><h3>Strikeouts</h3><span>K</span></div>
             <div id="leaderboardStrikeouts"></div>
           </div>
 
-          <div class="leaderboard-card dashboard-v2-podium-card">
+          <div class="leaderboard-card dashboard-v2-podium-card leaderboard-clickable" role="button" tabindex="0" onclick="openDashboardLeaderboardModal('fps')" onkeydown="handleLeaderboardCardKey(event, 'fps')">
             <div class="leaderboard-head dashboard-v2-podium-title"><h3>FPS %</h3><span>First pitch</span></div>
             <div id="leaderboardFps"></div>
           </div>
 
-          <div class="leaderboard-card dashboard-v2-podium-card">
+          <div class="leaderboard-card dashboard-v2-podium-card leaderboard-clickable" role="button" tabindex="0" onclick="openDashboardLeaderboardModal('sb')" onkeydown="handleLeaderboardCardKey(event, 'sb')">
             <div class="leaderboard-head dashboard-v2-podium-title"><h3>S/B Ratio</h3><span>Min. 20 P</span></div>
             <div id="leaderboardSbRatio"></div>
           </div>
 
-          <div class="leaderboard-card dashboard-v2-podium-card">
+          <div class="leaderboard-card dashboard-v2-podium-card leaderboard-clickable" role="button" tabindex="0" onclick="openDashboardLeaderboardModal('contact')" onkeydown="handleLeaderboardCardKey(event, 'contact')">
             <div class="leaderboard-head dashboard-v2-podium-title"><h3>Minst contact</h3><span>%</span></div>
             <div id="leaderboardContact"></div>
           </div>
 
-          <div class="leaderboard-card dashboard-v2-podium-card">
-            <div class="leaderboard-head dashboard-v2-podium-title"><h3>Lowest ERA</h3><span>Min. 6 IP</span></div>
+          <div class="leaderboard-card dashboard-v2-podium-card leaderboard-clickable" role="button" tabindex="0" onclick="openDashboardLeaderboardModal('era')" onkeydown="handleLeaderboardCardKey(event, 'era')">
+            <div class="leaderboard-head dashboard-v2-podium-title"><h3>Lowest ERA</h3><span>Min. 8 IP</span></div>
             <div id="leaderboardEra"></div>
           </div>
         </section>
@@ -954,5 +954,19 @@
   </main>
 
   <script src="app.js"></script>
+
+  <div id="leaderboardModal" class="leaderboard-modal hidden" onclick="closeLeaderboardModal(event)">
+    <div class="leaderboard-modal-card">
+      <div class="leaderboard-modal-top">
+        <div>
+          <h2 id="leaderboardModalTitle">Leaderboard</h2>
+          <p id="leaderboardModalSubtitle">Alle pitchers</p>
+        </div>
+        <button type="button" class="leaderboard-modal-close" onclick="closeLeaderboardModal(event)">×</button>
+      </div>
+      <div id="leaderboardModalList" class="leaderboard-modal-list"></div>
+    </div>
+  </div>
+
 </body>
 </html>

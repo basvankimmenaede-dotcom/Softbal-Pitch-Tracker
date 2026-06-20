@@ -7134,3 +7134,186 @@ body:has(#loginScreen.active) .app {
 .gameday-pitching-stats .stats-table {
   min-width: 720px;
 }
+
+
+/* === Mobile menu tap fix === */
+.app-nav-logo-row .mobile-menu-toggle {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+@media (max-width: 980px) {
+  .app-nav-links.open {
+    display: grid !important;
+  }
+}
+
+
+/* === Dashboard leaderboard popup cards === */
+.leaderboard-clickable {
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.leaderboard-clickable:hover {
+  transform: translateY(-3px);
+}
+
+.leaderboard-clickable:focus-visible {
+  outline: 3px solid rgba(255,116,23,.45);
+  outline-offset: 4px;
+}
+
+.leaderboard-head span:empty {
+  display: none;
+}
+
+.leaderboard-modal.hidden {
+  display: none !important;
+}
+
+.leaderboard-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0,0,0,.62);
+  backdrop-filter: blur(10px);
+}
+
+.leaderboard-modal-card {
+  width: min(680px, 100%);
+  max-height: 84vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 34px;
+  padding: 22px;
+  box-shadow: 0 36px 100px rgba(0,0,0,.42);
+  animation: leaderboardPop .18s ease-out;
+}
+
+@keyframes leaderboardPop {
+  from { transform: translateY(16px) scale(.98); opacity: .6; }
+  to { transform: none; opacity: 1; }
+}
+
+.leaderboard-modal-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.leaderboard-modal-top h2 {
+  margin: 0;
+  color: #111;
+  font-size: 30px;
+  letter-spacing: -.05em;
+}
+
+.leaderboard-modal-top p {
+  margin: 4px 0 0;
+  color: #777;
+  font-weight: 800;
+}
+
+.leaderboard-modal-close {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 0;
+  background: #111;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.leaderboard-modal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboard-modal-row {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 20px;
+  background: #f7f7f7;
+  border: 1px solid transparent;
+}
+
+.leaderboard-modal-row.top {
+  background: linear-gradient(135deg, rgba(255,116,23,.18), rgba(255,177,105,.25));
+  border-color: rgba(255,116,23,.26);
+}
+
+.leaderboard-modal-rank {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 1000;
+}
+
+.leaderboard-modal-row strong {
+  display: block;
+  color: #111;
+  font-size: 17px;
+}
+
+.leaderboard-modal-row small {
+  display: block;
+  color: #777;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.leaderboard-modal-row b {
+  color: #ff7417;
+  font-size: 26px;
+  letter-spacing: -.04em;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 620px) {
+  .leaderboard-modal {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .leaderboard-modal-card {
+    border-radius: 26px 26px 18px 18px;
+    padding: 18px;
+    max-height: 88vh;
+  }
+
+  .leaderboard-modal-row {
+    grid-template-columns: 38px 1fr auto;
+    padding: 12px;
+  }
+
+  .leaderboard-modal-rank {
+    width: 30px;
+    height: 30px;
+  }
+
+  .leaderboard-modal-row b {
+    font-size: 22px;
+  }
+}
