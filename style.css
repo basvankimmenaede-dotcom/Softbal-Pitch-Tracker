@@ -7317,3 +7317,51 @@ body.modal-open {
     font-size: 22px;
   }
 }
+
+
+/* === Mobile alignment fixes === */
+@media (max-width: 640px) {
+
+  .dashboard-v2-hero,
+  .dashboard-hero {
+    text-align: center !important;
+    align-items: center !important;
+  }
+
+  .dashboard-v2-section-title,
+  .dashboard-section-title,
+  .section-title {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  .dashboard-v2-section-title small,
+  .dashboard-section-title small {
+    display: block;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .login-modal-card,
+  .login-card {
+    width: calc(100vw - 24px) !important;
+    max-width: 420px !important;
+    padding: 24px !important;
+  }
+
+  .login-modal-card h1,
+  .login-modal-card h2,
+  .login-modal-card p,
+  .login-card h1,
+  .login-card h2,
+  .login-card p {
+    text-align: center !important;
+  }
+
+  .login-logo,
+  .login-screen img {
+    display: block;
+    margin: 0 auto 16px auto !important;
+  }
+}
