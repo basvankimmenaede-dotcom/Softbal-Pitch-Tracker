@@ -7318,50 +7318,96 @@ body.modal-open {
   }
 }
 
-
-/* === Mobile alignment fixes === */
+/* === Mobile alignment fixes v2 - exact classes === */
 @media (max-width: 640px) {
 
-  .dashboard-v2-hero,
-  .dashboard-hero {
+  /* Login exact centreren */
+  .login-overlay-screen {
+    padding: 16px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  .login-modal-card {
+    width: min(420px, calc(100vw - 28px)) !important;
+    max-width: calc(100vw - 28px) !important;
+    margin: 0 auto !important;
+    padding: 24px 20px !important;
     text-align: center !important;
+    align-items: center !important;
+    justify-items: center !important;
+  }
+
+  .login-modal-card *,
+  .login-modal-text,
+  .login-modal-text h1,
+  .login-modal-text h2,
+  .login-modal-text p {
+    text-align: center !important;
+  }
+
+  .login-modal-card input,
+  .login-modal-card button {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .login-modal-card img,
+  .login-modal-card .hero-logo,
+  .login-modal-card .home-logo {
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Dashboard hero en grote sectietitels exact centreren */
+  .dashboard-v2-hero-grid {
+    text-align: center !important;
+    justify-items: center !important;
     align-items: center !important;
   }
 
-  .dashboard-v2-section-title,
-  .dashboard-section-title,
-  .section-title {
-    width: 100% !important;
-    text-align: center !important;
+  .dashboard-v2-brand {
     justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
   }
 
-  .dashboard-v2-section-title small,
-  .dashboard-section-title small {
-    display: block;
-    margin-top: 4px;
-    text-align: center;
+  .dashboard-v2-hero-stats {
+    justify-content: center !important;
+    width: 100% !important;
   }
 
-  .login-modal-card,
-  .login-card {
-    width: calc(100vw - 24px) !important;
-    max-width: 420px !important;
-    padding: 24px !important;
+  .dashboard-section-title.dashboard-v2-section-title,
+  .dashboard-section-title,
+  .dashboard-v2-section-title {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 4px !important;
   }
 
-  .login-modal-card h1,
-  .login-modal-card h2,
-  .login-modal-card p,
-  .login-card h1,
-  .login-card h2,
-  .login-card p {
+  .dashboard-section-title.dashboard-v2-section-title h2,
+  .dashboard-section-title h2,
+  .dashboard-v2-section-title h2 {
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     text-align: center !important;
   }
 
-  .login-logo,
-  .login-screen img {
-    display: block;
-    margin: 0 auto 16px auto !important;
+  .dashboard-section-title.dashboard-v2-section-title span,
+  .dashboard-section-title span,
+  .dashboard-v2-section-title span,
+  .dashboard-section-title.dashboard-v2-section-title small,
+  .dashboard-section-title small,
+  .dashboard-v2-section-title small {
+    width: 100% !important;
+    display: block !important;
+    text-align: center !important;
   }
 }
+
