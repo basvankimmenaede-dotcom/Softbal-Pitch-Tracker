@@ -7411,3 +7411,9 @@ body.modal-open {
   }
 }
 
+
+
+/* === Inning summary recap source note === */
+.inning-table-title span {
+  line-height: 1.35;
+}

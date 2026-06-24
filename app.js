@@ -76,6 +76,150 @@ function normalizeRunEvents(gameData) {
   return gameData.runEvents;
 }
 
+
+function normalizeInningSummaries(gameData) {
+  if (!gameData) return [];
+  gameData.inningSummaries = Array.isArray(gameData.inningSummaries) ? gameData.inningSummaries : [];
+  return gameData.inningSummaries;
+}
+
+function getPitcherInningSummaries(gameData, pitcherName = "") {
+  return normalizeInningSummaries(gameData)
+    .filter(summary => !pitcherName || String(summary.pitcherName || "") === String(pitcherName || ""))
+    .sort((a, b) => Number(a.inning || 0) - Number(b.inning || 0));
+}
+
+function getRunTotalsFromInningSummaries(gameData, pitcherName = "") {
+  const summaries = getPitcherInningSummaries(gameData, pitcherName);
+  return summaries.reduce((acc, summary) => {
+    acc.earnedRuns += Number(summary.earnedRuns || 0);
+    acc.unearnedRuns += Number(summary.unearnedRuns || 0);
+    acc.runnerOuts += Number(summary.runnerOuts || 0);
+    return acc;
+  }, { earnedRuns: 0, unearnedRuns: 0, runnerOuts: 0 });
+}
+
+function getOutsFromInningSummary(summary) {
+  const explicit = Number(summary.outs || summary.totalOuts || 0);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+  const strikeouts = Number(summary.strikeouts || 0);
+  const fieldOuts = Number(summary.fieldOuts || 0);
+  const runnerOuts = Number(summary.runnerOuts || 0);
+  return strikeouts + fieldOuts + runnerOuts;
+}
+
+function getInningStatsFromSummary(summary) {
+  const totalPitches = Number(summary.totalPitches || summary.pitches || 0);
+  const strikes = Number(summary.strikes || 0);
+  const balls = Number(summary.balls || 0);
+  const totalBatters = Number(summary.totalBatters || summary.battersFaced || summary.bf || 0);
+  const fps = Number(summary.fps || summary.firstPitchStrikes || 0);
+  const walks = Number(summary.walks || 0);
+  const strikeouts = Number(summary.strikeouts || 0);
+  const hits = Number(summary.hits || 0);
+  const contact = Number(summary.contact || 0);
+  const fieldOuts = Number(summary.fieldOuts || 0);
+  const runnerOuts = Number(summary.runnerOuts || 0);
+  const earnedRuns = Number(summary.earnedRuns || 0);
+  const unearnedRuns = Number(summary.unearnedRuns || 0);
+  const runsAllowed = Number(summary.runsAllowed || (earnedRuns + unearnedRuns) || 0);
+  const outs = getOutsFromInningSummary(summary);
+  const sbRatio = balls === 0 ? strikes.toFixed(2) : (strikes / balls).toFixed(2);
+  const strikePct = totalPitches ? Math.round((strikes / totalPitches) * 100) : 0;
+  const fpsPct = getFpsPercentValue(fps, totalBatters);
+
+  return {
+    totalPitches,
+    strikes,
+    balls,
+    outs,
+    ip: formatInningsPitched(outs),
+    fps,
+    totalBatters,
+    walks,
+    strikeouts,
+    sbRatio,
+    earnedRuns,
+    unearnedRuns,
+    runsAllowed,
+    era: formatEra(earnedRuns, outs),
+    hits,
+    contact,
+    fieldOuts,
+    runnerOuts,
+    strikePct,
+    fpsPct
+  };
+}
+
+function buildInningSummariesForGame(gameData) {
+  const summaries = [];
+  const allPitches = getPitchesChronological(gameData.pitches || []);
+  const pitchers = getPitcherNamesForGame({ ...gameData, pitches: allPitches });
+
+  pitchers.forEach(pitcherName => {
+    const pitcherPitches = allPitches.filter(p => String(p.pitcherName || gameData.pitcherName || "") === String(pitcherName || ""));
+    const pitchInnings = getPitchesByInning(pitcherPitches);
+    const runEventsByInning = getRunEventsForPitcherByInning(gameData, pitcherName);
+    const maxInnings = Math.max(
+      pitchInnings.length,
+      ...[...runEventsByInning.keys()],
+      0
+    );
+
+    for (let index = 0; index < maxInnings; index += 1) {
+      const inning = index + 1;
+      const inningPitches = pitchInnings[index] || [];
+      const runTotals = runEventsByInning.get(inning) || {};
+      const stats = getInningStats({
+        pitches: inningPitches,
+        runTotals
+      });
+
+      summaries.push({
+        type: "inning_summary",
+        timestamp: new Date().toISOString(),
+        gameId: gameData.gameId,
+        date: gameData.date,
+        startTime: gameData.startTime,
+        opponent: gameData.opponent,
+        pitcherName,
+        inning,
+        totalPitches: stats.totalPitches,
+        strikes: stats.strikes,
+        balls: stats.balls,
+        totalBatters: stats.totalBatters,
+        fps: stats.fps,
+        strikeouts: stats.strikeouts,
+        walks: stats.walks,
+        hits: stats.hits,
+        contact: stats.contact,
+        fieldOuts: stats.fieldOuts,
+        outs: stats.outs,
+        runnerOuts: stats.runnerOuts || Number(runTotals.runnerOuts || 0),
+        earnedRuns: stats.earnedRuns,
+        unearnedRuns: stats.unearnedRuns,
+        runsAllowed: stats.runsAllowed
+      });
+    }
+  });
+
+  return summaries;
+}
+
+async function sendInningSummariesToGoogleSheet(gameData) {
+  const summaries = buildInningSummariesForGame(gameData);
+
+  gameData.inningSummaries = summaries;
+
+  for (const summary of summaries) {
+    await queueGoogleSheetPayload("inning_summary", summary, `Inning ${summary.inning} summary`);
+  }
+
+  return summaries;
+}
+
 function getActivePitcherRunTotals() {
   const events = normalizeRunEvents(game);
   const pitcherName = String(game.pitcherName || "");
@@ -90,6 +234,11 @@ function getActivePitcherRunTotals() {
 }
 
 function getPitcherRunTotals(gameData, pitcherName = "") {
+  const summaries = getPitcherInningSummaries(gameData, pitcherName);
+  if (summaries.length) {
+    return getRunTotalsFromInningSummaries(gameData, pitcherName);
+  }
+
   const events = normalizeRunEvents(gameData);
   return events
     .filter(event => !pitcherName || String(event.pitcherName || "") === String(pitcherName || ""))
@@ -2657,14 +2806,19 @@ function getPitcherGames(pitcherName) {
     .map(g => {
       const pitcherPitches = (g.pitches || []).filter(p => p.pitcherName === pitcherName);
       const pitcherRunEvents = (g.runEvents || []).filter(event => String(event.pitcherName || "") === String(pitcherName || ""));
-      if (!pitcherPitches.length && !pitcherRunEvents.length) return null;
+      const pitcherInningSummaries = getPitcherInningSummaries(g, pitcherName);
+      if (!pitcherPitches.length && !pitcherRunEvents.length && !pitcherInningSummaries.length) return null;
+
+      const summaryOuts = pitcherInningSummaries.reduce((sum, summary) => sum + getOutsFromInningSummary(summary), 0);
+      const pitchOuts = getPitcherOutsFromPitches(pitcherPitches) + getPitcherRunTotals({ runEvents: pitcherRunEvents }, pitcherName).runnerOuts;
 
       return {
         ...g,
         pitcherName,
         pitches: pitcherPitches,
         runEvents: pitcherRunEvents,
-        totalOuts: getPitcherOutsFromPitches(pitcherPitches) + getPitcherRunTotals({ runEvents: pitcherRunEvents }, pitcherName).runnerOuts,
+        inningSummaries: pitcherInningSummaries,
+        totalOuts: summaryOuts || pitchOuts,
         totalBalls: pitcherPitches.filter(p => ["Ball", "HBP"].includes(p.result)).length,
         totalStrikes: pitcherPitches.filter(p => isStrikeResult(p.result)).length,
         firstPitchStrikes: pitcherPitches.filter(p => p.firstPitch && isStrikeResult(p.result)).length
@@ -2730,6 +2884,48 @@ function getPitcherOutsFromPitches(pitches) {
 }
 
 function calculateGameStats(g) {
+  const summaries = getPitcherInningSummaries(g, g.pitcherName || "");
+
+  if (summaries.length) {
+    const total = summaries
+      .map(getInningStatsFromSummary)
+      .reduce((acc, s) => {
+        acc.totalPitches += s.totalPitches;
+        acc.strikes += s.strikes;
+        acc.balls += s.balls;
+        acc.outs += s.outs;
+        acc.fps += s.fps;
+        acc.totalBatters += s.totalBatters;
+        acc.walks += s.walks;
+        acc.strikeouts += s.strikeouts;
+        acc.earnedRuns += s.earnedRuns;
+        acc.unearnedRuns += s.unearnedRuns;
+        acc.runsAllowed += s.runsAllowed;
+        return acc;
+      }, {
+        totalPitches: 0,
+        strikes: 0,
+        balls: 0,
+        outs: 0,
+        fps: 0,
+        totalBatters: 0,
+        walks: 0,
+        strikeouts: 0,
+        earnedRuns: 0,
+        unearnedRuns: 0,
+        runsAllowed: 0
+      });
+
+    const sbRatio = total.balls === 0 ? total.strikes.toFixed(2) : (total.strikes / total.balls).toFixed(2);
+
+    return {
+      ...total,
+      ip: formatInningsPitched(total.outs),
+      sbRatio,
+      era: formatEra(total.earnedRuns, total.outs)
+    };
+  }
+
   const pitches = g.pitches || [];
   const totalPitches = pitches.length;
 
@@ -4092,25 +4288,30 @@ function getInningRowClass(stats) {
 }
 
 function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = "") {
-  const pitchInnings = getPitchesByInning(pitcherPitches);
-  const runEventsByInning = getRunEventsForPitcherByInning(gameData, pitcherName);
-  const maxInnings = Math.max(
-    pitchInnings.length,
-    ...[...runEventsByInning.keys()],
-    0
-  );
+  const summaries = getPitcherInningSummaries(gameData, pitcherName);
+  const inningStats = summaries.length
+    ? summaries.map(getInningStatsFromSummary)
+    : (() => {
+        const pitchInnings = getPitchesByInning(pitcherPitches);
+        const runEventsByInning = getRunEventsForPitcherByInning(gameData, pitcherName);
+        const maxInnings = Math.max(
+          pitchInnings.length,
+          ...[...runEventsByInning.keys()],
+          0
+        );
 
-  if (!maxInnings) {
+        return Array.from({ length: maxInnings }, (_, index) => {
+          const inningNumber = index + 1;
+          return getInningStats({
+            pitches: pitchInnings[index] || [],
+            runTotals: runEventsByInning.get(inningNumber) || {}
+          });
+        });
+      })();
+
+  if (!inningStats.length) {
     return `<p class="small-note">Geen inningdata gevonden.</p>`;
   }
-
-  const inningStats = Array.from({ length: maxInnings }, (_, index) => {
-    const inningNumber = index + 1;
-    return getInningStats({
-      pitches: pitchInnings[index] || [],
-      runTotals: runEventsByInning.get(inningNumber) || {}
-    });
-  });
 
   const rows = inningStats.map((stats, index) => {
     const label = getInningLabel(stats);
@@ -4153,12 +4354,13 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
 
   const best = inningStats[bestIndex];
   const attention = inningStats[attentionIndex];
+  const sourceLabel = summaries.length ? "Uit datasheet inning_summary regels" : "Automatisch opgebouwd uit pitches";
 
   return `
     <div class="inning-table-wrap">
       <div class="inning-table-title">
         <strong>INNING OVERZICHT</strong>
-        <span>RA = ER + UER · Contact = Foul + Hit + Veld uit</span>
+        <span>${sourceLabel} · RA = ER + UER · Contact = Foul + Hit + Veld uit</span>
       </div>
 
       <table class="inning-table">
@@ -5489,7 +5691,10 @@ async function resetGame() {
   game.closed = true;
   game.closedAt = new Date().toISOString();
 
+  game.inningSummaries = buildInningSummariesForGame(game);
+
   upsertStoredGame(game);
+  await sendInningSummariesToGoogleSheet(game);
   await sendGameStatusToGoogleSheet();
 
   showHome();
@@ -5681,7 +5886,8 @@ async function sendGameStatusToGoogleSheet() {
     inningsPitched: formatInningsPitched(game.totalOuts),
     totalPitches: getActivePitcherPitchCount(),
     firstPitchStrikes: game.firstPitchStrikes || 0,
-    runEvents: game.runEvents || []
+    runEvents: game.runEvents || [],
+    inningSummaries: game.inningSummaries || []
   };
 
   await queueGoogleSheetPayload("game_status", payload, "Game status");
@@ -5935,6 +6141,7 @@ function convertSheetRowsToGames(payload) {
 
   records.forEach(record => {
     const rowType = String(get(record, ["Row Type", "type"], 0) || "").trim();
+    const rowTypeKey = normalizeCell(rowType);
     const gameId = String(get(record, ["Game ID", "gameId"], rowType ? 2 : 1) || "").trim();
     if (!gameId) return;
 
@@ -5944,7 +6151,7 @@ function convertSheetRowsToGames(payload) {
     const pitcherName = get(record, ["Pitcher", "pitcherName"], rowType ? 6 : 5);
 
 
-    if (rowType === "game_event") {
+    if (rowTypeKey === "game_event") {
       if (!games.has(gameId)) {
         games.set(gameId, {
           gameId,
@@ -5966,6 +6173,7 @@ function convertSheetRowsToGames(payload) {
           totalOuts: 0,
           pitches: [],
           runEvents: [],
+          inningSummaries: [],
           closed: false,
           appsScriptUrl: APPS_SCRIPT_URL
         });
@@ -5991,7 +6199,8 @@ function convertSheetRowsToGames(payload) {
       return;
     }
 
-    if (rowType === "game_status") {
+
+    if (rowTypeKey === "inning_summary") {
       if (!games.has(gameId)) {
         games.set(gameId, {
           gameId,
@@ -6013,6 +6222,71 @@ function convertSheetRowsToGames(payload) {
           totalOuts: 0,
           pitches: [],
           runEvents: [],
+          inningSummaries: [],
+          closed: false,
+          appsScriptUrl: APPS_SCRIPT_URL
+        });
+      }
+
+      const g = games.get(gameId);
+      g.inningSummaries = g.inningSummaries || [];
+
+      const earnedRuns = Number(get(record, ["Earned Runs", "earnedRuns"], 31) || 0);
+      const unearnedRuns = Number(get(record, ["Unearned Runs", "unearnedRuns"], 32) || 0);
+      const runsAllowed = Number(get(record, ["Runs Allowed", "runsAllowed"], null) || (earnedRuns + unearnedRuns));
+
+      g.inningSummaries.push({
+        type: "inning_summary",
+        timestamp: get(record, ["Timestamp", "timestamp"], 1),
+        gameId,
+        date,
+        startTime,
+        opponent,
+        pitcherName,
+        inning: Number(get(record, ["Inning", "inning"], null) || 0),
+        totalPitches: Number(get(record, ["Inning Pitches", "Pitches", "totalPitches"], null) || 0),
+        strikes: Number(get(record, ["Inning Strikes", "Strikes", "strikes"], null) || 0),
+        balls: Number(get(record, ["Inning Balls", "Balls", "balls"], null) || 0),
+        totalBatters: Number(get(record, ["Batters Faced", "BF", "totalBatters"], null) || 0),
+        fps: Number(get(record, ["FPS", "First Pitch Strikes", "firstPitchStrikes"], null) || 0),
+        strikeouts: Number(get(record, ["Strikeouts", "K", "strikeouts"], null) || 0),
+        walks: Number(get(record, ["Walks", "BB", "walks"], null) || 0),
+        hits: Number(get(record, ["Hits", "hits"], null) || 0),
+        contact: Number(get(record, ["Contact", "contact"], null) || 0),
+        fieldOuts: Number(get(record, ["Field Outs", "Veld uit", "fieldOuts"], null) || 0),
+        outs: Number(get(record, ["Inning Outs", "Outs", "outs"], null) || 0),
+        runnerOuts: Number(get(record, ["Runner Outs", "runnerOuts"], 33) || 0),
+        earnedRuns,
+        unearnedRuns,
+        runsAllowed
+      });
+
+      return;
+    }
+
+    if (rowTypeKey === "game_status") {
+      if (!games.has(gameId)) {
+        games.set(gameId, {
+          gameId,
+          date,
+          startTime,
+          opponent,
+          pitcherName,
+          lineup: [],
+          activeLineupSize: 9,
+          substitutionHistory: [],
+          pitcherSessions: [],
+          batterIndex: 0,
+          balls: 0,
+          strikes: 0,
+          totalBalls: 0,
+          totalStrikes: 0,
+          firstPitchStrikes: 0,
+          outs: 0,
+          totalOuts: 0,
+          pitches: [],
+          runEvents: [],
+          inningSummaries: [],
           closed: true,
           closedAt: get(record, ["Closed At", "closedAt"], 29),
           appsScriptUrl: APPS_SCRIPT_URL
@@ -6144,7 +6418,8 @@ function convertSheetRowsToGames(payload) {
 
   return Array.from(games.values()).map(g => ({
     ...g,
-    pitches: g.pitches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    pitches: g.pitches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+    inningSummaries: (g.inningSummaries || []).sort((a, b) => Number(a.inning || 0) - Number(b.inning || 0))
   }));
 }
 
