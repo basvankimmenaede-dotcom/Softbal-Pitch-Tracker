@@ -7417,3 +7417,13 @@ body.modal-open {
 .inning-table-title span {
   line-height: 1.35;
 }
+
+
+/* === Recap reads inning_summary totals === */
+.inning-table {
+  min-width: 1280px;
+}
+
+.inning-table-title span {
+  line-height: 1.35;
+}

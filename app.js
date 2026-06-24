@@ -124,7 +124,7 @@ function getInningStatsFromSummary(summary) {
   const earnedRuns = Number(summary.earnedRuns || 0);
   const unearnedRuns = Number(summary.unearnedRuns || 0);
   const runsAllowed = Number(summary.runsAllowed || (earnedRuns + unearnedRuns) || 0);
-  const outs = getOutsFromInningSummary(summary);
+  const outs = Number(summary.outs || summary.inningOuts || 0) || getOutsFromInningSummary(summary);
   const sbRatio = balls === 0 ? strikes.toFixed(2) : (strikes / balls).toFixed(2);
   const strikePct = totalPitches ? Math.round((strikes / totalPitches) * 100) : 0;
   const fpsPct = getFpsPercentValue(fps, totalBatters);
@@ -3974,15 +3974,7 @@ function getGamesForRecaps() {
 }
 
 function getPitcherNamesForGame(g) {
-  const names = new Set();
-
-  if (g.pitcherName) names.add(String(g.pitcherName));
-
-  (g.pitches || []).forEach(p => {
-    if (p.pitcherName) names.add(String(p.pitcherName));
-  });
-
-  return [...names].filter(Boolean);
+  return getSummaryBasedPitcherNamesForGame(g);
 }
 
 function getPitcherInitials(name) {
@@ -3998,19 +3990,73 @@ function getPitcherInitials(name) {
 }
 
 
+
+function getPitcherRecapTotals(gameData, pitcherName) {
+  const summaries = getPitcherInningSummaries(gameData, pitcherName);
+
+  if (summaries.length) {
+    const stats = calculateGameStats({
+      ...gameData,
+      pitcherName,
+      pitches: (gameData.pitches || []).filter(p =>
+        String(p.pitcherName || gameData.pitcherName || "") === String(pitcherName || "")
+      ),
+      inningSummaries: summaries
+    });
+
+    return {
+      stats,
+      summaries,
+      source: "inning_summary"
+    };
+  }
+
+  const pitches = (gameData.pitches || []).filter(p =>
+    String(p.pitcherName || gameData.pitcherName || "") === String(pitcherName || "")
+  );
+
+  return {
+    stats: calculateGameStats({
+      ...gameData,
+      pitcherName,
+      pitches
+    }),
+    summaries: [],
+    source: "pitches"
+  };
+}
+
+function getSummaryBasedPitcherNamesForGame(gameData) {
+  const names = new Set();
+
+  (gameData.inningSummaries || []).forEach(summary => {
+    if (summary.pitcherName) names.add(String(summary.pitcherName).trim());
+  });
+
+  (gameData.runEvents || []).forEach(event => {
+    if (event.pitcherName) names.add(String(event.pitcherName).trim());
+  });
+
+  (gameData.pitches || []).forEach(pitch => {
+    if (pitch.pitcherName) names.add(String(pitch.pitcherName).trim());
+  });
+
+  if (gameData.pitcherName) names.add(String(gameData.pitcherName).trim());
+
+  return [...names].filter(Boolean);
+}
+
+
 function getPitcherRecapData(gameData, pitcherName) {
   const pitches = (gameData.pitches || []).filter(p =>
     String(p.pitcherName || gameData.pitcherName || "") === String(pitcherName || "")
   );
 
-  const stats = calculateGameStats({
-    ...gameData,
-    pitcherName,
-    pitches
-  });
+  const totals = getPitcherRecapTotals(gameData, pitcherName);
+  const stats = totals.stats;
 
-  const strikePct = pitches.length
-    ? Math.round((stats.strikes / pitches.length) * 100)
+  const strikePct = stats.totalPitches
+    ? Math.round((stats.strikes / stats.totalPitches) * 100)
     : 0;
 
   const fpsPct = getFpsPercentValue(stats.fps, stats.totalBatters);
@@ -4018,9 +4064,11 @@ function getPitcherRecapData(gameData, pitcherName) {
   return {
     pitcherName,
     pitches,
+    inningSummaries: totals.summaries,
     stats,
     strikePct,
-    fpsPct
+    fpsPct,
+    source: totals.source
   };
 }
 
@@ -4289,6 +4337,7 @@ function getInningRowClass(stats) {
 
 function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = "") {
   const summaries = getPitcherInningSummaries(gameData, pitcherName);
+
   const inningStats = summaries.length
     ? summaries.map(getInningStatsFromSummary)
     : (() => {
@@ -4326,7 +4375,10 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
       <tr class="${rowClass}">
         <td><span class="inning-badge">${index + 1}</span></td>
         <td class="${pitchClass}">${stats.totalPitches}</td>
+        <td>${stats.strikes}</td>
+        <td>${stats.balls}</td>
         <td class="${strikeClass}">${stats.strikePct}%</td>
+        <td>${stats.totalBatters}</td>
         <td class="${fpsClass}">${stats.fpsPct}%</td>
         <td>${stats.strikeouts || 0}</td>
         <td class="${stats.walks ? "stat-danger" : ""}">${stats.walks || 0}</td>
@@ -4337,6 +4389,8 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
         <td class="${stats.hits >= 2 ? "stat-danger" : ""}">${stats.hits || 0}</td>
         <td class="${stats.contact >= 6 ? "stat-warning" : ""}">${stats.contact || 0}</td>
         <td>${stats.fieldOuts || 0}</td>
+        <td>${stats.runnerOuts || 0}</td>
+        <td>${stats.outs || 0}</td>
         <td class="${rowClass === "row-good" ? "stat-good" : rowClass === "row-warning" ? "stat-warning" : ""}">${label}</td>
       </tr>
     `;
@@ -4354,13 +4408,15 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
 
   const best = inningStats[bestIndex];
   const attention = inningStats[attentionIndex];
-  const sourceLabel = summaries.length ? "Uit datasheet inning_summary regels" : "Automatisch opgebouwd uit pitches";
+  const sourceLabel = summaries.length
+    ? "Totals uit inning_summary regels"
+    : "Automatisch opgebouwd uit pitches";
 
   return `
     <div class="inning-table-wrap">
       <div class="inning-table-title">
         <strong>INNING OVERZICHT</strong>
-        <span>${sourceLabel} · RA = ER + UER · Contact = Foul + Hit + Veld uit</span>
+        <span>${sourceLabel} · Locatie- en zoneanalyse blijft gebaseerd op alle pitchregels</span>
       </div>
 
       <table class="inning-table">
@@ -4368,7 +4424,10 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
           <tr>
             <th>Inn</th>
             <th>P</th>
+            <th>S</th>
+            <th>B</th>
             <th>STR%</th>
+            <th>BF</th>
             <th>FPS</th>
             <th>K</th>
             <th>BB</th>
@@ -4379,6 +4438,8 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
             <th>Hits</th>
             <th>Contact</th>
             <th>Veld uit</th>
+            <th>Runner out</th>
+            <th>Outs</th>
             <th>Label</th>
           </tr>
         </thead>
@@ -4389,11 +4450,11 @@ function renderInningOverviewTable(pitcherPitches, gameData = {}, pitcherName = 
     <div class="inning-note">
       <div class="inning-note-box good">
         <strong>STERKSTE INNING</strong>
-        Inning ${bestIndex + 1}: ${best.strikePct}% strikes, ${best.fpsPct}% FPS, ${best.strikeouts || 0} K, ${best.walks || 0} BB en ${best.runsAllowed || 0} RA.
+        Inning ${bestIndex + 1}: ${best.totalPitches} P, ${best.strikes} S, ${best.balls} B, ${best.strikePct}% strikes, ${best.fpsPct}% FPS, ${best.strikeouts || 0} K en ${best.runsAllowed || 0} RA.
       </div>
       <div class="inning-note-box attention">
         <strong>PUNT VAN AANDACHT</strong>
-        Inning ${attentionIndex + 1}: ${attention.totalPitches} pitches, ${attention.walks || 0} BB, ${attention.earnedRuns || 0} ER, ${attention.unearnedRuns || 0} UER en ${attention.runsAllowed || 0} RA.
+        Inning ${attentionIndex + 1}: ${attention.totalPitches} P, ${attention.walks || 0} BB, ${attention.earnedRuns || 0} ER, ${attention.unearnedRuns || 0} UER en ${attention.runsAllowed || 0} RA.
       </div>
     </div>
   `;
